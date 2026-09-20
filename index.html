@@ -710,11 +710,19 @@ const CONFIG = {
   },
   ANTECIPACAO_PRIORITARIA: 0.8,         // assunto difícil: antecipa todas as revisões em 20%
 
-  /* Sem data de prova, não há janela para comprimir: as revisões seguem os
-     intervalos crescentes clássicos da repetição espaçada, contados a partir
-     do estudo. O horizonte é só o teto de quanto o plano pode se esticar. */
-  INTERVALOS_LIVRES: [1, 3, 7, 16, 35, 70],
-  HORIZONTE_LIVRE: 180,                 // dias à frente quando não há prova marcada
+  /* A ESCADA da repetição espaçada: dias após o estudo em que cada revisão cai,
+     em intervalos crescentes. Ela é usada sempre que a janela disponível a
+     comporta — inclusive com prova marcada. Só quando a janela é curta demais
+     para a escada é que o plano é comprimido (DISTRIBUICAO, acima).
+     Com um ano pela frente ela dá 9 revisões; é esse o "quantas forem
+     necessárias" dentro do horizonte escolhido. */
+  INTERVALOS_LIVRES: [1, 3, 7, 16, 35, 70, 140, 240, 365],
+  HORIZONTE_LIVRE: 180,                 // dias à frente quando não há prova nem teto escolhido
+  HORIZONTE_MAX_DIAS: 365,              // teto de planejamento: no máximo um ano à frente
+  MAX_REVISOES: 9,                      // nenhum assunto passa disso (o tamanho da escada)
+  /* Quanto a dificuldade deixa o assunto ir fundo na escada: um assunto
+     tranquilo não precisa das 9 revisões só porque há um ano de janela. */
+  FOLGA_POR_DIFICULDADE: 4,
   ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na Revisão por assunto antes do "+"
   MAX_ANOTACAO: 2000,                   // caracteres por caixa de anotação (~2 KB por anotação)
 
@@ -843,6 +851,8 @@ try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); } catch(e
 
 function estadoInicial(){
   return { versao: 1, tema: "claro", dataProva: CONFIG.DATA_DA_PROVA,
+           revisarAte: "",                      // teto escolhido: agendar revisões até este dia
+           posProva: "",                        // "" = ainda não perguntei · "continuo" · "encerrei"
            metaDiariaMin: CONFIG.META_DIARIA_MIN,
            disciplinas: [],                     // cadastro próprio; registros só apontam para elas
            grupos: [],                          // grupos de revisão integrada: { id, nome, disciplina, criadoEm }
@@ -997,11 +1007,31 @@ function excluirErro(id){
    regressiva e nada de comprimir o cronograma — as revisões usam os intervalos
    clássicos e o horizonte anda junto com hoje. */
 const semProva = () => !db.dataProva;
-const ultimoDiaRevisao = () => semProva() ? D.soma(D.hoje(), CONFIG.HORIZONTE_LIVRE)
-                                          : D.soma(db.dataProva, -1);   // 10/10 quando a prova é 11/10
+/** a prova ainda está à frente? (depois dela o cronograma muda de regra) */
+const provaFutura = () => !!db.dataProva && db.dataProva > D.hoje();
+/** O agendamento está de pé? Ele para em dois casos: quando você disse que
+    encerrou, e enquanto a prova já passou e a pergunta ainda não foi respondida
+    — seria estranho continuar agendando para uma prova que acabou. */
+const agendamentoAtivo = () => db.posProva !== "encerrei" && !precisaPerguntarPosProva();
+/* ATÉ QUANDO O SISTEMA AGENDA. Três fontes, nesta ordem:
+   1. o teto que você escolheu ("revisar até"), que vale inclusive depois da prova;
+   2. a véspera da prova, enquanto ela estiver à frente;
+   3. o horizonte livre, quando não há nem uma coisa nem outra.
+   Nada passa de um ano à frente — planejar além disso é ficção. */
+function ultimoDiaRevisao(){
+  const hoje = D.hoje();
+  const maximo = D.soma(hoje, CONFIG.HORIZONTE_MAX_DIAS);
+  let fim = db.revisarAte || (provaFutura() ? D.soma(db.dataProva, -1)
+                                            : D.soma(hoje, CONFIG.HORIZONTE_LIVRE));
+  if (fim > maximo) fim = maximo;
+  return fim;
+}
 const diasParaProva    = () => semProva() ? null : D.dif(D.hoje(), db.dataProva);
 /** como dizer o prazo nos textos da tela */
-const rotuloPrazo = () => semProva() ? "no seu ritmo" : "até " + D.brFull(ultimoDiaRevisao());
+const rotuloPrazo = () => !agendamentoAtivo() ? "— agendamento encerrado"
+                        : db.revisarAte ? "até " + D.brFull(db.revisarAte)
+                        : provaFutura()  ? "até " + D.brFull(ultimoDiaRevisao())
+                        : "no seu ritmo";
 
 /** Estatísticas consolidadas de um assunto (registros + revisões feitas + aprendizados). */
 function estatAssunto(disciplina, assunto){
@@ -1064,6 +1094,10 @@ function capacidadeDeRevisoes(diasDisponiveis){
 /* Quantas revisões o assunto pede: dificuldade + desempenho, limitado pelo que cabe.
    As anotações da aba Pontos importantes NÃO entram nesta conta — elas são
    conhecimento à parte e não mexem no cronograma. */
+/** degraus da escada que cabem na janela (é quantas revisões ela comporta) */
+function degrausQueCabem(diasDisponiveis){
+  return CONFIG.INTERVALOS_LIVRES.filter(d => d <= diasDisponiveis).length;
+}
 function numeroDeRevisoes(dificuldade, taxa, diasDisponiveis){
   let n = CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? 3;
   if (taxa !== null){
@@ -1071,32 +1105,46 @@ function numeroDeRevisoes(dificuldade, taxa, diasDisponiveis){
     else if (taxa < CONFIG.TAXA_ATENCAO) n = Math.max(n, 3);
     else if (taxa >= 90 && dificuldade <= 2) n = Math.min(n, 2); // dominado: não gasta tempo à toa
   }
-  const teto = capacidadeDeRevisoes(diasDisponiveis);
-  return Math.max(0, Math.min(n, teto));
+  /* Janela longa: a escada manda, porque revisar em intervalos crescentes é o
+     que fixa. A dificuldade decide até onde subir — um assunto tranquilo não
+     precisa das 9 revisões só porque há um ano pela frente. */
+  const tetoDificuldade = Math.min(CONFIG.MAX_REVISOES,
+                                   (CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? 3) + CONFIG.FOLGA_POR_DIFICULDADE);
+  n = Math.max(n, Math.min(tetoDificuldade, degrausQueCabem(diasDisponiveis)));
+  const teto = Math.max(capacidadeDeRevisoes(diasDisponiveis), degrausQueCabem(diasDisponiveis));
+  return Math.max(0, Math.min(n, teto, CONFIG.MAX_REVISOES));
 }
 
 /** Offsets (em dias) a partir do início, respeitando o nº de dias disponíveis. */
+/* ONDE CADA REVISÃO CAI. Duas réguas, e a janela decide qual vale:
+   - cabendo a escada (intervalos crescentes reais), ela é usada — é a forma
+     certa da repetição espaçada, e é o que permite planos de meses ou de um ano;
+   - não cabendo, o plano é COMPRIMIDO em frações da janela (DISTRIBUICAO), que
+     é o caso de quem tem a prova perto.
+   Antes essa escolha era "tem prova ou não"; agora é "cabe ou não cabe", que é
+   o que de fato importa: com prova daqui a 8 meses, comprimir seria errado.   */
 function calcularOffsets(diasDisponiveis, n, prioritario){
-  while (n > 1 && diasDisponiveis < CONFIG.DIAS_MINIMOS[n]) n--;      // não cabe: reduz revisões
   if (diasDisponiveis < 1) return [];
   const fator = prioritario ? CONFIG.ANTECIPACAO_PRIORITARIA : 1;
-  if (semProva()){                    // sem prazo: intervalos fixos crescentes, a partir do estudo
-    const saida = [];
-    CONFIG.INTERVALOS_LIVRES.slice(0, n).forEach(d => {
-      let dia = Math.max(1, Math.round(d * fator));
-      if (saida.length && dia <= saida[saida.length-1]) dia = saida[saida.length-1] + CONFIG.ESPACAMENTO_MIN_DIAS;
-      saida.push(dia);
-    });
-    return saida;
-  }
+  const escada = [];
+  CONFIG.INTERVALOS_LIVRES.slice(0, n).forEach(d => {
+    let dia = Math.max(1, Math.round(d * fator));
+    if (escada.length && dia <= escada[escada.length-1]) dia = escada[escada.length-1] + CONFIG.ESPACAMENTO_MIN_DIAS;
+    if (dia <= diasDisponiveis) escada.push(dia);
+  });
+  if (escada.length >= n) return escada.slice(0, n);
+
+  while (n > 1 && diasDisponiveis < CONFIG.DIAS_MINIMOS[n]) n--;      // não cabe: reduz revisões
+  const dist = CONFIG.DISTRIBUICAO[n];
+  if (!dist) return escada;
   const saida = [];
-  CONFIG.DISTRIBUICAO[n].forEach(f => {
+  dist.forEach(f => {
     let dia = Math.round(diasDisponiveis * Math.min(1, f * fator));
     dia = Math.max(1, Math.min(diasDisponiveis, dia));
     if (saida.length && dia <= saida[saida.length-1]) dia = saida[saida.length-1] + CONFIG.ESPACAMENTO_MIN_DIAS;
     if (dia <= diasDisponiveis) saida.push(dia);
   });
-  return saida;
+  return saida.length >= escada.length ? saida : escada;
 }
 
 /* ---------- vínculo entre a revisão (agenda) e a sessão (o que aconteceu) ----------
@@ -1202,6 +1250,7 @@ function gerarRevisoes(reg, opcoes){
   }
   if (ehRevisaoSessao(reg)) return;                            // sessão de revisão não agenda nada
   if (planoDe(reg) === "manual") return;                       // só revisões criadas à mão
+  if (!agendamentoAtivo()) return;                             // você disse que encerrou os estudos
   if (planoDe(reg) === "grupo"){
     entrarNoGrupo(reg, reg.grupoId);                           // entra nos cards do grupo, sem abrir fila nova
     gerarRevisoesGrupo(reg.grupoId, opcoes);
@@ -1228,9 +1277,12 @@ function gerarRevisoes(reg, opcoes){
 
   const prioritario = dificuldade >= 4 || (est.taxa !== null && est.taxa < CONFIG.TAXA_CRITICA);
 
+  const ocupadas = new Set(mantidas.map(r => r.data));           // nada de duas no mesmo dia
   calcularOffsets(dias, faltam, prioritario).forEach((off, i) => {
     const data = D.soma(partida, off);
-    if (data > limite) return;                                  // trava: nunca na prova ou depois
+    if (data > limite) return;                                  // trava: nunca além do horizonte
+    if (ocupadas.has(data)) return;
+    ocupadas.add(data);
     db.revisoes.push({ id: uid(), registroId: reg.id, data, ordem: mantidas.length + i + 1,
                        feita: false, feitaEm: null, minutos: null, questoes: null, acertos: null,
                        dificuldade: null, atividade: "", nota: "", manual: false });
@@ -1247,6 +1299,7 @@ function gerarRevisoesGrupo(gid, opcoes){
     db.revisoes = db.revisoes.filter(r => !doGrupo(r) || r.feita || r.manual || r.registroId);
     return;
   }
+  if (!agendamentoAtivo()) return;
   const disc = grupo.disciplina;
   const uniao = [...new Set(regs.flatMap(assuntosDe))];
 
@@ -4213,6 +4266,75 @@ function registrarRevisao(rev){
   redesenharTelaForm();
 }
 
+/* A PROVA PASSOU, E AGORA? Antes o sistema simplesmente parava de agendar: a
+   véspera ficava no passado, a janela virava negativa e nenhuma revisão nova
+   nascia — sem dizer nada. Agora ele pergunta uma vez, e a resposta fica
+   guardada (db.posProva) para não virar interrogatório diário.               */
+function precisaPerguntarPosProva(){
+  return !!db.dataProva && db.dataProva <= D.hoje() && !db.posProva;
+}
+function modalPosProva(){
+  const dias = Math.abs(D.dif(db.dataProva, D.hoje()));
+  abrirModal("E depois da prova?",
+    '<p class="sub">A prova de <b>' + D.brFull(db.dataProva) + '</b> ' +
+      (dias === 0 ? "é hoje" : "foi há " + dias + (dias === 1 ? " dia" : " dias")) + '. ' +
+      'Enquanto eu não souber se você continua, <b>nenhuma revisão nova é agendada</b> — ' +
+      'as que já existem continuam aí.</p>' +
+    '<div class="campos">' +
+      '<div class="campo largo"><span>Você continua estudando?</span><div class="opcoes">' +
+        '<label class="opcao"><input type="radio" name="rumo" value="continuo" checked>' +
+          '<span>Sim, continuo — sem data marcada</span></label>' +
+        '<label class="opcao"><input type="radio" name="rumo" value="outra">' +
+          '<span>Sim, tenho outra prova</span></label>' +
+        '<label class="opcao"><input type="radio" name="rumo" value="encerrei">' +
+          '<span>Não, encerrei por aqui</span></label>' +
+      '</div></div>' +
+      '<div class="campo largo painel-questao" id="painelOutraProva">' +
+        '<div class="interno"><div class="campos">' +
+          campo("Data da nova prova", '<input type="date" name="novaProva" id="campoNovaProva" ' +
+                'min="' + D.soma(D.hoje(), 1) + '" max="' + D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS) + '">', true) +
+        '</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<p class="sub" style="margin-top:10px">Escolhendo <b>continuo</b>, as revisões voltam a ser criadas em ' +
+      'intervalos crescentes, até o teto que você definir em <b>Ajustes</b>. Escolhendo <b>encerrei</b>, ' +
+      'nada é apagado — o sistema só para de agendar, e você pode religar quando quiser.</p>' +
+    '<div class="linha acoes-form"><button class="btn" type="button" data-acao="salvar-pos-prova">Confirmar</button></div>',
+    () => {
+      const painel = $("#painelOutraProva");
+      document.querySelectorAll('[name="rumo"]').forEach(r =>
+        r.addEventListener("change", () => {
+          if (painel) painel.classList.toggle("aberto", r.value === "outra" && r.checked);
+        }));
+    });
+}
+function salvarPosProva(){
+  const escolha = (document.querySelector('[name="rumo"]:checked') || {}).value || "continuo";
+  const nova = (document.getElementById("campoNovaProva") || {}).value || "";
+  if (escolha === "outra" && !nova){
+    toast("Informe a data da nova prova."); return;
+  }
+  if (escolha === "outra"){ db.dataProva = nova; db.posProva = ""; }      // prova nova: o ciclo recomeça
+  else if (escolha === "continuo"){ db.dataProva = ""; db.posProva = "continuo"; }
+  else { db.posProva = "encerrei"; }
+  if (agendamentoAtivo()) db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
+  persistir(); fecharModal(); render();
+  toast(escolha === "encerrei" ? "Agendamento encerrado — nada foi apagado."
+       : escolha === "outra"   ? "Nova prova em " + D.brFull(nova) + " — cronograma refeito."
+                               : "Estudo contínuo — revisões em intervalos crescentes.");
+}
+
+/* Mudou o horizonte (prova, teto ou religar): todo mundo é replanejado. As
+   revisões FEITAS e as criadas À MÃO nunca são tocadas — inclusive as que
+   estejam além do teto, que é o que evita o conflito entre o teto e o que você
+   marcou de propósito. O que sai são as automáticas que não cabem mais.      */
+function replanejarTudo(){
+  const limite = ultimoDiaRevisao();
+  db.revisoes = db.revisoes.filter(r => r.feita || r.manual || r.data <= limite);
+  db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
+  (db.grupos || []).forEach(g => gerarRevisoesGrupo(g.id, { base: D.hoje() }));
+}
+
 function modalAjuda(){
   abrirModal("Ajuda e ajustes",
     '<form id="formAjustes"><div class="campos">' +
@@ -4220,12 +4342,20 @@ function modalAjuda(){
         texto:"Estudo contínuo — não tenho uma prova marcada" }]) +
       campo("Data da prova", '<input type="date" name="dataProva" id="campoDataProva" value="'+esc(db.dataProva||"")+'"' +
             (semProva() ? " disabled" : "") + '>') +
+      campo("Revisar até (opcional)",
+            '<input type="date" name="revisarAte" value="'+esc(db.revisarAte||"")+'" ' +
+            'min="'+D.soma(D.hoje(), 1)+'" max="'+D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS)+'">',
+            false, "O teto do cronograma: o sistema agenda até esse dia e não passa dele. Até um ano à frente.") +
       campo("Meta diária (min)", '<input type="number" name="meta" min="15" max="960" value="'+db.metaDiariaMin+'">') +
+      (agendamentoAtivo() ? "" : campoOpcoes("Agendamento", [{ nome:"religar", marcado:false,
+        texto:"Voltar a agendar revisões (está desligado desde a prova)" }])) +
     '</div><p class="sub" style="margin-top:10px">' +
-      '<b>Com data:</b> o cronograma é comprimido para caber até a véspera — quanto menos tempo, ' +
-      'mais cedo e mais juntas as revisões.<br>' +
-      '<b>Sem data:</b> repetição espaçada clássica, em D+' + CONFIG.INTERVALOS_LIVRES.slice(0,4).join(', D+') +
-      '… a partir de cada estudo, sem contagem regressiva.</p>' +
+      '<b>Horizonte atual:</b> ' + D.brFull(ultimoDiaRevisao()) + ' · ' +
+      'cabem até <b>' + degrausQueCabem(D.dif(D.hoje(), ultimoDiaRevisao())) + '</b> revisões por assunto.<br>' +
+      '<b>Janela larga</b> (a partir de ~4 meses): repetição espaçada clássica, em D+' +
+      CONFIG.INTERVALOS_LIVRES.slice(0,5).join(', D+') + '… a partir de cada estudo.<br>' +
+      '<b>Janela curta</b> (prova perto): o cronograma é comprimido para caber até a véspera — ' +
+      'quanto menos tempo, mais cedo e mais juntas as revisões.</p>' +
     '<div class="linha" style="margin-top:12px"><button class="btn" type="submit">Salvar ajustes</button>' +
     '<span class="hl-tema">mudar o prazo reagenda todas as revisões pendentes</span></div></form>' +
     '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
@@ -4249,12 +4379,19 @@ function modalAjuda(){
       $("#formAjustes").addEventListener("submit", ev => {
         ev.preventDefault();
         const d = Object.fromEntries(new FormData(ev.target).entries());
-        const antes = db.dataProva;
+        const antes = db.dataProva, tetoAntes = db.revisarAte;
         db.dataProva = d.semProva ? "" : (d.dataProva || db.dataProva);
+        // o teto nunca passa de um ano: o resto do sistema confia nisso
+        const limiteMax = D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS);
+        db.revisarAte = (d.revisarAte || "") > limiteMax ? limiteMax : (d.revisarAte || "");
+        if (db.revisarAte && db.revisarAte <= D.hoje()) db.revisarAte = "";
+        if (d.religar) db.posProva = "continuo";
         db.metaDiariaMin = Math.max(15, Number(d.meta) || CONFIG.META_DIARIA_MIN);
-        db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
+        replanejarTudo();
         persistir(); fecharModal(); render();
-        toast(db.dataProva === antes ? "Ajustes salvos — cronograma recalculado."
+        toast(d.religar ? "Agendamento religado — cronograma refeito."
+             : db.revisarAte && db.revisarAte !== tetoAntes ? "Revisões agendadas até " + D.brFull(db.revisarAte) + "."
+             : db.dataProva === antes ? "Ajustes salvos — cronograma recalculado."
              : db.dataProva ? "Prova em " + D.brFull(db.dataProva) + " — cronograma refeito."
                             : "Estudo contínuo — revisões em intervalos crescentes.");
       });
@@ -4757,6 +4894,7 @@ document.addEventListener("click", ev => {
       ui.eAssunto = alvo.dataset.k; ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null; ui.foco = null;
       render(); break;
     case "abrir-composer": ui.compondo = true; ui.editandoErro = null; ui.foco = "txtNovo"; render(); break;
+    case "salvar-pos-prova": salvarPosProva(); break;
     case "cancelar-composer": ui.compondo = false; ui.rascunhoAnot = ""; ui.foco = null; render(); break;
     case "salvar-aprendizado": salvarNovoAprendizado(); break;
     case "editar-erro": ui.editandoErro = id; ui.compondo = false; ui.rascunhoAnot = ""; ui.foco = null; render(); break;
@@ -5005,6 +5143,7 @@ function verificarVirada(){
   if (ui.mesCal === mesAnterior) ui.mesCal = agora.slice(0,7);
   render();
   toast("Virou o dia: a tela agora mostra " + D.brFull(agora) + ".");
+  if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
 }
 setInterval(verificarVirada, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) verificarVirada(); });
@@ -5013,6 +5152,8 @@ window.addEventListener("focus", verificarVirada);
 /* ---------- arranque ---------- */
 if (!temStorage) $("#avisoStorage").hidden = false;
 render();
+// a prova passou e ninguém disse o que fazer: pergunta uma vez
+if (precisaPerguntarPosProva()) modalPosProva();
 iniciarArquivo();                 // religa o .json escolhido antes, se houver
 iniciarNuvem();                   // e a conta da nuvem, se houver sessão salva
 // voltou a ter conexão: sobe o que ficou pendente

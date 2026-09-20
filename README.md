@@ -551,7 +551,7 @@ nesse caso um aviso laranja aparece no topo; use Chrome/Firefox ou sirva a pasta
 
 ## Metodologias aplicadas
 
-1. **Repetição espaçada** — o número de revisões sai da **dificuldade** do assunto, limitado pelo que cabe na janela até a prova, sempre em intervalos crescentes.
+1. **Repetição espaçada** — o número de revisões sai da **dificuldade** do assunto e de **quantos degraus da escada cabem no horizonte**, sempre em intervalos crescentes.
 2. **Curva do esquecimento (Ebbinghaus)** — a primeira revisão vem cedo, quando o esquecimento é mais rápido.
 3. **Recordação ativa** — toda revisão pede questões feitas e acertos; reler não conta como revisão.
 4. **Sistema Leitner** — dificuldade alta ou taxa de acerto abaixo de 60% = mais revisões, começando antes.
@@ -572,18 +572,23 @@ TAXA_CRITICA: 60                   // % de acerto abaixo disso pede ao menos 4
 TAXA_ATENCAO: 75                   // abaixo disso garante ao menos 3
 DISTRIBUICAO: {1..6}               // fração do tempo restante, com intervalos crescentes
 ANTECIPACAO_PRIORITARIA: 0.8       // assunto fraco antecipa tudo em 20%
-INTERVALOS_LIVRES: [1,3,7,16,35,70]  // sem prova: intervalos clássicos, em dias
-HORIZONTE_LIVRE: 180               // sem prova: até onde o plano pode se esticar
+INTERVALOS_LIVRES: [1,3,7,16,35,70,140,240,365]   // a escada: dias após o estudo
+HORIZONTE_LIVRE: 180               // sem prova nem teto: até onde o plano se estica
+HORIZONTE_MAX_DIAS: 365            // teto de planejamento: no máximo um ano
+MAX_REVISOES: 9                    // nenhum assunto passa disso
+FOLGA_POR_DIFICULDADE: 4           // quão fundo na escada a dificuldade deixa ir
 CATEGORIAS_ERRO: [conteudo, interpretacao, bobo, chute, acertei]  // opcionais, editáveis
 ```
 
-A data da prova e a meta diária também podem ser mudadas pela interface (botão **?**);
-alterar a data **recalcula todas as revisões pendentes**.
+Data da prova, **revisar até** (o teto, até um ano) e meta diária são mudadas pela interface
+(botão **?**); alterar qualquer uma delas **replaneja todas as revisões pendentes** — ver
+*Até quando o sistema agenda*.
 
 ## Estrutura dos dados
 
 ```
-{ versao, tema, dataProva, metaDiariaMin,
+{ versao, tema, dataProva, revisarAte, posProva, metaDiariaMin,
+  // revisarAte = teto do cronograma ("" = sem teto) · posProva = "" | "continuo" | "encerrei"
   cronometro: null | {inicio, disciplina, assunto, destinoTipo, destinoId},   // em andamento
   grupos:    [{id, nome, disciplina, criadoEm}],        // grupos de revisão integrada
   lancamentos: [{id, registroId, data, questoes, acertos, criadoEm}],   // questões lançadas à parte
@@ -746,6 +751,56 @@ dias a prova foi.
 
 Se a prova acabou e você quer seguir estudando, há dois caminhos: **marcar a próxima data** (o
 cronograma se refaz até ela) ou ligar o **estudo contínuo**, que volta a agendar revisões sem prazo.
+
+## Até quando o sistema agenda
+
+Tudo o que é automático para num dia só: o **horizonte**. Ele sai de três fontes, nesta ordem:
+
+1. **Revisar até** — o teto que você escolhe em *Ajustes*, **até um ano à frente**. Vale inclusive
+   depois da prova.
+2. **A véspera da prova**, enquanto ela estiver à frente.
+3. **180 dias**, quando não há nem uma coisa nem outra.
+
+### Escada ou compressão
+
+O cronograma tem duas réguas, e **quem escolhe é a janela, não a existência de prova**:
+
+- **Cabe a escada** → intervalos crescentes reais: **D+1, D+3, D+7, D+16, D+35, D+70, D+140, D+240,
+  D+365**. É a repetição espaçada como ela é, e é o que permite planos de meses ou de um ano.
+- **Não cabe** → o plano é **comprimido** em frações da janela (prova perto): quanto menos tempo,
+  mais cedo e mais juntas.
+
+Antes essa escolha era *"tem prova ou não tem"*, o que ficava errado nos dois extremos: com prova
+daqui a oito meses o plano era comprimido sem necessidade, e sem prova ele parava em 6 revisões.
+
+**Quantas revisões:** a dificuldade dá o piso (1 a 5) e o teto de quão fundo ir na escada
+(`dificuldade + 4`, limitado a **9**). Com um ano pela frente, um assunto difícil chega a 9 revisões;
+um tranquilo fica em 5. Taxa de acerto baixa continua puxando para cima, como antes.
+
+### A prova passou — e agora?
+
+Antes o sistema **simplesmente parava**: a véspera ficava no passado, a janela virava negativa e
+nenhuma revisão nova nascia, sem dizer nada. Agora ele **pergunta uma vez**, na primeira vez que você
+abre depois da data (ou na virada do dia, se estiver com a tela aberta):
+
+| Resposta | O que acontece |
+|---|---|
+| **Sim, continuo — sem data** | a prova sai, o modo vira contínuo e as revisões voltam a nascer |
+| **Sim, tenho outra prova** | você informa a data e o ciclo recomeça a partir dela |
+| **Não, encerrei por aqui** | o agendamento é desligado — **nada é apagado** |
+
+A resposta fica guardada (`db.posProva`), então a pergunta não vira interrogatório diário. Enquanto
+ela não for respondida, **nenhuma revisão nova é agendada** — é o que o texto do aviso promete. Quem
+encerrou pode **religar** a qualquer momento em *Ajustes*.
+
+### O teto e as revisões que você criou
+
+Mudar o horizonte (prova, teto ou religar) **replaneja tudo**, e a regra de sempre vale aqui: as
+revisões **feitas** e as criadas **à mão** nunca são tocadas — inclusive as que estejam **além do
+teto**. É isso que evita o conflito entre o teto e o que você marcou de propósito: o teto governa o
+que o sistema cria, não o que você decidiu. O que sai, ao encolher o teto, são apenas as automáticas
+que não cabem mais. Ao esticar, as que faltavam são criadas — e nunca duas no mesmo dia para o mesmo
+card.
 
 ## O calendário e o filtro de dia
 
