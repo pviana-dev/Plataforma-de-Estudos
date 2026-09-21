@@ -818,6 +818,26 @@ disciplina inteira. Ao fechar, a escada nasce inteira
 **a partir daquele dia**; as voltas já feitas não somem, elas foram sessões de estudo com tempo e
 questões registrados. Dá para **reabrir** também, e aí a fila volta a ser uma volta só.
 
+### A agenda se resolve sozinha
+
+Você não precisa marcar nada: **registrar uma sessão daquele conteúdo dá o lembrete vencido por
+cumprido** e faz nascer o próximo, contado daquele dia. A caixa de marcar continua ali para quem
+preferir esse caminho — ela é atalho, não obrigação.
+
+Duas regras seguram o comportamento:
+
+- **Só o que já venceu é consumido.** Estudar hoje não apaga uma revisão marcada para daqui a três
+  semanas — ela ainda tem função. Vencido é o que estava marcado para hoje ou para trás.
+- **Uma sessão fecha um lembrete**, o mais antigo. Estudar duas horas não quita a agenda do mês.
+
+**Atraso vale para os dois.** Lembrete de conteúdo em andamento que passou da data é atrasado do
+mesmo jeito que uma revisão: aquele dia era para ter sido usado. Os dois aparecem no card
+**Revisões atrasadas**, com o botão de remarcar.
+
+**Estudar de novo um conteúdo já fechado não abre outra escada.** A que existe é a que vale — a
+sessão apenas cumpre a revisão vencida, se houver. Antes, cada sessão montava a própria fila: oito
+itens para o mesmo assunto, dois no mesmo dia.
+
 **Marcar uma volta como feita** abre a sessão já no tipo **Estudo** (e não *Revisão*), porque é o que
 normalmente está acontecendo — você continuou o conteúdo. Trocar para *Estudo/Revisão* ou *Revisão*
 continua a um clique.

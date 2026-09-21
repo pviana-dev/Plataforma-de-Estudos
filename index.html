@@ -1367,12 +1367,25 @@ function diasDaVolta(dificuldade, taxa){
 }
 /** a revisão é uma volta (conteúdo aberto) ou revisão de verdade? */
 const ehRetomada = rev => !!rev && !!rev.retomada;
+/** outra sessão do mesmo conteúdo já tem escada pendente? (não se abre uma segunda) */
+function escadaEmAberto(reg){
+  const chave = chaveSessao(reg);
+  return db.revisoes.some(r => {
+    if (r.feita || r.manual || ehRetomada(r) || !r.registroId || r.registroId === reg.id) return false;
+    const dono = acharRegistro(r.registroId);
+    return !!dono && chaveSessao(dono) === chave;
+  });
+}
 /** a volta em aberto de OUTRA sessão do mesmo conteúdo (é ela que anda, em vez de duplicar) */
 function voltaEmAberto(reg){
   const chave = chaveSessao(reg);
   return db.revisoes.find(r => {
     if (r.feita || r.manual || !ehRetomada(r) || !r.registroId || r.registroId === reg.id) return false;
     if (r.id === reg.revisaoId) return false;          // é a volta que esta sessão está fechando
+    /* Volta JÁ VENCIDA não anda: ela é cumprida por esta sessão (resolverLembrete)
+       e fica no histórico como "voltei neste dia". Só a que ainda está por vir
+       é que se desloca, para não marcar duas idas ao mesmo conteúdo. */
+    if (r.data <= reg.data) return false;
     const dono = acharRegistro(r.registroId);
     return !!dono && conteudoAberto(dono) && chaveSessao(dono) === chave;
   }) || null;
@@ -1424,6 +1437,10 @@ function gerarRevisoes(reg, opcoes){
                        acertos: null, dificuldade: null, atividade: "", nota: "", manual: false });
     return;
   }
+  /* Conteúdo fechado já tem escada? Então é ela que vale. Sem isto, estudar de
+     novo um conteúdo concluído abria uma segunda fila por cima da primeira —
+     oito itens para o mesmo assunto, dois no mesmo dia. */
+  if (escadaEmAberto(reg)) return;
   // conteúdo fechado: a escada conta do dia em que você fechou
   const fechou = fechadoEm(reg);
   if (fechou && fechou > partida) partida = fechou;
@@ -4486,6 +4503,7 @@ function enviarRegistro(ev){
   const salvo = acharRegistro(reg.id);
   if (revAlvo) ligarSessaoRevisao(salvo, revAlvo);
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
+  else resolverLembrete(salvo);          // estudou o conteúdo? o lembrete vencido se dá por cumprido
   /* Trocar um conteúdo por outro na sessão deixou de significar "renomeei":
      os nomes vêm do cadastro, e renomear de verdade se faz em Ajustes →
      Disciplinas e conteúdos, que já propaga para tudo. A pergunta antiga
@@ -4670,6 +4688,29 @@ function renomearConteudo(disc, antigo, novo){
       r.assuntos = r.assuntos.map(a => bate(a) ? novo : a);
   });
   db.erros.forEach(e => { if (e.disciplina === disc && bate(e.assunto)) e.assunto = novo; });
+}
+/* O LEMBRETE SE RESOLVE SOZINHO. A agenda não é uma lista de tarefas a marcar:
+   ela aponta quando voltar a um conteúdo. Registrada uma sessão daquele
+   conteúdo, o lembrete vencido dali se dá por cumprido e o próximo nasce a
+   partir deste dia — sem você registrar a mesma coisa duas vezes.
+   Só entra o que já venceu: estudar hoje não consome uma revisão marcada para
+   daqui a três semanas, que ainda tem função.                               */
+function resolverLembrete(reg){
+  if (!reg || ehRevisaoSessao(reg) || planoDe(reg) === "sem") return null;
+  const chave = chaveSessao(reg);
+  const candidatos = db.revisoes.filter(r => {
+    if (r.feita || r.manual || r.sessaoId) return false;
+    if (r.data > reg.data) return false;                     // ainda não venceu
+    const dono = r.grupoId ? acharGrupo(r.grupoId) : acharRegistro(r.registroId);
+    if (!dono) return false;
+    return r.grupoId ? dono.id === reg.grupoId : chaveSessao(dono) === chave;
+  }).sort((a,b) => a.data.localeCompare(b.data));
+  if (!candidatos.length) return null;
+  const alvo = candidatos[0];            // uma sessão fecha um lembrete: o mais antigo
+  ligarSessaoRevisao(reg, alvo);
+  if (reg.grupoId) gerarRevisoesGrupo(reg.grupoId, { base: reg.data });
+  else gerarRevisoes(reg, { base: reg.data });               // e o próximo nasce daqui
+  return alvo;
 }
 /** as sessões que falam destes conteúdos — é o alcance de fechar um deles */
 function sessoesDoConteudo(disc, nomes){
