@@ -1,5 +1,13 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),ontem=iso(new Date(Date.now()-864e5));
 const mais=n=>iso(new Date(Date.now()+n*864e5));
@@ -24,6 +32,7 @@ const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 setTimeout(()=>{
   click(doc.querySelector('[data-aba="revisoes"]'));
+  setTimeout(()=>verPorAssunto(doc, w), 60);
   setTimeout(()=>{
     const blocos=[...doc.querySelectorAll(".grupo-rev")];
     ok("cada conteúdo virou um bloco próprio", blocos.length===2, blocos.length);

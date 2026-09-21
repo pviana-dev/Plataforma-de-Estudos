@@ -1,5 +1,13 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date());
 const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
@@ -55,6 +63,7 @@ async function abrir(sel){ click(doc.querySelector(sel)); await espera(300); }
 
   /* ---- nova revisão ---- */
   click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(250);
   await abrir('[data-acao="nova-revisao"]');
   const rod2=caixa().querySelector(":scope > .acoes-form");
   ok("a tela de revisão também tira o rodapé do scroll", !!rod2 && !corpo().querySelector(".acoes-form"));
@@ -75,6 +84,7 @@ async function abrir(sel){ click(doc.querySelector(sel)); await espera(300); }
 
   /* ---- editar card de revisão ---- */
   click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(250);
   await abrir('[data-acao="editar-card"]');
   const rod3=caixa().querySelector(":scope > .acoes-form");
   ok("o editor de card também prende o rodapé", !!rod3, caixa().className);

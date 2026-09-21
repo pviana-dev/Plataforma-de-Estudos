@@ -3,6 +3,14 @@
    é também o motivo de os testes agora viverem dentro do repositório. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date());
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
@@ -60,6 +68,7 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
 
   /* ---- 4. fechar o conteúdo dá partida na escada ---- */
   click($('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(300);
   ok("o card mostra o conteúdo em andamento", /em andamento/.test($("#view").textContent));
   click($('[data-acao="concluir-conteudo"]')); await espera(400);
   const pend=(db().revisoes||[]).filter(r=>!r.feita);

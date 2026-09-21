@@ -1,6 +1,14 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
+
 /* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
    escolhe "criar novo", digita o nome e clica em adicionar. */
 function porConteudo(doc, w, nome){
@@ -45,6 +53,7 @@ async function gravarSessao(w){
   doc.querySelector("#modalCorpo #formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(350);
   doc.querySelector('[data-aba="revisoes"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(250); verPorAssunto(doc, w);
   await espera(250);
 }
 
@@ -103,7 +112,8 @@ async function gravarSessao(w){
   const st=JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   st.revisoes[0].data=hoje; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(st));
   w=abrir(st,"revisoes"); await espera(400);
-  const marcar=w.document.querySelector('.grupo-rev [data-acao="concluir"]');
+  // a volta de hoje aparece no card "Revisões de hoje", em qualquer visão
+  const marcar=w.document.querySelector('#view [data-acao="concluir"]');
   marcar.dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(400);
   const tipoSel=w.document.querySelector('#modalCaixa [name="tipo"]:checked');
   ok("marcar a volta abre a sessão já como Estudo", tipoSel && tipoSel.value==="estudo",

@@ -1,5 +1,13 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date());
 const mais=n=>iso(new Date(Date.now()+n*864e5));
@@ -45,7 +53,8 @@ setTimeout(()=>{
     setTimeout(()=>{
       // 1. nome do card e da aba
       const aba=doc.querySelector('[data-aba="revisoes"]');
-      ok("a aba se chama “Revisões”", aba.textContent.trim()==="Revisões", aba.textContent);
+      ok("a aba se chama “Agenda”", aba.textContent.trim()==="Agenda", aba.textContent);
+      verPorAssunto(doc, w);
       ok("“Rotina” não aparece mais em lugar nenhum",
          !/Rotina/.test(doc.body.textContent), doc.body.textContent.match(/.{0,30}Rotina.{0,30}/));
       ok("o card se chama “Revisão por assunto”", /Revisão por assunto/.test(txt()));

@@ -12,9 +12,9 @@ Abra o arquivo no navegador e use. Todos os dados ficam no **`localStorage`** do
 |---|---|
 | **Hoje** | **Cronômetro de estudo** logo no topo, em card próprio com moldura verde — é a ação mais usada do dia; revisões de hoje, atrasadas e dos próximos 7 dias (estas **agrupadas por dia**, mostrando **3 por vez** com **+ ver todas as N**); **Registrado hoje**, um resumo só de leitura das sessões do dia; meta diária e sequência de dias nos números do topo. |
 | **Sessões** | Formulário da sessão de estudo (data, disciplina, **um ou vários assuntos**, tempo, questões, acertos, **dificuldade do assunto**, e **um único campo de descrição** para a sessão) e a lista **Todas as sessões**: resumo do que está filtrado (sessões, tempo somado e média, revisões pendentes), separadores por dia com o total do dia, e por sessão o tempo (com o nº de medições do cronômetro, quando há mais de uma), dificuldade e a situação das revisões. **Questões não aparecem aqui** — elas têm aba própria, porque nem toda sessão tem questões (num assunto novo é normal só estudar). Os campos de questões continuam no formulário, opcionais. Registrar e editar acontecem numa **tela sobreposta** (ver abaixo) — a lista nunca é empurrada para baixo. **Clique em qualquer lugar da linha** para abrir a sessão: a tela de edição traz, além dos campos, um bloco **Esta sessão** com os intervalos do cronômetro, quando foi registrada e a situação das revisões. |
-| **Revisões** | **Agenda e alerta** — não é aqui que o tempo é registrado. Abre com **Revisões de hoje** — tudo o que tem a data de hoje: em andamento, em aberto e já concluídas —, e só depois vem o cronograma. Cronograma **por assunto** (ou pelo nome do grupo, nos conteúdos integrados), com uma caixa de seleção por dia recomendado. A lista abre com **4 assuntos** — os mais urgentes, porque atraso e pior taxa vêm primeiro — e um botão **+ ver todos os N assuntos** revela o resto. Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
+| **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. Abre com **Revisões de hoje** — tudo o que tem a data de hoje — e tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto** (ou pelo nome do grupo, nos conteúdos integrados), com uma caixa de seleção por dia recomendado. A lista abre com **4 assuntos** — os mais urgentes, porque atraso e pior taxa vêm primeiro — e um botão **+ ver todos os N assuntos** revela o resto. Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
 | **Pontos importantes** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
-| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; os conteúdos ainda sem questões são listados à parte. O agrupamento **segue a integração**: cada grupo de revisão vira um bloco único com o nome do grupo, somando as questões de todos os conteúdos que ele reúne (o nome do grupo já diz isso — a etiqueta *plano integrado* saiu daqui, ela continua no card da aba Revisões); o que não está integrado continua listado conteúdo a conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Embaixo, os **lançamentos** — de qual sessão, revisão ou lançamento avulso cada número veio, com *editar* e *✕* nos avulsos. |
+| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; os conteúdos ainda sem questões são listados à parte. O agrupamento **segue a integração**: cada grupo de revisão vira um bloco único com o nome do grupo, somando as questões de todos os conteúdos que ele reúne (o nome do grupo já diz isso — a etiqueta *plano integrado* saiu daqui, ela continua no card da aba Agenda); o que não está integrado continua listado conteúdo a conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Embaixo, os **lançamentos** — de qual sessão, revisão ou lançamento avulso cada número veio, com *editar* e *✕* nos avulsos. |
 | **Progresso** | Meta diária, **estudo na semana** e **questões da semana**, calendário de horas por dia, % de acerto por disciplina, tempo por disciplina, situação das revisões e a tabela de prioridade da reta final. **Clique numa disciplina** (no filtro ou na própria barra) para restringir os gráficos a ela; **clique num dia do calendário** para ver o que foi feito naquele dia e filtrar a aba (ver abaixo). |
 
 ### Regra: tempo só em data que já aconteceu
@@ -129,7 +129,7 @@ O seletor oferece três caminhos:
 
 Logo abaixo abre o **editor do grupo**, dentro do próprio formulário da sessão:
 
-- **Nome do grupo** (obrigatório) — é ele que aparece no card da revisão, na aba Revisões e no bloco *plano
+- **Nome do grupo** (obrigatório) — é ele que aparece no card da revisão, na aba Agenda e no bloco *plano
   integrado* da aba Questões. Dá para renomear a qualquer momento, por dentro de qualquer sessão do grupo.
 - **Conteúdos revisados juntos** — a lista completa do que o grupo cobre, com a sessão em edição
   sempre presente e as demais em etiquetas removíveis.
@@ -153,7 +153,7 @@ Como o plano funciona:
 - O plano do grupo segue o conteúdo **mais frágil** do conjunto (maior dificuldade, pior taxa).
 - **Tirar um conteúdo do grupo (ou desmarcar a caixa) não recria o plano individual**: a sessão fica
   em modo manual, nada é agendado automaticamente para ela e as revisões passam a ser criadas à mão na
-  aba Revisões. A tela avisa isso ao reabrir o registro.
+  aba Agenda. A tela avisa isso ao reabrir o registro.
 - Se o grupo ficar **sem nenhum conteúdo ligado**, os cards voltam para a sessão de onde vieram (nenhuma
   revisão fica órfã) e o grupo é descartado.
 
@@ -317,7 +317,7 @@ qualquer botão agora **atualiza o contador e o rascunho salvo** — antes `setR
 O texto é **escapado antes** de qualquer transformação: só os marcadores viram tag, então digitar
 `<script>` mostra `<script>` como texto, nunca como HTML.
 
-### Editar o card pela aba Revisões
+### Editar o card pela aba Agenda
 
 Cada card da ***Revisão por assunto*** tem **✎ editar card**, que abre o mesmo editor direto no card:
 
@@ -615,7 +615,7 @@ para que backups antigos continuem sendo lidos.
 
 ## Revisão é sessão de estudo
 
-Revisar é estudar. Por isso **todo tempo mora num lugar só — a aba Sessões** — e a aba **Revisões** virou
+Revisar é estudar. Por isso **todo tempo mora num lugar só — a aba Sessões** — e a aba **Agenda** virou
 agenda: ela diz *o que* revisar e *quando*, não guarda horas.
 
 Cada sessão tem um **tipo**:
@@ -647,7 +647,7 @@ horas).
 **atrasadas em vermelho**; revisão já cumprida por outra sessão não aparece — **uma revisão vale por
 uma sessão só**. Ao salvar, a caixa dela é marcada sozinha.
 
-**Pela aba Revisões:** marcar a caixa abre a tela de sessão já preenchida (tipo Revisão, revisão travada,
+**Pela aba Agenda:** marcar a caixa abre a tela de sessão já preenchida (tipo Revisão, revisão travada,
 data de hoje). É o mesmo formulário, então você registra tempo, questões e descrição de uma vez.
 
 ### Trocar o tipo
@@ -710,7 +710,7 @@ cronograma logo abaixo.
 
 ### Revisões atrasadas
 
-Abaixo da **Revisão por assunto** há o card **Revisões atrasadas**, com o que ficou para trás e um botão
+Abaixo da agenda há o card **Revisões atrasadas**, com o que ficou para trás e um botão
 **remarcar** para trazer a revisão para hoje ou para a frente. A data em que ela estava marcada fica
 registrada e aparece na linha: *"estava marcada para 15/09"*. Não é permitido remarcar para um dia que
 já tem revisão daquele mesmo conteúdo.
@@ -780,6 +780,27 @@ o mesmo aplicado a cada ficha.
 
 **A migração** transformou em ficha tudo o que já estava em uso (sessões, revisões avulsas e pontos
 importantes), uma por disciplina + nome, e roda uma vez só (`db.conteudosMigrados`).
+
+## A aba Agenda e suas três visões
+
+A aba deixou de se chamar *Revisões* porque deixou de ser só isso: para conteúdo **concluído** ela
+traz revisões; para conteúdo **em andamento**, lembretes de voltar ao assunto — e quem decide o que
+fazer quando o lembrete chega é você. **Agenda** cobre as duas naturezas sem mentir sobre nenhuma.
+
+O topo é sempre o mesmo, porque é o que se faz agora: **Revisões de hoje**, o botão **+ Adicionar
+revisão** e, quando houver, o card **Revisões atrasadas**. Abaixo, a visão escolhida:
+
+| Visão | Para quê | O que mostra |
+|---|---|---|
+| **Por dia** (padrão) | *"o que eu faço agora?"* | os próximos itens agrupados por dia — `SEG · 22/09 — amanhã · 2 itens` —, 12 por vez, com **+ ver todos** |
+| **Por assunto** | olhar um conteúdo inteiro | os blocos por conteúdo, com a fase, o botão de fechar o conteúdo, *+ revisão*, *editar card* e *pontos importantes →* |
+| **Mês** | a visão de longe | o mês inteiro, cada dia com a contagem e a cor do que há nele; clicar num dia abre a lista dali |
+
+No **Mês**, a cor do dia diz o estado sem precisar abrir: **vermelho** se há atraso, **verde** se tudo
+já foi feito, **verde-claro** se há o que fazer. O pontinho embaixo segue a mesma regra.
+
+A visão escolhida — e o dia aberto no mês — **ficam lembrados** entre recarregamentos, junto com os
+outros filtros.
 
 ## Conteúdo em andamento × conteúdo concluído
 
@@ -1193,7 +1214,7 @@ miúda. O que mudou foi **onde a cor aparece**: ela passou a dizer alguma coisa,
 - **Filtros** viraram um painel próprio, separado do conteúdo; títulos de card e do modal ganharam uma
   marca vertical verde.
 - **"Próximos 7 dias" abre com 3 revisões**, e o botão **+ ver todas as N** mostra o resto — a
-  amostra é menor que a da aba Revisões porque aqui o card divide espaço com o resto do dia.
+  amostra é menor que a da aba Agenda porque aqui o card divide espaço com o resto do dia.
 - **Em "Próximos 7 dias", as revisões são agrupadas por dia**: cada dia tem um rótulo próprio
   (`QUI · 18/09 — amanhã · 2 revisões`) e uma linha separando do dia seguinte, em vez de uma fila
   corrida de cards iguais. Como o dia já está no rótulo, o card não repete a data.
@@ -1201,7 +1222,7 @@ miúda. O que mudou foi **onde a cor aparece**: ela passou a dizer alguma coisa,
   **atrasados** ganham sombra colorida (verde e vermelha) e sobem da lista; os já feitos ficam rentes.
 - **Só 4 assuntos abertos de cada vez**, com **+ ver todos os N assuntos** no rodapé do card. A
   ordenação já põe atraso e pior taxa na frente, então o que fica escondido é sempre o menos urgente.
-- **Na aba Revisões, cada conteúdo é um bloco fechado** — painel com fundo próprio, borda e uma barra
+- **Na visão por assunto, cada conteúdo é um bloco fechado** — painel com fundo próprio, borda e uma barra
   vertical de 4px à esquerda (vermelha quando há atraso), com o título e os botões num cabeçalho
   separado por um fio. Antes os conteúdos eram apenas faixas divididas por uma linha de 1px, que se
   perdia. Dentro do bloco, cada revisão é um card claro sobre o fundo do painel, e as de **hoje** e as

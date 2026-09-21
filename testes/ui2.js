@@ -2,6 +2,14 @@ const fs = require("fs");
 const { JSDOM } = require("jsdom");
 const html = fs.readFileSync(__dirname + "/../index.html", "utf8");
 
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
+
 /* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
    escolhe "criar novo", digita o nome e clica em adicionar. */
 function porConteudo(doc, w, nome){
@@ -94,6 +102,7 @@ const passo = (fn, ms=300) => new Promise(r => setTimeout(() => { fn(); r(); }, 
   /* ---- a Rotina mostra o nome do grupo ---- */
   await passo(() => {
     click($('[data-aba="revisoes"]'));
+    setTimeout(()=>verPorAssunto(doc, w), 60);
   });
   await passo(() => {
     const txt = $("#view").textContent;

@@ -11,7 +11,7 @@ setTimeout(()=>{
   console.log(obtida===esperada ? "\nordem correta" : "\nORDEM ERRADA: "+obtida);
   // os rótulos visíveis (os ids internos não mudam com o rebranding)
   const rotulos=abas.map(b=>b.textContent.trim().replace(/\s*\d+$/,""));
-  const alvo="Hoje,Sessões,Revisões,Pontos importantes,Questões,Progresso";
+  const alvo="Hoje,Sessões,Agenda,Pontos importantes,Questões,Progresso";
   const okRot = rotulos.join(",")===alvo;
   console.log(okRot ? "rótulos conferem" : "RÓTULOS ERRADOS: "+rotulos.join(","));
   // cada aba ainda abre a tela certa

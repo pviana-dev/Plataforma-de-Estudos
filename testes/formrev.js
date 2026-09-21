@@ -1,6 +1,14 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
+
 /* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
    escolhe "criar novo", digita o nome e clica em adicionar. */
 function porConteudo(doc, w, nome){
@@ -32,6 +40,7 @@ const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
 
 (async()=>{try{
   click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(250);
   click(doc.querySelector('[data-acao="editar-revisao"]')); await espera(300);
   const f=$("#modalCorpo #formRevisao");
   ok("a tela de editar revisão abriu", !!f);

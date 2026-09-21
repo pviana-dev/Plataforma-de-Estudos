@@ -506,7 +506,7 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .compositor textarea::placeholder{color:var(--muted)}
 .compositor .rodape{display:flex;align-items:center;gap:9px;margin-top:8px}
 .edicao{border:1px solid var(--accent);border-radius:10px;background:var(--surface);padding:13px;margin-bottom:9px}
-/* --- Revisões: cada conteúdo é um bloco fechado, não uma faixa separada por um fio --- */
+/* --- Agenda, visão por assunto: cada conteúdo é um bloco fechado, não uma faixa separada por um fio --- */
 .grupo-rev{border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);
   background:var(--surface-2);padding:12px 13px;margin-bottom:16px}
 .grupo-rev:last-of-type{margin-bottom:4px}
@@ -733,7 +733,8 @@ const CONFIG = {
   VOLTA_DIAS: { dificil: 1, normal: 2, facil: 4 },
   VOLTA_TETO: 7,                        // nenhuma volta passa disso
   AVISO_ABERTO_DIAS: 14,                // depois disso, o card sugere fechar o conteúdo
-  ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na Revisão por assunto antes do "+"
+  ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na visão por assunto antes do "+"
+  AGENDA_VISIVEL: 12,                   // itens abertos na visão por dia antes do "+"
   MAX_ANOTACAO: 2000,                   // caracteres por caixa de anotação (~2 KB por anotação)
 
   /* Cores da anotação. São MARCADORES no texto (4 bytes por trecho), nunca HTML
@@ -1607,7 +1608,7 @@ function descricaoAtividade(rev){
     (at ? '<span class="nome">'+esc(at.nome)+'</span>' : '') +
     (rev.nota ? '<span class="det">'+esc(rev.nota)+'</span>' : '') + '</div>';
 }
-/** A que card a revisão pertence — a MESMA regra usada na aba Revisões e na numeração,
+/** A que card a revisão pertence — a MESMA regra usada na aba Agenda e na numeração,
     senão o card junta duas sessões e cada uma continua contando do 1. */
 function chaveCard(rev){
   const ctx = contextoRevisao(rev);
@@ -1742,6 +1743,7 @@ const ui = {
   compondo: false, rascunhoAnot: "", editandoErro: null, prefill: null,
   editandoRevisao: null, editandoLancamento: null, prefRevisao: null, cronoDestino: "", rascunho: null,
   verTodasProximas: false, verTodosAssuntos: false, mesCal: "",
+  visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false,
   diaSel: D.hoje(),                 // o painel já abre mostrando o dia de hoje
   formAberto: false,
   pDisciplina: "",
@@ -1759,7 +1761,7 @@ function toast(msg){
 const ABAS = [
   { id:"hoje",      nome:"Hoje" },
   { id:"registros", nome:"Sessões" },
-  { id:"revisoes",  nome:"Revisões" },
+  { id:"revisoes",  nome:"Agenda" },
   { id:"erros",     nome:"Pontos importantes" },
   { id:"questoes",  nome:"Questões" },
   { id:"painel",    nome:"Progresso" }
@@ -1775,6 +1777,7 @@ const CAMPOS_TELA = ["aba",
   "eDisciplina","eAssunto","eSoImportantes","eJuntarTudo",      // filtros dos Pontos importantes
   "qVisao","pDisciplina","diaSel","mesCal",                     // Questões e Painel
   "verTodasProximas","verTodosAssuntos",                        // listas abertas/fechadas
+  "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda",        // como a Agenda está sendo vista
   "compondo","rascunhoAnot"];                                   // e o que está sendo escrito
 function abaSalva(){
   try { const a = localStorage.getItem(CHAVE_ABA); return ABAS.some(x => x.id === a) ? a : ""; }
@@ -2469,7 +2472,7 @@ function formRegistroHtml(){
           esc((grupoDe(v) || {}).nome || "") + '</b> — o card da revisão mostra o nome do grupo. Abaixo você troca o nome, ' +
           'vê os conteúdos que ele reúne e traz outras sessões para dentro. Desmarcar não recria o plano individual: as revisões passam a ser criadas à mão.</p>'
         : planoAtual === "manual"
-        ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão saiu de um grupo de revisão: nada é agendado automaticamente para ela. Marque a caixa para integrar de novo, ou crie revisões à mão na aba Revisões.</p>'
+        ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão saiu de um grupo de revisão: nada é agendado automaticamente para ela. Marque a caixa para integrar de novo, ou crie revisões à mão na aba Agenda.</p>'
         : planoAtual === "sem"
         ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão está <b>sem cronograma de revisão</b> — serve para o conteúdo que você estuda todo dia. Desmarque a caixa para voltar a agendar revisões.</p>'
         : '') +
@@ -2716,7 +2719,7 @@ function htmlPainelRevisao(v, ed){
     '<label class="campo"><span>Qual revisão esta sessão cumpre? *</span>' +
       '<select name="revisaoAlvo" id="revisaoAlvo">' + opcoes + '</select></label>' +
     (lista.length ? '' : '<p class="sub" style="margin:8px 0 0">Não há revisão de hoje nem atrasada para cumprir. ' +
-      'Agende uma na aba <b>Revisões</b> — ou registre isto como estudo.</p>') +
+      'Agende uma na aba <b>Agenda</b> — ou registre isto como estudo.</p>') +
     (ctx ? '<p class="sub" style="margin:8px 0 0">O conteúdo vem da revisão: <b>'+esc(ctx.rotulo)+'</b> · ' +
       esc(ctx.disciplina) + (rev.dataOriginal ? ' <span class="badge b-alerta">estava marcada para ' +
       D.br(rev.dataOriginal) + '</span>' : '') + '</p>' : '') +
@@ -2811,7 +2814,7 @@ function htmlPainelGrupo(alvo, v){
     '<span style="font-size:11.5px;color:var(--muted);margin-top:6px;display:block">' +
       'Integrar <b>não cria cards de revisão novos</b>: o conteúdo entra nos cards que já existem. ' +
       'O grupo tem um plano só, calculado pelo conteúdo mais frágil da lista — e o título dele ' +
-      'também pode ser editado no card, na aba Revisões.</span></div>';
+      'também pode ser editado no card, na aba Agenda.</span></div>';
 }
 /* Revisões que ficaram para trás, num bloco só: é daqui que você remarca cada
    uma para hoje ou para a frente, guardando a data em que ela estava. */
@@ -2831,7 +2834,7 @@ function cardAtrasadas(det){
       '</div>').join("") + '</div>';
 }
 
-/* ---------- editor do card de revisão (aba Revisões) ----------
+/* ---------- editor do card de revisão (aba Agenda) ----------
    O título do card é o nome do grupo: dar um título a um card que ainda não é
    integrado transforma a sessão num grupo, e daí em diante dá para ver e mexer
    nos conteúdos ligados a ele.                                              */
@@ -3224,6 +3227,21 @@ function telaRevisoes(){
   h += '<button class="btn-add" data-acao="nova-revisao"><span class="mais">+</span> Adicionar revisão' +
        '<span class="pista">que eu fiz ou quero fazer</span></button>';
 
+  /* TRÊS VISÕES DA MESMA AGENDA. Por dia é o padrão porque é a pergunta que a
+     pessoa traz ("o que faço agora?"); por assunto serve para olhar um
+     conteúdo inteiro; o mês é a visão de longe. */
+  const visao = ["dia","assunto","mes"].indexOf(ui.visaoAgenda) >= 0 ? ui.visaoAgenda : "dia";
+  h += '<div class="card" style="padding:11px 13px;margin-bottom:14px"><div class="linha">' +
+    '<span class="hl-tema">Ver:</span>' +
+    [["dia","Por dia"],["assunto","Por assunto"],["mes","Mês"]].map(([k,rot]) =>
+      '<button class="aba" data-acao="visao-agenda" data-visao="'+k+'" aria-selected="'+(visao===k)+'">' +
+      rot + '</button>').join("") +
+    '</div></div>';
+
+  h += cardAtrasadas(det);
+  if (visao === "dia")  return h + agendaPorDia(det) + ajudaCronograma();
+  if (visao === "mes")  return h + agendaDoMes(det) + ajudaCronograma();
+
   // agrupa por assunto (sessão de estudo ou revisão avulsa)
   const grupos = new Map();
   det.forEach(x => {
@@ -3282,17 +3300,116 @@ function telaRevisoes(){
          (ui.verTodosAssuntos ? "− mostrar menos"
                               : "+ ver todos os " + ordenados.length + " assuntos") + '</button>';
   }
-  h += '</div>' + cardAtrasadas(det) + '<div class="card">' +
+  return h + '</div>' + ajudaCronograma();
+}
+/* VISÃO POR DIA — o padrão. A pergunta que a pessoa traz para esta aba é "o
+   que eu faço agora?", e ela se responde com os próximos dias em lista, não
+   com o cronograma inteiro por assunto.                                     */
+function agendaPorDia(det){
+  const hoje = D.hoje();
+  const futuras = det.filter(x => !x.rev.feita && x.rev.data > hoje)
+                     .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
+  if (!futuras.length){
+    return '<div class="card"><h2>Próximos dias</h2>' +
+      '<div class="vazio">' + (det.length
+        ? '<strong>Nada marcado para a frente</strong>O que existe está em hoje ou atrasado.'
+        : '<strong>Agenda vazia</strong>Registre uma sessão na aba <b>Sessões</b> — o plano nasce de lá.') +
+      '</div></div>';
+  }
+  const teto = ui.verTodaAgenda ? futuras.length : CONFIG.AGENDA_VISIVEL;
+  const mostradas = futuras.slice(0, teto);
+  const dias = new Map();
+  mostradas.forEach(x => {
+    if (!dias.has(x.rev.data)) dias.set(x.rev.data, []);
+    dias.get(x.rev.data).push(x);
+  });
+  const blocos = [...dias.entries()].map(([data, itens]) => {
+    const faltam = D.dif(hoje, data);
+    return '<div class="dia-bloco">' +
+      '<div class="dia-rotulo">' + esc(D.semana(data)) + ' · ' + D.br(data) +
+        '<span>' + (faltam === 1 ? "amanhã" : "em " + faltam + " dias") +
+        ' · ' + itens.length + (itens.length === 1 ? " item" : " itens") + '</span></div>' +
+      itens.map(x => itemRevisao(x, "")).join("") + '</div>';
+  }).join("");
+  return '<div class="card"><h2>Próximos dias ' +
+    '<span class="dica">' + futuras.length + (futuras.length === 1 ? " item na agenda" : " itens na agenda") + '</span></h2>' +
+    blocos +
+    (futuras.length > CONFIG.AGENDA_VISIVEL
+      ? '<button class="act ver-mais" data-acao="toggle-agenda">' +
+        (ui.verTodaAgenda ? "− mostrar menos" : "+ ver todos os " + futuras.length + " itens") + '</button>'
+      : '') + '</div>';
+}
+
+/* VISÃO DO MÊS — a de longe. Cada dia mostra quantos itens tem e de que cor:
+   vermelho se há atraso, verde se tudo já foi feito, verde-escuro se há o que
+   fazer. Clicar num dia abre a lista daquele dia, logo abaixo.              */
+function agendaDoMes(det){
+  const hoje = D.hoje();
+  const mes = ui.mesAgenda || hoje.slice(0,7);
+  const [ano, m] = mes.split("-").map(Number);
+  const primeiro = mes + "-01";
+  const inicio = D.soma(primeiro, -D.parse(primeiro).getDay());
+  const porDia = new Map();
+  det.forEach(x => {
+    const d = x.rev.feita ? (x.rev.feitaEm || x.rev.data) : x.rev.data;
+    const atual = porDia.get(d) || { total: 0, atrasadas: 0, feitas: 0 };
+    atual.total++;
+    if (x.rev.feita) atual.feitas++; else if (x.status === "atrasada") atual.atrasadas++;
+    porDia.set(d, atual);
+  });
+  let celulas = "";
+  for (let i = 0; i < 42; i++){
+    const data = D.soma(inicio, i);
+    if (i >= 35 && data.slice(0,7) !== mes) break;
+    const doMes = data.slice(0,7) === mes;
+    const info = porDia.get(data);
+    const cor = !info ? "" : info.atrasadas ? "var(--critico-soft)"
+              : info.feitas === info.total ? "var(--bom-soft)" : "var(--accent-soft)";
+    const sel = data === ui.diaAgenda;
+    celulas += '<button class="cal-dia' + (doMes ? "" : " fora") + (data === hoje ? " hoje" : "") +
+      (sel ? " sel" : "") + '" data-acao="dia-agenda" data-dia="' + data + '"' +
+      (cor && !sel ? ' style="background:' + cor + '"' : '') +
+      ' title="' + esc(D.extenso(data) + (info ? " — " + info.total + " item(ns)" +
+        (info.atrasadas ? ", " + info.atrasadas + " atrasado(s)" : "") : " — nada marcado")) + '">' +
+      Number(data.slice(8)) +
+      (info ? '<span class="pt" style="background:' + (info.atrasadas ? "var(--critico)"
+              : info.feitas === info.total ? "var(--bom)" : "var(--accent-forte)") + '"></span>' : '') +
+      '</button>';
+  }
+  const nomeMes = ["janeiro","fevereiro","março","abril","maio","junho",
+                   "julho","agosto","setembro","outubro","novembro","dezembro"][m-1];
+  const doDia = ui.diaAgenda ? det.filter(x => (x.rev.feita ? (x.rev.feitaEm || x.rev.data) : x.rev.data) === ui.diaAgenda)
+                             : [];
+  return '<div class="card"><h2>Mês <span class="dica">clique num dia para ver o que há nele</span></h2>' +
+    '<div class="cal" style="width:100%;max-width:420px">' +
+      '<div class="cal-cab"><b>' + nomeMes + ' ' + ano + '</b>' +
+        (mes === hoje.slice(0,7) ? '' : '<button class="act" data-acao="mes-agenda" data-delta="0">hoje</button>') +
+        '<button class="cal-nav" data-acao="mes-agenda" data-delta="-1" aria-label="Mês anterior">‹</button>' +
+        '<button class="cal-nav" data-acao="mes-agenda" data-delta="1" aria-label="Próximo mês">›</button>' +
+      '</div>' +
+      '<div class="cal-semana">' + ["dom","seg","ter","qua","qui","sex","sáb"].map(n => '<span>'+n+'</span>').join("") + '</div>' +
+      '<div class="cal-dias">' + celulas + '</div>' +
+    '</div>' +
+    (ui.diaAgenda
+      ? '<div style="margin-top:14px"><div class="dia-rotulo">' + esc(D.extenso(ui.diaAgenda)) +
+        '<span>' + doDia.length + (doDia.length === 1 ? " item" : " itens") + '</span></div>' +
+        (doDia.length ? doDia.map(x => itemRevisao(x, rotuloDeHoje(x, ui.diaAgenda))).join("")
+                      : '<div class="vazio">Nada marcado neste dia.</div>') + '</div>'
+      : '') + '</div>';
+}
+
+/** o texto de apoio que fecha a aba, igual nas três visões */
+function ajudaCronograma(){
+  return '<div class="card">' +
     '<details class="ajuda"><summary>Como o cronograma é montado?</summary><p>' +
-    (semProva()
-      ? 'Sem data de prova, as revisões seguem os intervalos crescentes clássicos da repetição espaçada — ' +
-        'cerca de D+' + CONFIG.INTERVALOS_LIVRES.slice(0,4).join(', D+') + ' — contados a partir do estudo. '
-      : 'Como faltam poucas semanas, o clássico D+1/D+7/D+30 não cabe. O sistema distribui de 1 a 3 revisões ' +
-        'entre a data do estudo e ' + D.brFull(ultimoDiaRevisao()) + ', com intervalos crescentes (repetição espaçada comprimida). ') +
+    'Conteúdo <b>em andamento</b> recebe <b>uma volta de cada vez</b> — a agenda chama para continuar de ' +
+    'onde você parou, sem intervalo crescente. Conteúdo <b>concluído</b> entra na repetição espaçada: ' +
+    (D.dif(D.hoje(), ultimoDiaRevisao()) >= CONFIG.INTERVALOS_LIVRES[3]
+      ? 'D+' + CONFIG.INTERVALOS_LIVRES.slice(0,5).join(', D+') + '… contados do dia em que você fechou. '
+      : 'como a janela até ' + D.brFull(ultimoDiaRevisao()) + ' é curta, o plano é comprimido para caber nela. ') +
     'Quanto maior a <b>dificuldade</b> do assunto (e quanto pior a taxa de acerto), mais revisões ele recebe e mais cedo elas começam — Sistema Leitner. ' +
     'O teto vem do tempo que ainda resta: com ' + capacidadeDeRevisoes(D.dif(D.hoje(), ultimoDiaRevisao())) + ' cabendo hoje, é esse o máximo por assunto.' +
     '</p></details></div>';
-  return h;
 }
 
 /* ---------- linha e formulário de revisão ---------- */
@@ -5385,6 +5502,16 @@ document.addEventListener("click", ev => {
     case "outra-dica": ui.dicaIdx = (ui.dicaIdx + 1) % CONFIG.DICAS.length; render(); break;
     case "toggle-proximas": ui.verTodasProximas = !ui.verTodasProximas; render(); break;
     case "toggle-assuntos": ui.verTodosAssuntos = !ui.verTodosAssuntos; render(); break;
+    case "toggle-agenda":   ui.verTodaAgenda = !ui.verTodaAgenda; render(); break;
+    case "visao-agenda":    ui.visaoAgenda = alvo.dataset.visao; render(); break;
+    case "dia-agenda":      ui.diaAgenda = ui.diaAgenda === alvo.dataset.dia ? "" : alvo.dataset.dia; render(); break;
+    case "mes-agenda": {
+      const delta = Number(alvo.dataset.delta || 0);
+      const base = ui.mesAgenda || D.hoje().slice(0,7);
+      ui.mesAgenda = delta ? D.soma(base + "-01", delta * 28).slice(0,7) : D.hoje().slice(0,7);
+      if (delta && D.soma(base + "-01", delta * 28).slice(0,7) === base)      // meses de 31 dias
+        ui.mesAgenda = D.soma(base + "-01", delta * 32).slice(0,7);
+      render(); break; }
     case "add-assunto": adicionarAssuntoForm(); return;      // sem redesenhar: preserva o que já foi digitado
     case "painel-nuvem": painelNuvem(); break;
     case "nuvem-sincronizar": subirParaNuvem().then(() => toast("Sincronizado.")); break;

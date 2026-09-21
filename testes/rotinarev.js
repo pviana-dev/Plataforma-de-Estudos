@@ -1,5 +1,13 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),dia=n=>iso(new Date(Date.now()+n*864e5));
 const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
@@ -24,6 +32,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
 (async()=>{try{
   click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(250);
   ok("existe o card de revisões atrasadas", !!doc.getElementById("revisoes-atrasadas"));
   ok("com a revisão atrasada dentro", /estava marcada para/.test($("#revisoes-atrasadas").textContent),
      $("#revisoes-atrasadas").textContent.replace(/\s+/g," ").slice(0,140));
@@ -59,6 +68,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
   /* ---- a Rotina mostra as horas da sessão ---- */
   click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
+  verPorAssunto(doc, w); await espera(250);
   ok("a linha da revisão mostra o tempo vindo da sessão", /35min/.test($("#view").textContent),
      ($("#view").textContent.match(/.{0,60}35min.{0,20}/)||[""])[0]);
   ok("e oferece ir até a sessão", !!doc.querySelector('[data-acao="abrir-sessao"]'));

@@ -2,6 +2,14 @@
    fase mora nela — fechar um conteúdo fecha todas as sessões que falam dele. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
+   pedir a visão "Por assunto" primeiro. */
+function verPorAssunto(doc, w){
+  const b=doc.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+  if (b) b.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return !!b;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
 const sess=(id,disc,assuntos,extra)=>Object.assign({id,data:hoje,disciplina:disc,assuntos,assunto:assuntos[0],
@@ -78,6 +86,7 @@ const opcoesConteudo=()=>[...doc.querySelectorAll("#campoAssunto option")].map(o
     $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(400);
   }
   click($('[data-aba="revisoes"]')); await espera(350);
+  verPorAssunto(doc, w); await espera(300);
   const botao=[...doc.querySelectorAll('[data-acao="concluir-conteudo"]')]
     .find(b=>(b.dataset.conts||"")==="LAI");
   ok("o card de LAI traz o botão de concluir", !!botao,
