@@ -401,6 +401,19 @@ discreta na linha de baixo (*2ª da sequência*), para a sequência não se perd
 Apagar o campo devolve o nome automático. Mudar a **data** reordena a lista (é o critério), e nesse
 caso os números acompanham a nova ordem — o nome dado, não: ele segue a revisão.
 
+### Trocar o conteúdo de uma revisão
+
+Dá para pegar uma revisão marcada para hoje e **apontá-la para outro conteúdo** — é o caso de quem
+tinha a revisão de X agendada, mas hoje está estudando Y da mesma disciplina e quer que as horas
+contem como revisão. Escolhido o conteúdo novo, a revisão passa a apontar para a **sessão daquele
+conteúdo** (ou fica avulsa, se ainda não houver sessão dele).
+
+**Se a revisão estava num card integrado, ela sai do card.** Enquanto pertence a um grupo, quem manda
+no conteúdo dela é o grupo — e era por isso que a troca parecia não salvar: o dado mudava, a tela
+continuava lendo do grupo e, ao reabrir, o conteúdo antigo estava lá. Agora, escolher um conteúdo
+diferente do grupo **desintegra aquela revisão**; mexer em qualquer outra coisa (data, nome,
+detalhes) a mantém no card.
+
 ### Adicionar e editar revisões
 
 Além das revisões que o sistema agenda sozinho, o botão **+ adicionar uma revisão** (e o **+ revisão**

@@ -3494,6 +3494,19 @@ function enviarRevisao(ev){
   const chave = chaveAssunto(disciplina, listaAssuntos.join(" | "));
   const reg = db.registros.find(r => chaveSessao(r) === chave);
 
+  /* CARD INTEGRADO. Enquanto a revisão pertence a um grupo, quem manda no
+     conteúdo dela é o grupo — por isso trocar o conteúdo aqui não aparecia em
+     lugar nenhum: o dado mudava, a tela continuava lendo do grupo, e parecia
+     que nada tinha sido salvo. Escolhendo um conteúdo que não é o do grupo, a
+     revisão SAI do grupo e passa a valer por si. */
+  if (rev.grupoId){
+    const doGrupo = assuntosDoGrupo(rev.grupoId).map(a => a.toLowerCase()).sort().join("|");
+    const escolhido = listaAssuntos.map(a => a.toLowerCase()).sort().join("|");
+    const g = acharGrupo(rev.grupoId);
+    if (doGrupo !== escolhido || (g && g.disciplina !== disciplina)){
+      delete rev.grupoId; delete rev.integrada;
+    }
+  }
   rev.registroId = reg ? reg.id : null;
   if (reg){ delete rev.disciplina; delete rev.assuntos; }
   else { rev.disciplina = disciplina; rev.assuntos = listaAssuntos; }
