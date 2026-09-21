@@ -401,6 +401,23 @@ discreta na linha de baixo (*2ª da sequência*), para a sequência não se perd
 Apagar o campo devolve o nome automático. Mudar a **data** reordena a lista (é o critério), e nesse
 caso os números acompanham a nova ordem — o nome dado, não: ele segue a revisão.
 
+### Continuar um conteúdo
+
+Conteúdo grande atravessa vários dias, e nem sempre é a agenda que puxa: às vezes você está olhando a
+sessão de terça e quer seguir dali. O botão **▶ continuar**, na última coluna da lista de Sessões (e
+como **▶ Continuar hoje** dentro da tela de edição), abre uma sessão **de hoje** já com a mesma
+disciplina, os mesmos conteúdos e a dificuldade herdada. Tempo e **descrição** começam vazios — é a
+descrição que separa uma sessão da outra.
+
+- **Se já existe sessão daquele conteúdo hoje, é ela que abre**: continuar no mesmo dia é somar horas
+  na mesma sessão, não criar outra com o mesmo nome.
+- **O agendamento não duplica.** Nenhuma fila nova nasce: a volta em aberto daquele conteúdo apenas
+  passa a contar a partir desta sessão.
+- **Lembrete atrasado é dado por cumprido** ao salvar, como em qualquer sessão do conteúdo.
+
+A **coluna Tipo** mudou de lugar: ficou ao lado de *Revisões*, e a ponta direita da tabela passou a
+ser a coluna da ação.
+
 ### Trocar o conteúdo de uma revisão
 
 Dá para pegar uma revisão marcada para hoje e **apontá-la para outro conteúdo** — é o caso de quem

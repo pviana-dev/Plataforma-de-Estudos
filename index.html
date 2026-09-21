@@ -264,6 +264,7 @@ tbody tr.linha-clicavel{cursor:pointer}
 /* coluna Tipo: alinhada ao cabeçalho, com folga na margem — "estudo/revisão"
    é longo e antes ficava espremido na borda direita da tabela */
 .col-tipo{text-align:left;white-space:nowrap;padding-right:14px}
+.col-acao{text-align:right;white-space:nowrap;width:1%}
 .tab-rolagem{overflow-x:auto}
 tr.sep-dia td{background:var(--surface-2);font-size:12px;color:var(--text-2);font-weight:550;
   padding:6px 9px;border-bottom:1px solid var(--border);box-shadow:inset 3px 0 0 var(--accent)}
@@ -2498,6 +2499,10 @@ function formRegistroHtml(){
     '</div><div class="linha acoes-form">' +
       '<button class="btn" type="submit">'+(ed ? "Salvar alterações" : "Registrar")+'</button>' +
       '<button class="btn ghost" type="button" data-acao="'+(ed ? "cancelar-edicao" : "toggle-form-registro")+'">Cancelar</button>' +
+      // continuar o conteúdo também cabe aqui: é onde você está quando relê a sessão
+      (ed && ed.data !== D.hoje()
+        ? '<button class="btn ghost" type="button" data-acao="continuar-sessao" data-id="'+ed.id+'" ' +
+          'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ Continuar hoje</button>' : '') +
       (ed ? '<span class="spacer"></span><button class="act excluir" type="button" data-acao="excluir-registro" data-id="'+ed.id+'">Excluir</button>' : '') +
       '<span class="erro-form" id="erroForm"></span></div></form>';
 
@@ -2566,7 +2571,8 @@ function telaHistorico(){
 
   h += '<div class="tab-rolagem"><table><thead><tr>' +
     '<th>Data</th><th>Disciplina</th><th>Assuntos</th><th class="num">Tempo</th>' +
-    '<th>Dificuldade</th><th>Revisões</th><th>Tipo</th></tr></thead><tbody>';
+    '<th>Dificuldade</th><th class="col-tipo">Tipo</th><th>Revisões</th>' +
+    '<th></th></tr></thead><tbody>';
   const emEdicao = ui.editandoRegistro;
   let ultimoDia = "";
   h += linhas.map(r => {
@@ -2587,7 +2593,7 @@ function telaHistorico(){
     let sep = "";
     if (r.data !== ultimoDia && (ui.fOrdem === "data-desc" || ui.fOrdem === "data-asc")){
       ultimoDia = r.data;
-      sep = '<tr class="sep-dia"><td colspan="7">'+esc(D.semana(r.data))+' · '+D.brFull(r.data) +
+      sep = '<tr class="sep-dia"><td colspan="8">'+esc(D.semana(r.data))+' · '+D.brFull(r.data) +
             ' <span class="meta">'+hhmm(minutosDoDia(r.data))+' no dia</span></td></tr>';
     }
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
@@ -2600,8 +2606,13 @@ function telaHistorico(){
           ? '<div style="font-size:11px;color:var(--muted)">'+intervalosDe(r).length+' medições</div>' : '') +
         '</td>' +
       '<td>'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
+      '<td class="col-tipo">'+badgeTipoSessao(r)+'</td>' +
       '<td>'+rotuloRev+'</td>' +
-      '<td class="col-tipo">'+badgeTipoSessao(r)+'</td></tr>';
+      /* Continuar o conteúdo dali: abre uma sessão de hoje com a mesma
+         disciplina e os mesmos conteúdos. É o impulso que nasce olhando a
+         sessão de terça — antes ele custava escolher tudo de novo. */
+      '<td class="col-acao"><button class="act" data-acao="continuar-sessao" data-id="'+r.id+'" ' +
+        'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ continuar</button></td></tr>';
   }).join("");
   return h + '</tbody></table></div></div>';
 }
@@ -5501,6 +5512,22 @@ document.addEventListener("click", ev => {
       render(); break;
     case "abrir-composer": ui.compondo = true; ui.editandoErro = null; ui.foco = "txtNovo"; render(); break;
     case "salvar-pos-prova": salvarPosProva(); break;
+    case "continuar-sessao": {
+      const r = acharRegistro(id); if (!r) break;
+      /* Já existe sessão deste conteúdo hoje? Continuar é somar horas nela —
+         abrir outra igual é o que enchia a lista de sessões com o mesmo nome. */
+      const chave = chaveSessao(r);
+      const hojeMesmo = db.registros.find(x => x.data === D.hoje() && chaveSessao(x) === chave);
+      if (hojeMesmo){
+        ui.editandoRegistro = hojeMesmo.id; ui.formAberto = false;
+        toast("Já há uma sessão deste conteúdo hoje — o tempo entra nela.");
+      } else {
+        ui.prefill = { data: D.hoje(), tipo: "estudo", disciplina: r.disciplina,
+                       assuntos: assuntosDe(r).slice(), minutos: "", questoes: "", acertos: "",
+                       dificuldade: dificuldadeDe(r), anotacoes: "" };
+        ui.editandoRegistro = null; ui.formAberto = true;
+      }
+      ui.aba = "registros"; ui.foco = null; redesenharTelaForm(); break; }
     case "cancelar-composer": ui.compondo = false; ui.rascunhoAnot = ""; ui.foco = null; render(); break;
     case "salvar-aprendizado": salvarNovoAprendizado(); break;
     case "editar-erro": ui.editandoErro = id; ui.compondo = false; ui.rascunhoAnot = ""; ui.foco = null; render(); break;

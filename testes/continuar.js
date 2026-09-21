@@ -1,0 +1,107 @@
+/* Continuar um conteúdo a partir de uma sessão anterior: um clique abre a
+   sessão de hoje já com disciplina e conteúdos, sem mexer no agendamento. */
+const fs=require("fs"),{JSDOM}=require("jsdom");
+const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
+const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
+const sess=(id,extra)=>Object.assign({id,data:dia(-3),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",
+  minutos:90,questoes:10,acertos:7,dificuldade:4,anotacoes:"parei no art. 12",tipo:"estudo",
+  criadoEm:Number(id.slice(1))},extra||{});
+const base=extra=>Object.assign({versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
+  fasesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
+  conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:1}],
+  registros:[],revisoes:[],erros:[],cronometro:null},extra||{});
+let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
+const espera=ms=>new Promise(r=>setTimeout(r,ms));
+function abrir(seed){
+  const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
+   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+     w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"registros",gravadoEm:hoje}));
+     w.confirm=()=>true; }});
+  return dom.window;
+}
+const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
+
+(async()=>{try{
+  /* ---- a coluna Tipo mudou de lugar e a ação ficou na ponta ---- */
+  let w=abrir(base({registros:[sess("r1")]})); await espera(450);
+  let doc=w.document, $=s=>doc.querySelector(s);
+  const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  const cabecalhos=[...doc.querySelectorAll("#view thead th")].map(t=>t.textContent.trim());
+  ok("Tipo ficou ao lado de Revisões",
+     cabecalhos.indexOf("Tipo")===cabecalhos.indexOf("Revisões")-1, cabecalhos);
+  ok("e a última coluna é a da ação", cabecalhos[cabecalhos.length-1]==="", cabecalhos);
+  const linha=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
+  ok("cada sessão tem o botão de continuar",
+     !!linha.querySelector('[data-acao="continuar-sessao"]'),
+     [...linha.querySelectorAll("td")].map(td=>td.className));
+  ok("o botão fica na última célula",
+     [...linha.querySelectorAll("td")].pop().querySelector('[data-acao="continuar-sessao"]') !== null);
+
+  /* ---- continuar abre a sessão de hoje já preenchida ---- */
+  click(linha.querySelector('[data-acao="continuar-sessao"]')); await espera(450);
+  ok("abre o formulário de uma sessão nova", $("#modalTitulo").textContent==="Registrar sessão",
+     $("#modalTitulo").textContent);
+  ok("com a data de hoje", $('#modalCaixa [name="data"]').value===hoje, $('#modalCaixa [name="data"]').value);
+  ok("a disciplina vem preenchida", $("#modalCaixa select.sel-disciplina").value==="Legislação",
+     $("#modalCaixa select.sel-disciplina").value);
+  ok("e o conteúdo também",
+     [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto).join()==="LAI",
+     [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
+  ok("a dificuldade é herdada", $('#modalCaixa [name="dificuldade"]').value==="4",
+     $('#modalCaixa [name="dificuldade"]').value);
+  ok("o tempo começa vazio, é sessão nova", !$('#modalCaixa [name="minutos"]').value,
+     $('#modalCaixa [name="minutos"]').value);
+  ok("e a descrição também, que é o que separa uma sessão da outra",
+     !$('#modalCaixa [name="anotacoes"]').value, $('#modalCaixa [name="anotacoes"]').value);
+
+  $('#modalCaixa [name="minutos"]').value="45";
+  $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(500);
+  let d=db(w);
+  ok("a sessão nova é gravada, sem mexer na antiga",
+     d.registros.length===2 && d.registros.find(r=>r.id==="r1").minutos===90,
+     d.registros.map(r=>[r.data,r.minutos]));
+  ok("e o agendamento não duplica: uma volta só",
+     d.revisoes.filter(r=>!r.feita).length===1, d.revisoes.map(r=>[r.registroId,r.data]));
+
+  /* ---- sessão de hoje: continuar leva para ela, em vez de criar outra ---- */
+  w=abrir(base({registros:[sess("r1"), sess("r2",{data:hoje,minutos:30})]})); await espera(450);
+  doc=w.document; $=s=>doc.querySelector(s);
+  const l1=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
+  l1.querySelector('[data-acao="continuar-sessao"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(450);
+  ok("havendo sessão de hoje do mesmo conteúdo, ela é que abre",
+     $("#modalTitulo").textContent==="Editar sessão" && $('#modalCaixa [name="minutos"]').value==="30",
+     [$("#modalTitulo").textContent, $('#modalCaixa [name="minutos"]').value]);
+  ok("e a plataforma explica", /o tempo entra nela/.test($("#toast").textContent), $("#toast").textContent);
+
+  /* ---- a sessão nova cumpre o lembrete atrasado daquele conteúdo ---- */
+  w=abrir(base({registros:[sess("r1")],
+    revisoes:[{id:"v1",registroId:"r1",data:dia(-1),ordem:1,retomada:true,feita:false,manual:false,
+      minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]}));
+  await espera(450);
+  doc=w.document; $=s=>doc.querySelector(s);
+  [...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1")
+    .querySelector('[data-acao="continuar-sessao"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(450);
+  $('#modalCaixa [name="minutos"]').value="60";
+  $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(500);
+  d=db(w);
+  ok("continuar dá por cumprido o lembrete que estava atrasado",
+     d.revisoes.find(r=>r.id==="v1").feita===true, d.revisoes.map(r=>[r.id,r.data,r.feita]));
+  ok("e o próximo nasce a partir de hoje",
+     d.revisoes.filter(r=>!r.feita).length===1 && d.revisoes.find(r=>!r.feita).data > hoje,
+     d.revisoes.filter(r=>!r.feita).map(r=>r.data));
+
+  /* ---- o botão também está na tela de edição da sessão antiga ---- */
+  w=abrir(base({registros:[sess("r1")]})); await espera(450);
+  doc=w.document; $=s=>doc.querySelector(s);
+  [...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1").querySelector("td")
+    .dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(400);
+  ok("a tela de edição de uma sessão antiga oferece continuar hoje",
+     !!doc.querySelector('#modalCaixa [data-acao="continuar-sessao"]'),
+     doc.querySelector("#modalCaixa > .acoes-form").textContent);
+  console.log(falhas?"\n"+falhas+" FALHA(S)":"\ncontinuar conteúdo funcionando");
+  process.exit(falhas?1:0);
+}catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();
