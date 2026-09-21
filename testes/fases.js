@@ -1,5 +1,21 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
+   escolhe "criar novo", digita o nome e clica em adicionar. */
+function porConteudo(doc, w, nome){
+  const sel=doc.querySelector("#campoAssunto"); if (!sel) return false;
+  const existe=[...sel.options].some(o=>o.value.toLowerCase()===nome.toLowerCase());
+  if (existe){ sel.value=[...sel.options].find(o=>o.value.toLowerCase()===nome.toLowerCase()).value; }
+  else {
+    sel.value="__novo"; sel.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const campo=doc.querySelector("#novoConteudoNome"); if (!campo) return false;
+    campo.value=nome;
+  }
+  const bt=doc.querySelector('[data-acao="add-assunto"]');
+  bt.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return true;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
 const sess=(id,extra)=>Object.assign({id,data:hoje,disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",
@@ -36,7 +52,8 @@ async function gravarSessao(w){
   /* ---- 1. conteúdo novo nasce em andamento, com UMA volta ---- */
   let w=abrir(seedBase({registros:[sess("r1")]})); await espera(400);
   await gravarSessao(w);
-  ok("a sessão nasce em andamento", db(w).registros[0].fase==="andamento", db(w).registros[0].fase);
+  const ficha=(ww,nome)=>(db(ww).conteudos||[]).find(c=>c.nome===(nome||"LAI"));
+  ok("o conteúdo nasce em andamento", ficha(w).fase==="andamento", ficha(w));
   ok("e ganha uma volta só, não uma fila", revs(w).length===1, revs(w).map(r=>r.data));
   ok("marcada como volta, não revisão", revs(w)[0].retomada===true, revs(w)[0]);
   ok("a volta é curta (2 dias, dificuldade média)", off(w)[0]===2, off(w));
@@ -61,8 +78,8 @@ async function gravarSessao(w){
   const fechar=doc.querySelector('[data-acao="concluir-conteudo"]');
   ok("o card traz o botão de fechar o conteúdo", !!fechar, doc.querySelector(".grupo-rev .cab").textContent);
   fechar.dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(400);
-  ok("a sessão fica marcada como concluída", db(w).registros[0].fase==="concluido");
-  ok("com o dia em que foi fechada", db(w).registros[0].concluidoEm===hoje, db(w).registros[0].concluidoEm);
+  ok("a ficha do conteúdo fica concluída", ficha(w).fase==="concluido", ficha(w));
+  ok("com o dia em que foi fechada", ficha(w).concluidoEm===hoje, ficha(w).concluidoEm);
   const o=off(w);
   console.log("      escada depois de fechar: D+"+o.join(", D+"));
   ok("a escada nasce inteira", o.length>=4, o);
@@ -75,7 +92,7 @@ async function gravarSessao(w){
   /* ---- 4. reabrir desfaz ---- */
   doc.querySelector('[data-acao="reabrir-conteudo"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(400);
-  ok("reabrir volta para em andamento", db(w).registros[0].fase==="andamento");
+  ok("reabrir volta para em andamento", ficha(w).fase==="andamento", ficha(w));
   ok("e a fila encolhe para uma volta", revs(w).filter(r=>!r.feita).length===1, revs(w).length);
 
   /* ---- 5. fechar uma volta abre a sessão como ESTUDO ---- */
@@ -107,10 +124,11 @@ async function gravarSessao(w){
   w=abrir(seedBase({registros:[sess("r1")]}),"registros"); await espera(400);
   w.document.querySelector('[data-acao="toggle-form-registro"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(350);
-  const fase=[...w.document.querySelectorAll('#modalCaixa [name="fase"]')];
-  ok("o formulário pergunta se o conteúdo acabou", fase.length===2, fase.map(f=>f.value));
-  ok("e o padrão é ainda não", fase.find(f=>f.checked).value==="andamento",
-     fase.find(f=>f.checked).value);
+  // a fase saiu do formulário: ela é do conteúdo, e a tela só mostra como está
+  ok("o formulário mostra a fase dos conteúdos, sem perguntar",
+     /Fase dos conteúdos/.test(w.document.querySelector("#modalCorpo").textContent) &&
+     !w.document.querySelector('#modalCaixa [name="fase"]'),
+     w.document.querySelector("#modalCorpo").textContent.slice(0,120));
 
   /* ---- 7. migração: o que já existia vira em andamento ---- */
   const antigo=seedBase({registros:[{id:"rX",data:dia(-20),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",
@@ -124,6 +142,8 @@ async function gravarSessao(w){
   w=abrir(antigo); await espera(450);
   const d7=db(w);
   ok("a sessão antiga passou a em andamento", d7.registros[0].fase==="andamento", d7.registros[0].fase);
+  ok("e o conteúdo dela virou ficha no cadastro",
+     (d7.conteudos||[]).some(c=>c.nome==="LAI" && c.disciplina==="Legislação"), d7.conteudos);
   ok("das automáticas pendentes sobrou a mais próxima",
      d7.revisoes.filter(r=>!r.feita && !r.manual).map(r=>r.id).join(",")==="a1",
      d7.revisoes.filter(r=>!r.feita&&!r.manual).map(r=>r.id));

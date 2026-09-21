@@ -30,8 +30,11 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   disc.value="__nova"; disc.dispatchEvent(new w.Event("change",{bubbles:true}));
   await espera(200);
   $('#modalCaixa [name="novaDisciplina"]').value="Legislação";
+  // conteúdo é escolhido numa lista; numa base vazia, cria-se na hora
   const campoAssunto=$("#modalCaixa #campoAssunto");
-  campoAssunto.value="LAI";
+  campoAssunto.value="__novo";
+  campoAssunto.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(150);
+  $("#modalCaixa #novoConteudoNome").value="LAI";
   click($('#modalCaixa [data-acao="add-assunto"]')); await espera(200);
   $('#modalCaixa [name="minutos"]').value="60";
   $('#modalCaixa [name="questoes"]').value="10";
@@ -40,7 +43,10 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   const regs=db().registros||[];
   ok("a sessão é gravada", regs.length===1 && regs[0].minutos===60, regs.map(r=>[r.disciplina,r.minutos]));
   ok("com o assunto que eu digitei", (regs[0].assuntos||[]).join()==="LAI", regs[0].assuntos);
-  ok("nasce em andamento", regs[0].fase==="andamento", regs[0].fase);
+  // a fase mora na ficha do conteúdo, não na sessão
+  const fichaLAI=(db().conteudos||[]).find(c=>c.nome==="LAI");
+  ok("o conteúdo vira ficha no cadastro", !!fichaLAI, db().conteudos);
+  ok("e nasce em andamento", fichaLAI.fase==="andamento", fichaLAI.fase);
   ok("e ganha uma volta marcada", (db().revisoes||[]).length===1, db().revisoes);
   ok("a volta é do tipo retomada", db().revisoes[0].retomada===true);
 

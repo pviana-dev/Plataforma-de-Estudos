@@ -1,5 +1,21 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
+   escolhe "criar novo", digita o nome e clica em adicionar. */
+function porConteudo(doc, w, nome){
+  const sel=doc.querySelector("#campoAssunto"); if (!sel) return false;
+  const existe=[...sel.options].some(o=>o.value.toLowerCase()===nome.toLowerCase());
+  if (existe){ sel.value=[...sel.options].find(o=>o.value.toLowerCase()===nome.toLowerCase()).value; }
+  else {
+    sel.value="__novo"; sel.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const campo=doc.querySelector("#novoConteudoNome"); if (!campo) return false;
+    campo.value=nome;
+  }
+  const bt=doc.querySelector('[data-acao="add-assunto"]');
+  bt.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return true;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),dia=n=>iso(new Date(Date.now()+n*864e5));
 const base=(prova)=>({versao:1,tema:"claro",dataProva:prova,metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
@@ -57,7 +73,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const f=$("#modalCorpo #formRevisao");
   f.querySelector("[name=data]").value=dia(20);
   f.querySelector("select.sel-disciplina").value="Legislação";
-  f.querySelector("#campoAssunto").value="LAI";
+  porConteudo(doc, w, "LAI");
   f.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(300);
   ok("dá para lançar revisão em qualquer data futura",

@@ -1,5 +1,21 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
+
+/* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
+   escolhe "criar novo", digita o nome e clica em adicionar. */
+function porConteudo(doc, w, nome){
+  const sel=doc.querySelector("#campoAssunto"); if (!sel) return false;
+  const existe=[...sel.options].some(o=>o.value.toLowerCase()===nome.toLowerCase());
+  if (existe){ sel.value=[...sel.options].find(o=>o.value.toLowerCase()===nome.toLowerCase()).value; }
+  else {
+    sel.value="__novo"; sel.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const campo=doc.querySelector("#novoConteudoNome"); if (!campo) return false;
+    campo.value=nome;
+  }
+  const bt=doc.querySelector('[data-acao="add-assunto"]');
+  bt.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return true;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date());
 const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
@@ -33,9 +49,10 @@ const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
   click(doc.querySelector('[data-acao="cancelar-revisao"]')); await espera(250);
   click(doc.querySelector('[data-aba="registros"]')); await espera(250);
   click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="rA")); await espera(300);
-  ok("no registro a dica de assuntos continua",
-     /Adicione um por vez/.test($("#modalCorpo").textContent));
-  ok("inclusive a parte de renomear", /clique no nome da etiqueta/.test($("#modalCorpo").textContent));
+  ok("no registro a dica de conteúdos explica a escolha",
+     /Escolha um de cada vez/.test($("#modalCorpo").textContent), $("#modalCorpo").textContent.slice(0,200));
+  ok("e diz o que diferencia duas sessões do mesmo conteúdo",
+     /é a descrição/.test($("#modalCorpo").textContent));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nformulário de revisão ajustado");
   process.exit(falhas?1:0);
 }catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

@@ -865,6 +865,7 @@ function estadoInicial(){
            posProva: "",                        // "" = ainda não perguntei · "continuo" · "encerrei"
            metaDiariaMin: CONFIG.META_DIARIA_MIN,
            disciplinas: [],                     // cadastro próprio; registros só apontam para elas
+           conteudos: [],                       // cadastro dos conteúdos: { id, nome, disciplina, fase, concluidoEm }
            grupos: [],                          // grupos de revisão integrada: { id, nome, disciplina, criadoEm }
            lancamentos: [],                     // questões lançadas à parte, ligadas a um registro:
                                                 // { id, registroId, data, questoes, acertos, criadoEm }
@@ -915,6 +916,50 @@ function migrarIntegracoes(base){
    revisões automáticas ainda pendentes são reduzidas à mais próxima; as já
    FEITAS e as criadas À MÃO continuam intocadas.
    Devolve quantos conteúdos foram abertos, para a plataforma avisar uma vez. */
+/* MIGRAÇÃO DOS CONTEÚDOS. O que era texto livre dentro de cada sessão vira
+   ficha no cadastro, uma por (disciplina + nome). A fase vem de quem já estava
+   lá: o conteúdo só nasce fechado se TODAS as sessões que falam dele estavam
+   fechadas. Anotações e revisões avulsas também entram, para o seletor
+   conhecer tudo o que já existe.                                            */
+function migrarConteudos(d){
+  if (!Array.isArray(d.conteudos)) d.conteudos = [];
+  if (d.conteudosMigrados) return 0;
+  const achar = (disc, nome) => d.conteudos.find(c => c.disciplina === disc &&
+                                                      c.nome.toLowerCase() === nome.toLowerCase());
+  const por = new Map();                     // disciplina|nome -> fases vistas
+  const anota = (disc, nome, fase) => {
+    if (!disc || !nome) return;
+    const k = disc + "|" + nome.toLowerCase();
+    const atual = por.get(k) || { disciplina: disc, nome, fases: [] };
+    if (fase) atual.fases.push(fase);
+    por.set(k, atual);
+  };
+  (d.registros || []).forEach(r => {
+    const lista = Array.isArray(r.assuntos) && r.assuntos.length ? r.assuntos : (r.assunto ? [r.assunto] : []);
+    lista.forEach(a => anota(r.disciplina, a, r.fase === "concluido" ? "concluido" : "andamento"));
+  });
+  (d.revisoes || []).forEach(r => (r.assuntos || []).forEach(a => anota(r.disciplina, a, null)));
+  (d.erros || []).forEach(e => anota(e.disciplina, e.assunto, null));
+  let criados = 0;
+  por.forEach(v => {
+    if (achar(v.disciplina, v.nome)) return;
+    const fechado = v.fases.length > 0 && v.fases.every(f => f === "concluido");
+    d.conteudos.push({ id: "c" + (Date.now().toString(36)) + criados.toString(36),
+                       nome: v.nome, disciplina: v.disciplina,
+                       fase: fechado ? "concluido" : "andamento",
+                       concluidoEm: fechado ? (d.registros || []).map(r => r.concluidoEm).filter(Boolean).sort().pop() || null : null,
+                       criadoEm: Date.now() });
+    criados++;
+  });
+  // toda disciplina em uso também entra no cadastro próprio
+  if (!Array.isArray(d.disciplinas)) d.disciplinas = [];
+  [].concat(d.registros || [], d.erros || [], d.revisoes || []).forEach(x => {
+    if (x.disciplina && !d.disciplinas.some(n => n.toLowerCase() === x.disciplina.toLowerCase()))
+      d.disciplinas.push(x.disciplina);
+  });
+  d.conteudosMigrados = true;
+  return criados;
+}
 function migrarFases(d){
   if (d.fasesMigradas) return 0;
   // só mexe em quem ainda não tem fase: quem já vem marcado é respeitado
@@ -958,7 +1003,8 @@ function carregar(){
         lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
       });
       const abertos = migrarFases(carregado);
-      return { db: carregado, migrados: 0, desintegrados: migrarIntegracoes(carregado), abertos };
+      const fichas = migrarConteudos(carregado);
+      return { db: carregado, migrados: 0, desintegrados: migrarIntegracoes(carregado), abertos, fichas };
     } catch(e){ /* dado corrompido: começa limpo, sem apagar o original */ }
   }
   const migrados = migrarPrototipo(base);
@@ -1288,7 +1334,29 @@ const planoDe = reg => reg.plano || "individual";
    primeira vez; a agenda chama para VOLTAR ao assunto, uma volta de cada vez.
    "concluido" = primeira passada fechada; aí começa a escada da repetição
    espaçada, contada do dia em que você fechou.                              */
-const faseDe = alvo => (alvo && alvo.fase) === "concluido" ? "concluido" : "andamento";
+/* A fase de uma SESSÃO (ou de um grupo) é lida dos conteúdos dela: está aberta
+   enquanto qualquer um dos seus conteúdos estiver aberto. Assim não existe
+   sessão "concluída" falando de conteúdo que ainda está sendo visto.        */
+function faseDe(alvo){
+  if (!alvo) return "andamento";
+  const itens = conteudosDoAlvo(alvo);
+  if (!itens.length) return alvo.fase === "concluido" ? "concluido" : "andamento";
+  return itens.every(c => c.fase === "concluido") ? "concluido" : "andamento";
+}
+/** as fichas de conteúdo de uma sessão ou de um grupo */
+function conteudosDoAlvo(alvo){
+  if (!alvo) return [];
+  if (alvo.nome !== undefined && alvo.disciplina && !alvo.assuntos){      // é um grupo
+    const uniao = [...new Set(registrosDoGrupo(alvo.id).flatMap(assuntosDe))];
+    return uniao.map(a => acharConteudo(alvo.disciplina, a)).filter(Boolean);
+  }
+  return assuntosDe(alvo).map(a => acharConteudo(alvo.disciplina, a)).filter(Boolean);
+}
+/** o dia em que o conteúdo mais recente da sessão foi fechado */
+function fechadoEm(alvo){
+  const dias = conteudosDoAlvo(alvo).map(c => c.concluidoEm).filter(Boolean).sort();
+  return dias.length ? dias[dias.length - 1] : (alvo && alvo.concluidoEm) || "";
+}
 const conteudoAberto = alvo => faseDe(alvo) === "andamento";
 /** quantos dias até a próxima volta, num conteúdo ainda aberto */
 function diasDaVolta(dificuldade, taxa){
@@ -1357,7 +1425,8 @@ function gerarRevisoes(reg, opcoes){
     return;
   }
   // conteúdo fechado: a escada conta do dia em que você fechou
-  if (reg.concluidoEm && reg.concluidoEm > partida) partida = reg.concluidoEm;
+  const fechou = fechadoEm(reg);
+  if (fechou && fechou > partida) partida = fechou;
 
   const limite = ultimoDiaRevisao();
   const dias = D.dif(partida, limite);                          // janela que ainda resta
@@ -1427,7 +1496,8 @@ function gerarRevisoesGrupo(gid, opcoes){
                        questoes: null, acertos: null, dificuldade: null, atividade: "", nota: "", manual: false });
     return;
   }
-  if (grupo.concluidoEm && grupo.concluidoEm > partida) partida = grupo.concluidoEm;
+  const fechouG = fechadoEm(grupo);
+  if (fechouG && fechouG > partida) partida = fechouG;
   const alvo = numeroDeRevisoes(dificuldade, taxa, D.dif(partida, limite));
   const faltam = Math.max(0, alvo - cards.length);
   if (!faltam) return;
@@ -1568,6 +1638,35 @@ function disciplinas(){
   db.revisoes.forEach(r => r.disciplina && set.add(r.disciplina));
   return [...set].sort((a,b) => a.localeCompare(b, "pt-BR"));
 }
+/* CADASTRO DE CONTEÚDOS. Conteúdo deixou de ser texto livre digitado em cada
+   sessão e passou a ser uma ficha escolhida numa lista: é ela que carrega a
+   FASE (em andamento × concluído), e por isso fechar um conteúdo fecha todas
+   as sessões que falam dele. O que distingue uma sessão da outra passa a ser
+   a descrição.                                                              */
+const conteudosCad = () => Array.isArray(db.conteudos) ? db.conteudos : (db.conteudos = []);
+function conteudosDaDisciplina(disc){
+  return conteudosCad().filter(c => c.disciplina === disc)
+    .sort((a,b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+function acharConteudo(disc, nome){
+  const n = (nome || "").trim().toLowerCase();
+  return conteudosCad().find(c => c.disciplina === disc && c.nome.toLowerCase() === n) || null;
+}
+/** cria a ficha do conteúdo se ela ainda não existe; devolve a ficha */
+function registrarConteudo(disc, nome){
+  const n = (nome || "").trim();
+  if (!disc || !n) return null;
+  const ja = acharConteudo(disc, n);
+  if (ja) return ja;
+  const novo = { id: uid(), nome: n, disciplina: disc, fase: "andamento", concluidoEm: null, criadoEm: Date.now() };
+  conteudosCad().push(novo);
+  return novo;
+}
+/** a fase de um conteúdo: só a ficha responde */
+const faseConteudo = (disc, nome) => {
+  const c = acharConteudo(disc, nome);
+  return c && c.fase === "concluido" ? "concluido" : "andamento";
+};
 /** grava a disciplina no cadastro (usado ao criar uma nova pelo seletor) */
 function registrarDisciplina(nome){
   const n = (nome || "").trim();
@@ -1818,7 +1917,9 @@ function guardarRascunhoRegistro(){
     tipo, revisaoId: rev ? rev.id : "",
     data: val("data") || D.hoje(),
     disciplina: ehTipoRevisao(tipo) && ctx ? ctx.disciplina : disciplinaDoForm(f),
-    assuntos: ehTipoRevisao(tipo) ? (ctx ? ctx.assuntos.slice() : []) : lerAssuntosForm(f),
+    // conteúdo pertence a uma disciplina: trocando a disciplina, a lista recomeça
+    assuntos: ehTipoRevisao(tipo) ? (ctx ? ctx.assuntos.slice() : [])
+            : lerAssuntosForm(f).filter(a => !!acharConteudo(disciplinaDoForm(f), a)),
     minutos: val("minutos"), questoes: val("questoes"), acertos: val("acertos"),
     dificuldade: val("dificuldade") || 3, anotacoes: val("anotacoes")
   };
@@ -2365,7 +2466,7 @@ function formRegistroHtml(){
                 '<input type="hidden" name="disciplina" value="'+esc(v.disciplina||"")+'">')
         : campo("Disciplina *", seletorDisciplina(v.disciplina))) +
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
-                     eRevisao ? "" : undefined, eRevisao) +
+                     eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
       campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(v.minutos ?? "")+'" placeholder="60">') +
       campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+(v.questoes ?? "")+'" placeholder="20">') +
       campo("Acertos", '<input type="number" name="acertos" min="0" value="'+(v.acertos ?? "")+'" placeholder="14">') +
@@ -2504,6 +2605,10 @@ function ligarSeletoresDisciplina(){
       const criar = sel.value === "__nova";
       inp.hidden = !criar;
       if (criar) inp.focus(); else inp.value = "";
+      /* Trocou a disciplina: a lista de conteúdos é outra. Redesenha o
+         formulário (guardando o que já estava digitado) para o campo de
+         conteúdo passar a mostrar só o que é daquela disciplina. */
+      if (!criar && sel.closest("#formRegistro")){ guardarRascunhoRegistro(); redesenharTelaForm(); }
     });
   });
 }
@@ -2526,9 +2631,11 @@ function campo(rot, inner, largo, ajuda){
 /* O nome do assunto é editável na própria etiqueta: clicar nele deixa digitar,
    Enter confirma, Esc desfaz. O data-assunto acompanha o que for digitado, que
    é de onde lerAssuntosForm tira a lista ao salvar.                          */
+/* A etiqueta não é mais editável: o nome mora na ficha do conteúdo, e renomear
+   ali seria renomear só nesta sessão — foi assim que nasciam duplicatas. Para
+   renomear de verdade, a tela de Conteúdos (em Ajustes) muda em todo lugar. */
 const tagAssunto = a => '<span class="tag" data-assunto="'+esc(a)+'">' +
-  '<span class="txt" contenteditable="true" spellcheck="false" ' +
-  'title="Clique para renomear">'+esc(a)+'</span>' +
+  '<span class="txt">'+esc(a)+'</span>' +
   '<button type="button" data-acao="remover-assunto" aria-label="Remover '+esc(a)+'">✕</button></span>';
 /* ---------- tipo da sessão: estudo ou revisão ----------
    Revisão = a sessão cumpre uma revisão agendada. O conteúdo vem dela (por isso
@@ -2607,15 +2714,25 @@ function htmlPainelRevisao(v, ed){
 function campoIntegracao(v){
   const g = grupoDe(v);
   const alvo = g ? "g:" + g.id : "";
-  const aberto = conteudoAberto(v.id ? (acharRegistro(v.id) || v) : v);
-  return '<div class="campo largo"><span>Este conteúdo já acabou?</span><div class="opcoes">' +
-    '<label class="opcao"><input type="radio" name="fase" value="andamento"'+(aberto ? " checked" : "")+'>' +
-      '<span>Ainda não terminei</span></label>' +
-    '<label class="opcao"><input type="radio" name="fase" value="concluido"'+(aberto ? "" : " checked")+'>' +
-      '<span>Terminei — pode revisar</span></label>' +
-    '<span class="ajuda-campo">Enquanto não termina, a agenda marca <b>uma volta de cada vez</b> para você ' +
-    'continuar de onde parou. Ao terminar, começa a repetição espaçada (D+1, 3, 7, 16…) a partir daquele dia.</span>' +
-    '</div></div>' +
+  /* A fase não é mais desta sessão: ela é do CONTEÚDO, e vale para todas as
+     sessões que falam dele. Aqui a tela só mostra como está cada um, com o
+     atalho para fechar — quem fecha, fecha para todo mundo.                 */
+  const fichas = assuntosDe(v).map(a => acharConteudo(v.disciplina, a)).filter(Boolean);
+  const abertos = fichas.filter(c => c.fase !== "concluido");
+  const estado = !fichas.length
+    ? '<span class="ajuda-campo">Escolha os conteúdos acima — a fase de cada um aparece aqui.</span>'
+    : '<div class="linha" style="flex-wrap:wrap;gap:7px">' +
+        fichas.map(c => '<span class="badge'+(c.fase === "concluido" ? " b-bom" : " b-misto")+'">' +
+          esc(c.nome) + ' · ' + (c.fase === "concluido" ? "concluído" : "em andamento") + '</span>').join("") +
+        (abertos.length
+          ? '<span class="spacer"></span><button class="act" type="button" data-acao="concluir-conteudo" ' +
+            'data-disc="'+esc(v.disciplina)+'" data-conts="'+esc(abertos.map(c => c.nome).join("|"))+'">' +
+            '✓ marcar como concluído' + (abertos.length > 1 ? "s" : "") + '</button>'
+          : '') +
+      '</div>' +
+      '<span class="ajuda-campo">Em andamento, a agenda marca <b>uma volta de cada vez</b> para continuar ' +
+      'de onde parou. Concluído, começa a repetição espaçada — e vale para <b>todas</b> as sessões deste conteúdo.</span>';
+  return '<div class="campo largo"><span>Fase dos conteúdos</span>' + estado + '</div>' +
     '<div class="campo largo"><span>Revisões</span><div class="opcoes">' +
     '<label class="opcao"><input type="checkbox" name="integrado" id="cxIntegrado"'+(g ? " checked" : "")+'>' +
       '<span>Integrar com outro conteúdo</span></label>' +
@@ -2819,39 +2936,75 @@ function campoOpcoes(rot, itens){
     itens.map(o => '<label class="opcao"><input type="checkbox" name="'+o.nome+'"'+(o.marcado?" checked":"")+'>' +
                    '<span>'+esc(o.texto)+'</span></label>').join("") + '</div></div>';
 }
-function camposAssuntos(lista, rotulo, dica, travado){
+function camposAssuntos(lista, rotulo, dica, travado, disciplina){
   // dica === "" desliga a linha de ajuda; travado = o conteúdo vem da revisão
   const ajuda = dica === undefined
-    ? "Estudou mais de um tópico? Adicione um por vez (Enter também adiciona). " +
-      "Para renomear, clique no nome da etiqueta."
+    ? "Estudou mais de um conteúdo? Escolha um de cada vez. O que diferencia duas sessões " +
+      "do mesmo conteúdo é a descrição."
     : dica;
   if (travado) return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos revisados")+'</span>' +
     '<div id="listaAssuntosForm" class="tags" style="margin-bottom:4px">' +
       (lista.length ? lista.map(a => '<span class="tag fixo" data-assunto="'+esc(a)+'">'+esc(a)+'</span>').join("")
                     : '<span class="tag fixo">escolha a revisão acima</span>') + '</div>' +
     '<span style="font-size:11.5px;color:var(--muted)">Vêm da revisão escolhida — para mudar, escolha outra revisão.</span></div>';
-  return '<div class="campo largo"><span>'+esc(rotulo || "Assuntos / tópicos da sessão *")+'</span>' +
+  /* Conteúdo não se digita mais: escolhe-se na lista da disciplina. O que
+     diferencia duas sessões do mesmo conteúdo é a DESCRIÇÃO, não um nome
+     ligeiramente diferente — era assim que nasciam "LAI", "LAI " e "Lei de
+     acesso", três fichas para a mesma coisa.                                */
+  const disc = disciplina || "";
+  const doCadastro = conteudosDaDisciplina(disc);
+  const jaNa = a => lista.some(x => x.toLowerCase() === a.nome.toLowerCase());
+  const opcoes = doCadastro.filter(c => !jaNa(c))
+    .map(c => '<option value="'+esc(c.nome)+'">'+esc(c.nome) +
+              (c.fase === "concluido" ? " — concluído" : "") + '</option>').join("");
+  return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos da sessão *")+'</span>' +
     '<div id="listaAssuntosForm" class="tags" style="margin-bottom:7px">' + lista.map(tagAssunto).join("") + '</div>' +
     '<div class="linha" style="gap:7px;flex-wrap:nowrap">' +
-      '<input id="campoAssunto" data-sug="assuntos" placeholder="Controle de constitucionalidade" style="flex:1">' +
+      '<select id="campoAssunto" style="flex:1">' +
+        '<option value="">' +
+          (opcoes ? "Escolha um conteúdo…"
+                  : disc ? "Nenhum conteúdo cadastrado em " + esc(disc)
+                         : "Escolha a disciplina para ver os conteúdos") + '</option>' +
+        opcoes +
+        '<option value="__novo">＋ Criar novo conteúdo</option>' +
+      '</select>' +
       '<button class="btn mini ghost" type="button" data-acao="add-assunto">+ adicionar</button></div>' +
+    '<input id="novoConteudoNome" class="nova-disciplina" hidden placeholder="Nome do novo conteúdo" style="margin-top:6px">' +
     (ajuda ? '<span style="font-size:11.5px;color:var(--muted);margin-top:4px">'+esc(ajuda)+'</span>' : '') +
     '</div>';
 }
 function adicionarAssuntoForm(){
   const inp = document.getElementById("campoAssunto"), lista = document.getElementById("listaAssuntosForm");
   if (!inp || !lista) return;
-  const v = inp.value.trim();
+  const novoNome = document.getElementById("novoConteudoNome");
+  const disc = disciplinaDoForm(inp.closest("form")) || "";
+  let v = inp.value.trim();
+  if (v === "__novo"){                                   // criar ficha nova, ali mesmo
+    const nome = novoNome ? novoNome.value.trim() : "";
+    if (!nome){ if (novoNome){ novoNome.hidden = false; novoNome.focus(); } return; }
+    // disciplina ainda não existe (está sendo criada agora): a ficha nasce no salvamento
+    if (disc){ registrarConteudo(disc, nome); persistir(); }
+    v = nome;
+    if (novoNome){ novoNome.value = ""; novoNome.hidden = true; }
+  }
   if (!v){ inp.focus(); return; }
   const jaTem = [...lista.querySelectorAll("[data-assunto]")].some(x => x.dataset.assunto.toLowerCase() === v.toLowerCase());
-  if (!jaTem) lista.insertAdjacentHTML("beforeend", tagAssunto(v));
+  if (!jaTem){
+    lista.insertAdjacentHTML("beforeend", tagAssunto(v));
+    const op = [...inp.options].find(o => o.value.toLowerCase() === v.toLowerCase());
+    if (op) op.remove();                                  // sai da lista: já está na sessão
+  }
   inp.value = ""; inp.focus();
 }
 /** lê as etiquetas + o que estiver digitado e ainda não foi adicionado */
 function lerAssuntosForm(form){
   const out = [...form.querySelectorAll("#listaAssuntosForm [data-assunto]")].map(x => x.dataset.assunto);
   const inp = form.querySelector("#campoAssunto");
-  const pendente = inp ? inp.value.trim() : "";
+  let pendente = inp ? inp.value.trim() : "";
+  if (pendente === "__novo"){                       // escolheu criar e esqueceu de adicionar
+    const nome = form.querySelector("#novoConteudoNome");
+    pendente = nome ? nome.value.trim() : "";
+  }
   if (pendente && !out.some(a => a.toLowerCase() === pendente.toLowerCase())) out.push(pendente);
   return out;
 }
@@ -3096,11 +3249,12 @@ function telaRevisoes(){
                 'em andamento' + (desde >= CONFIG.AVISO_ABERTO_DIAS ? ' · há ' + desde + ' dias' : '') + '</span>' : '') +
       (temAtraso ? '<span class="badge b-critico">tem atraso</span>' : '') +
       '<span class="spacer"></span>' +
-      (dono ? '<button class="act'+(aberto && desde >= CONFIG.AVISO_ABERTO_DIAS ? " destaque" : "")+'" ' +
-              'data-acao="'+(aberto ? "concluir-conteudo" : "reabrir-conteudo")+'" data-dono="'+esc(dono.id)+'" ' +
-              'title="'+(aberto ? "A primeira passada acabou: começa a repetição espaçada"
-                                : "Voltar a estudar este conteúdo do zero")+'">' +
-              (aberto ? "✓ terminei este conteúdo" : "↩ reabrir conteúdo") + '</button>' : '') +
+      '<button class="act'+(aberto && desde >= CONFIG.AVISO_ABERTO_DIAS ? " destaque" : "")+'" ' +
+        'data-acao="'+(aberto ? "concluir-conteudo" : "reabrir-conteudo")+'" ' +
+        'data-disc="'+esc(g.disciplina)+'" data-conts="'+esc(g.ctx.assuntos.join("|"))+'" ' +
+        'title="'+(aberto ? "Vale para todas as sessões deste conteúdo: começa a repetição espaçada"
+                          : "Volta a ser conteúdo em andamento, em todas as sessões")+'">' +
+        (aberto ? "✓ terminei este conteúdo" : "↩ reabrir conteúdo") + '</button>' +
       '<button class="act" data-acao="nova-revisao" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.ctx.assuntos.join("|"))+'">+ revisão</button>' +
       '<button class="act" data-acao="editar-card" data-card="'+esc(g.chave)+'">✎ editar card</button>' +
       '<button class="act" data-acao="ver-erros" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.primeiro)+'">pontos importantes →</button></div>' +
@@ -3172,7 +3326,7 @@ function formRevisao(rev){
             'placeholder="'+esc(rev ? "Revisão " + (ordemVisivel(rev) || 1) : "Revisão 1")+'" autocomplete="off">',
             false, "Em branco, ela se chama pela ordem — e batizar uma não renumera as outras.") +
       campo("Disciplina *", seletorDisciplina(disciplina)) +
-      camposAssuntos(lista, "Assuntos / tópicos revisados *", "") +
+      camposAssuntos(lista, "Conteúdos revisados *", "", false, disciplina) +
       campo("Detalhes da revisão (opcional)",
             '<textarea name="nota" class="texto-grande" placeholder="Ex.: refazer as 10 questões que errei da aula 3">' +
             esc(rev && rev.nota ? rev.nota : "")+'</textarea>', true) +
@@ -4174,6 +4328,8 @@ function sugestaoIntercalada(){
    apontavam para o nome antigo — elas virariam órfãs sem ninguém perceber.
    Quando a troca é inequívoca (um nome saiu, um entrou) e nenhuma outra sessão
    usa o nome antigo, a plataforma oferece levar tudo junto.                  */
+/* Mantida por compatibilidade com backups antigos que ainda chamam este
+   caminho; a renomeação corrente é a de renomearConteudo(). */
 function propagarRenomeacao(disciplina, antes, depois){
   const igual = (a,b) => chaveAssunto(disciplina,a) === chaveAssunto(disciplina,b);
   const saiu   = antes.filter(a => !depois.some(b => igual(a,b)));
@@ -4278,14 +4434,7 @@ function enviarRegistro(ev){
     criadoEm: anterior ? anterior.criadoEm : Date.now()
   });
   if (anterior && anterior.revisaoId) reg.revisaoId = anterior.revisaoId;
-  // fase do conteúdo: sessão nova nasce em andamento; fechar aqui dá partida na escada
-  const faseEscolhida = dado.fase === "concluido" ? "concluido" : "andamento";
-  const faseAntes = anterior ? faseDe(anterior) : "andamento";
-  reg.fase = faseEscolhida;
-  if (faseEscolhida === "concluido"){
-    reg.concluidoEm = (anterior && anterior.concluidoEm && faseAntes === "concluido")
-                      ? anterior.concluidoEm : D.hoje();
-  } else delete reg.concluidoEm;
+  // a fase mora na ficha do conteúdo: a sessão não carrega mais isso
   if (dado.inicio) { reg.inicio = dado.inicio; reg.fim = dado.fim || ""; }
   else if (anterior && anterior.inicio) { reg.inicio = anterior.inicio; reg.fim = anterior.fim; }
   // integrar / desintegrar: desmarcar NÃO recria o plano individual (passa a ser manual)
@@ -4299,6 +4448,7 @@ function enviarRegistro(ev){
             : planoAntes;
   const grupoAntes = anterior && planoDe(anterior) === "grupo" ? anterior.grupoId : null;
   registrarDisciplina(reg.disciplina);
+  listaAssuntos.forEach(a => registrarConteudo(reg.disciplina, a));   // cadastro dos conteúdos
 
   // resolve o grupo ANTES de salvar: é ele que manda no plano de revisões
   let gid = null;
@@ -4336,12 +4486,10 @@ function enviarRegistro(ev){
   const salvo = acharRegistro(reg.id);
   if (revAlvo) ligarSessaoRevisao(salvo, revAlvo);
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
-  // trocou de fase: o plano inteiro é refeito na régua nova
-  if (faseAntes !== faseEscolhida){
-    const atual = acharRegistro(reg.id);
-    if (faseEscolhida === "concluido") concluirConteudo(atual); else reabrirConteudo(atual);
-  }
-  if (anterior) propagarRenomeacao(disciplina, assuntosDe(anterior), listaAssuntos);
+  /* Trocar um conteúdo por outro na sessão deixou de significar "renomeei":
+     os nomes vêm do cadastro, e renomear de verdade se faz em Ajustes →
+     Disciplinas e conteúdos, que já propaga para tudo. A pergunta antiga
+     ("LAI virou Licitações?") agora só confundiria.                        */
   if (grupoAntes && grupoAntes !== gid) gerarRevisoesGrupo(grupoAntes);   // o grupo antigo perdeu esta sessão
   outrosGrupos.forEach(id => { if (id !== gid) gerarRevisoesGrupo(id); });
   limparGrupos();
@@ -4482,26 +4630,59 @@ function salvarPosProva(){
 /* FECHAR E REABRIR UM CONTEÚDO. Fechar é o que dá partida na repetição
    espaçada: a escada passa a contar do dia de hoje. As voltas já feitas não
    somem — elas foram sessões de estudo, com tempo e questões registrados. */
-function concluirConteudo(alvo){
-  if (!alvo) return;
-  alvo.fase = "concluido";
-  alvo.concluidoEm = D.hoje();
-  // a volta que estava marcada some: no lugar dela entra a escada
-  db.revisoes = db.revisoes.filter(r => !(ehRetomada(r) && !r.feita &&
-                                          (r.registroId === alvo.id || r.grupoId === alvo.id)));
-  if (alvo.nome !== undefined) gerarRevisoesGrupo(alvo.id, { base: D.hoje() });   // é um grupo
-  else gerarRevisoes(alvo, { base: D.hoje() });
-}
-function reabrirConteudo(alvo){
-  if (!alvo) return;
-  alvo.fase = "andamento";
-  delete alvo.concluidoEm;
-  // as revisões automáticas ainda pendentes voltam a ser uma volta só
+/* Fechar e reabrir agora acontecem no CONTEÚDO, não na sessão: o conteúdo é a
+   unidade que se aprende, e todas as sessões que falam dele acompanham. Dá
+   para fechar uma disciplina inteira — é o mesmo, aplicado a cada ficha.    */
+function marcarConteudos(fichas, fase){
+  const tocadas = fichas.filter(Boolean);
+  if (!tocadas.length) return 0;
+  tocadas.forEach(c => {
+    c.fase = fase;
+    c.concluidoEm = fase === "concluido" ? D.hoje() : null;
+  });
+  const nomes = new Set(tocadas.map(c => c.disciplina + "|" + c.nome.toLowerCase()));
+  const pega = reg => assuntosDe(reg).some(a => nomes.has(reg.disciplina + "|" + a.toLowerCase()));
+  const afetados = db.registros.filter(pega);
+  const ids = new Set(afetados.map(r => r.id));
+  const grupos = new Set(afetados.map(r => r.grupoId).filter(Boolean));
+  /* O plano muda de régua: as automáticas pendentes desses conteúdos saem e
+     nascem de novo. Feitas e manuais continuam intocadas, como sempre. */
   db.revisoes = db.revisoes.filter(r => r.feita || r.manual ||
-                                        (r.registroId !== alvo.id && r.grupoId !== alvo.id));
-  if (alvo.nome !== undefined) gerarRevisoesGrupo(alvo.id, { base: D.hoje() });
-  else gerarRevisoes(alvo, { base: D.hoje() });
+                                        (!ids.has(r.registroId) && !grupos.has(r.grupoId)));
+  afetados.forEach(r => { if (!r.grupoId) gerarRevisoes(r, { base: D.hoje() }); });
+  grupos.forEach(gid => gerarRevisoesGrupo(gid, { base: D.hoje() }));
+  return tocadas.length;
 }
+/* Renomear um conteúdo é renomear a FICHA e tudo o que apontava para ela: as
+   sessões, as revisões avulsas e os pontos importantes. Antes o nome vivia
+   solto em cada sessão, e renomear numa não mexia nas outras.               */
+function renomearConteudo(disc, antigo, novo){
+  const ficha = acharConteudo(disc, antigo);
+  if (ficha) ficha.nome = novo;
+  const bate = a => (a || "").toLowerCase() === antigo.toLowerCase();
+  db.registros.forEach(r => {
+    if (r.disciplina !== disc) return;
+    r.assuntos = assuntosDe(r).map(a => bate(a) ? novo : a);
+    r.assunto = r.assuntos[0] || "";
+  });
+  db.revisoes.forEach(r => {
+    if (r.disciplina === disc && Array.isArray(r.assuntos))
+      r.assuntos = r.assuntos.map(a => bate(a) ? novo : a);
+  });
+  db.erros.forEach(e => { if (e.disciplina === disc && bate(e.assunto)) e.assunto = novo; });
+}
+/** as sessões que falam destes conteúdos — é o alcance de fechar um deles */
+function sessoesDoConteudo(disc, nomes){
+  const alvo = new Set((nomes || []).map(n => (n || "").toLowerCase()));
+  return db.registros.filter(r => r.disciplina === disc &&
+                                  assuntosDe(r).some(a => alvo.has(a.toLowerCase())));
+}
+/** fecha (ou reabre) um conteúdo: todas as sessões com aquele rótulo acompanham */
+function concluirConteudo(disc, nome){ return marcarConteudos([acharConteudo(disc, nome)], "concluido"); }
+function reabrirConteudo(disc, nome){ return marcarConteudos([acharConteudo(disc, nome)], "andamento"); }
+/** fecha (ou reabre) a disciplina inteira, ficha por ficha */
+function concluirDisciplina(disc){ return marcarConteudos(conteudosDaDisciplina(disc), "concluido"); }
+function reabrirDisciplina(disc){ return marcarConteudos(conteudosDaDisciplina(disc), "andamento"); }
 /** o conteúdo (sessão ou grupo) a que uma revisão pertence */
 function donoDaRevisao(rev){
   if (!rev) return null;
@@ -4517,6 +4698,49 @@ function replanejarTudo(){
   db.revisoes = db.revisoes.filter(r => r.feita || r.manual || r.data <= limite);
   db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
   (db.grupos || []).forEach(g => gerarRevisoesGrupo(g.id, { base: D.hoje() }));
+}
+
+/* TELA DE CONTEÚDOS. O cadastro num lugar só: criar, renomear (em todo o
+   sistema), fechar e reabrir — por conteúdo ou pela disciplina inteira. */
+function modalConteudos(){
+  const discs = disciplinas();
+  const corpo = discs.length
+    ? discs.map(d => {
+        const itens = conteudosDaDisciplina(d);
+        const abertos = itens.filter(c => c.fase !== "concluido").length;
+        return '<div class="grupo-rev'+(abertos ? " aberto" : "")+'" style="margin-bottom:12px">' +
+          '<div class="linha cab"><strong>'+esc(d)+'</strong>' +
+          '<span class="badge">'+itens.length+(itens.length === 1 ? " conteúdo" : " conteúdos")+'</span>' +
+          (abertos ? '<span class="badge b-misto">'+abertos+' em andamento</span>'
+                   : '<span class="badge b-bom">tudo concluído</span>') +
+          '<span class="spacer"></span>' +
+          (abertos
+            ? '<button class="act" data-acao="concluir-disciplina" data-disc="'+esc(d)+'">✓ concluir disciplina</button>'
+            : '<button class="act" data-acao="reabrir-disciplina" data-disc="'+esc(d)+'">↩ reabrir disciplina</button>') +
+          '</div>' +
+          (itens.length
+            ? itens.map(c => {
+                const nSess = sessoesDoConteudo(d, [c.nome]).length;
+                return '<div class="item"><div class="rev-topo">' +
+                  '<div class="corpo"><div class="titulo">'+esc(c.nome)+'</div>' +
+                  '<div class="meta">'+nSess+(nSess === 1 ? " sessão" : " sessões")+' · ' +
+                  (c.fase === "concluido" ? "concluído" + (c.concluidoEm ? " em " + D.br(c.concluidoEm) : "")
+                                          : "em andamento")+'</div></div>' +
+                  '<button class="act" data-acao="renomear-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'">✎ renomear</button>' +
+                  '<button class="act" data-acao="'+(c.fase === "concluido" ? "reabrir-conteudo" : "concluir-conteudo")+'" ' +
+                    'data-disc="'+esc(d)+'" data-conts="'+esc(c.nome)+'">' +
+                    (c.fase === "concluido" ? "↩ reabrir" : "✓ concluir") + '</button>' +
+                  '</div></div>';
+              }).join("")
+            : '<div class="vazio" style="padding:14px">Nenhum conteúdo cadastrado nesta disciplina.</div>') +
+          '</div>';
+      }).join("")
+    : '<div class="vazio"><strong>Nenhuma disciplina ainda</strong>' +
+      'Registre uma sessão na aba <b>Sessões</b> — a disciplina e o conteúdo nascem por lá.</div>';
+  abrirModal("Disciplinas e conteúdos",
+    '<p class="sub">O conteúdo é uma ficha: as sessões apontam para ela. Por isso <b>fechar um ' +
+    'conteúdo fecha todas as sessões que falam dele</b>, e renomear aqui renomeia em todo o sistema — ' +
+    'nas sessões, nas revisões e nos pontos importantes.</p>' + corpo, null, true);
 }
 
 function modalAjuda(){
@@ -4541,6 +4765,7 @@ function modalAjuda(){
       '<b>Janela curta</b> (prova perto): o cronograma é comprimido para caber até a véspera — ' +
       'quanto menos tempo, mais cedo e mais juntas as revisões.</p>' +
     '<div class="linha" style="margin-top:12px"><button class="btn" type="submit">Salvar ajustes</button>' +
+    '<button class="btn ghost" type="button" data-acao="abrir-conteudos">Disciplinas e conteúdos</button>' +
     '<span class="hl-tema">mudar o prazo reagenda todas as revisões pendentes</span></div></form>' +
     '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
     '<h3 style="font-size:14px;margin-bottom:6px">Metodologias aplicadas</h3>' +
@@ -5141,17 +5366,44 @@ document.addEventListener("click", ev => {
     case "add-membro": adicionarMembroGrupo(alvo); return;
     case "remover-membro": removerMembroGrupo(alvo); return;
     case "editar-card": abrirEditorCard(alvo.dataset.card); break;
+    case "abrir-conteudos": modalConteudos(); break;
+    case "concluir-disciplina": {
+      const disc = alvo.dataset.disc;
+      const n = conteudosDaDisciplina(disc).filter(c => c.fase !== "concluido").length;
+      if (!confirm("Concluir " + n + " conteúdo(s) de " + disc + "? Todas as sessões deles passam a ser revisadas.")) break;
+      concluirDisciplina(disc); persistir(); render(); modalConteudos();
+      toast(disc + ": " + n + " conteúdo(s) concluído(s).");
+      break; }
+    case "reabrir-disciplina": {
+      const disc = alvo.dataset.disc;
+      if (!confirm("Reabrir todos os conteúdos de " + disc + "?")) break;
+      reabrirDisciplina(disc); persistir(); render(); modalConteudos();
+      toast(disc + " voltou a ser conteúdo em andamento.");
+      break; }
+    case "renomear-conteudo": {
+      const disc = alvo.dataset.disc, antigo = alvo.dataset.cont;
+      const novo = (prompt("Novo nome para “" + antigo + "”:", antigo) || "").trim();
+      if (!novo || novo === antigo) break;
+      if (acharConteudo(disc, novo) && novo.toLowerCase() !== antigo.toLowerCase()){
+        alert("Já existe um conteúdo com esse nome nesta disciplina."); break;
+      }
+      renomearConteudo(disc, antigo, novo); persistir(); render(); modalConteudos();
+      toast("Renomeado em todo o sistema.");
+      break; }
     case "concluir-conteudo": {
-      const dono = acharRegistro(alvo.dataset.dono) || acharGrupo(alvo.dataset.dono);
-      if (!dono) break;
-      concluirConteudo(dono); persistir(); render();
+      const disc = alvo.dataset.disc, nomes = (alvo.dataset.conts || "").split("|").filter(Boolean);
+      const quantas = sessoesDoConteudo(disc, nomes).length;
+      if (quantas > 1 && !confirm("Fechar " + (nomes.length > 1 ? "estes conteúdos" : "este conteúdo") +
+          " vale para as " + quantas + " sessões que falam dele. Continuar?")) break;
+      marcarConteudos(nomes.map(n => acharConteudo(disc, n)), "concluido");
+      persistir(); render();
       toast("Conteúdo fechado — as revisões começam a partir de hoje.");
       break; }
     case "reabrir-conteudo": {
-      const dono = acharRegistro(alvo.dataset.dono) || acharGrupo(alvo.dataset.dono);
-      if (!dono) break;
-      if (!confirm("Reabrir este conteúdo? As revisões pendentes viram uma volta só, e a escada recomeça quando você fechar de novo.")) break;
-      reabrirConteudo(dono); persistir(); render();
+      const disc = alvo.dataset.disc, nomes = (alvo.dataset.conts || "").split("|").filter(Boolean);
+      if (!confirm("Reabrir? As revisões pendentes viram uma volta só, e a escada recomeça quando você fechar de novo.")) break;
+      marcarConteudos(nomes.map(n => acharConteudo(disc, n)), "andamento");
+      persistir(); render();
       toast("Conteúdo reaberto — a agenda volta a chamar para estudar.");
       break; }
     case "salvar-card": salvarCard(); break;
@@ -5271,6 +5523,12 @@ document.addEventListener("focusout", ev => {
 document.addEventListener("change", ev => {
   // escolheu a data: tira o foco para o calendário do navegador fechar sozinho
   if (ev.target.matches && ev.target.matches('input[type="date"]')) ev.target.blur();
+  // "＋ Criar novo conteúdo" abre o campo do nome, ali mesmo
+  if (ev.target.id === "campoAssunto"){
+    const cx = document.getElementById("novoConteudoNome");
+    if (cx){ cx.hidden = ev.target.value !== "__novo"; if (!cx.hidden) cx.focus(); }
+    return;
+  }
   // "Isto apareceu numa questão?": o bloco abre e fecha na hora, sem redesenhar
   if (ev.target.name === "daQuestao"){
     const painel = document.getElementById("painelQuestao");

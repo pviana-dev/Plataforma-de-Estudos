@@ -1,6 +1,22 @@
 const fs = require("fs");
 const { JSDOM } = require("jsdom");
 const html = fs.readFileSync(__dirname + "/../index.html", "utf8");
+
+/* O conteúdo agora se escolhe numa lista. Este atalho faz o que a pessoa faz:
+   escolhe "criar novo", digita o nome e clica em adicionar. */
+function porConteudo(doc, w, nome){
+  const sel=doc.querySelector("#campoAssunto"); if (!sel) return false;
+  const existe=[...sel.options].some(o=>o.value.toLowerCase()===nome.toLowerCase());
+  if (existe){ sel.value=[...sel.options].find(o=>o.value.toLowerCase()===nome.toLowerCase()).value; }
+  else {
+    sel.value="__novo"; sel.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const campo=doc.querySelector("#novoConteudoNome"); if (!campo) return false;
+    campo.value=nome;
+  }
+  const bt=doc.querySelector('[data-acao="add-assunto"]');
+  bt.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  return true;
+}
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje = iso(new Date()), ontem = iso(new Date(Date.now()-864e5)), anteontem = iso(new Date(Date.now()-2*864e5));
 // dados do MODELO ANTIGO: duas sessões integradas por disciplina

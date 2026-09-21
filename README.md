@@ -587,7 +587,8 @@ Data da prova, **revisar até** (o teto, até um ano) e meta diária são mudada
 ## Estrutura dos dados
 
 ```
-{ versao, tema, dataProva, revisarAte, posProva, metaDiariaMin, fasesMigradas,
+{ versao, tema, dataProva, revisarAte, posProva, metaDiariaMin, fasesMigradas, conteudosMigrados,
+  conteudos: [{id, nome, disciplina, fase, concluidoEm, criadoEm}],   // o cadastro; a fase mora aqui
   // revisarAte = teto do cronograma ("" = sem teto) · posProva = "" | "continuo" | "encerrei"
   cronometro: null | {inicio, disciplina, assunto, destinoTipo, destinoId},   // em andamento
   grupos:    [{id, nome, disciplina, criadoEm}],        // grupos de revisão integrada
@@ -755,11 +756,40 @@ dias a prova foi.
 Se a prova acabou e você quer seguir estudando, há dois caminhos: **marcar a próxima data** (o
 cronograma se refaz até ela) ou ligar o **estudo contínuo**, que volta a agendar revisões sem prazo.
 
+## Disciplinas e conteúdos são um cadastro
+
+Conteúdo deixou de ser texto digitado em cada sessão e passou a ser uma **ficha**: a sessão aponta
+para ela. Era assim que nasciam *"LAI"*, *"LAI "* e *"Lei de acesso"* — três nomes para a mesma
+coisa, três cronogramas separados, três cards.
+
+- **Primeiro a disciplina, depois o conteúdo.** O campo de conteúdo mostra **só os conteúdos daquela
+  disciplina**; trocar a disciplina troca a lista (o formulário se redesenha preservando o que você
+  já preencheu). O que já está na sessão sai da lista, para não entrar duas vezes.
+- **Criar continua fácil:** a opção **＋ Criar novo conteúdo** abre um campo de nome ali mesmo, sem
+  sair do formulário. A ficha nasce na hora, presa à disciplina escolhida.
+- **O que diferencia duas sessões do mesmo conteúdo é a descrição**, não um nome ligeiramente
+  diferente. É por isso que a etiqueta deixou de ser editável no formulário.
+- **Renomear tem um lugar só:** *Ajustes → Disciplinas e conteúdos*. Ali o nome muda **em todo o
+  sistema** — nas sessões, nas revisões avulsas e nos pontos importantes.
+
+### A tela de Disciplinas e conteúdos
+
+Agrupada por disciplina, mostra cada conteúdo com **em quantas sessões ele aparece** e a fase. De lá
+dá para **renomear**, **concluir** e **reabrir** — por conteúdo ou pela **disciplina inteira**, que é
+o mesmo aplicado a cada ficha.
+
+**A migração** transformou em ficha tudo o que já estava em uso (sessões, revisões avulsas e pontos
+importantes), uma por disciplina + nome, e roda uma vez só (`db.conteudosMigrados`).
+
 ## Conteúdo em andamento × conteúdo concluído
 
 Conteúdo grande não acaba numa sentada, e a repetição espaçada só faz sentido **depois da primeira
 passada completa** — antes disso, a "revisão" chega para um material que você ainda está vendo. Por
 isso cada conteúdo tem uma **fase**:
+
+**A fase é do conteúdo, não da sessão.** Fechar um conteúdo fecha **todas as sessões que falam
+dele** — é o que se espera de "terminei a LAI", mesmo tendo estudado em cinco dias diferentes. Uma
+sessão que cobre vários conteúdos fica aberta enquanto **algum** deles estiver aberto.
 
 | Fase | O que a agenda faz | Como o item se chama |
 |---|---|---|
@@ -781,9 +811,10 @@ volta em aberto do mesmo conteúdo, ela **anda para a frente** e passa a pertenc
 **De quanto em quanto tempo:** 1 dia se o conteúdo é difícil ou a taxa está abaixo de 60%, 4 dias se
 é tranquilo e você vai bem, 2 dias no resto — nunca mais que 7.
 
-**Fechar o conteúdo** se faz em dois lugares: no formulário da sessão (*"Este conteúdo já acabou?"*,
-com **Ainda não terminei** por padrão) e no **card da agenda**, com **✓ terminei este conteúdo** —
-que é onde você costuma estar quando percebe que fechou o assunto. Ao fechar, a escada nasce inteira
+**Fechar o conteúdo** se faz em três lugares: no **card da agenda** (**✓ terminei este conteúdo**, com
+aviso de quantas sessões serão afetadas), no **formulário da sessão** (que mostra a fase de cada
+conteúdo e tem o atalho para fechar) e na tela de **Disciplinas e conteúdos**, por conteúdo ou por
+disciplina inteira. Ao fechar, a escada nasce inteira
 **a partir daquele dia**; as voltas já feitas não somem, elas foram sessões de estudo com tempo e
 questões registrados. Dá para **reabrir** também, e aí a fila volta a ser uma volta só.
 
