@@ -917,26 +917,29 @@ function migrarIntegracoes(base){
    Devolve quantos conteúdos foram abertos, para a plataforma avisar uma vez. */
 function migrarFases(d){
   if (d.fasesMigradas) return 0;
-  let abertos = 0;
-  const donos = [].concat(d.registros || [], d.grupos || []);
-  donos.forEach(alvo => { if (!alvo.fase){ alvo.fase = "andamento"; abertos++; } });
+  // só mexe em quem ainda não tem fase: quem já vem marcado é respeitado
+  const abertos = new Set();
+  [].concat(d.registros || [], d.grupos || []).forEach(alvo => {
+    if (!alvo.fase){ alvo.fase = "andamento"; abertos.add(alvo.id); }
+  });
   const pendentesDe = new Map();
   (d.revisoes || []).forEach(r => {
-    if (r.feita || r.manual) return;
     const dono = r.grupoId || r.registroId;
-    if (!dono) return;
+    if (r.feita || r.manual || !dono || !abertos.has(dono)) return;
     const atual = pendentesDe.get(dono);
     if (!atual || r.data < atual.data) pendentesDe.set(dono, r);
   });
   d.revisoes = (d.revisoes || []).filter(r => {
-    if (r.feita || r.manual) return true;
     const dono = r.grupoId || r.registroId;
-    if (!dono) return true;
-    return pendentesDe.get(dono) === r;          // sobra só a volta mais próxima
+    if (r.feita || r.manual || !dono || !abertos.has(dono)) return true;
+    return pendentesDe.get(dono) === r;          // do conteúdo aberto sobra só a volta mais próxima
   });
-  d.revisoes.forEach(r => { if (!r.feita && !r.manual) r.retomada = true; });
+  d.revisoes.forEach(r => {
+    const dono = r.grupoId || r.registroId;
+    if (!r.feita && !r.manual && dono && abertos.has(dono)) r.retomada = true;
+  });
   d.fasesMigradas = true;
-  return abertos;
+  return abertos.size;
 }
 function carregar(){
   const base = estadoInicial();

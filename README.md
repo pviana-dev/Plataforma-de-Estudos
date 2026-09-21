@@ -587,7 +587,7 @@ Data da prova, **revisar até** (o teto, até um ano) e meta diária são mudada
 ## Estrutura dos dados
 
 ```
-{ versao, tema, dataProva, revisarAte, posProva, metaDiariaMin,
+{ versao, tema, dataProva, revisarAte, posProva, metaDiariaMin, fasesMigradas,
   // revisarAte = teto do cronograma ("" = sem teto) · posProva = "" | "continuo" | "encerrei"
   cronometro: null | {inicio, disciplina, assunto, destinoTipo, destinoId},   // em andamento
   grupos:    [{id, nome, disciplina, criadoEm}],        // grupos de revisão integrada
@@ -751,6 +751,47 @@ dias a prova foi.
 
 Se a prova acabou e você quer seguir estudando, há dois caminhos: **marcar a próxima data** (o
 cronograma se refaz até ela) ou ligar o **estudo contínuo**, que volta a agendar revisões sem prazo.
+
+## Conteúdo em andamento × conteúdo concluído
+
+Conteúdo grande não acaba numa sentada, e a repetição espaçada só faz sentido **depois da primeira
+passada completa** — antes disso, a "revisão" chega para um material que você ainda está vendo. Por
+isso cada conteúdo tem uma **fase**:
+
+| Fase | O que a agenda faz | Como o item se chama |
+|---|---|---|
+| **Em andamento** (nasce assim) | marca **uma volta de cada vez**, curta, para você continuar de onde parou | **Retomar** |
+| **Concluído** | a **escada** da repetição espaçada, contada do dia em que você fechou | **Revisão 1, 2, 3…** |
+
+A agenda continua sendo o lembrete de sempre: quando ela chamar, **você decide** se revisa o que já
+viu ou se continua de onde parou. A diferença é que, enquanto o conteúdo está aberto, o intervalo
+**não cresce** — crescer é para material já fechado.
+
+**Uma volta de cada vez.** Não adianta marcar cinco retornos de um assunto que você nem terminou de
+ver; o que serve é saber quando voltar da próxima. Feita a volta, a seguinte nasce dali. Isso também
+resolve a duplicação que existia: registrar outra sessão do mesmo assunto **move** a volta, em vez de
+abrir uma segunda fila.
+
+**De quanto em quanto tempo:** 1 dia se o conteúdo é difícil ou a taxa está abaixo de 60%, 4 dias se
+é tranquilo e você vai bem, 2 dias no resto — nunca mais que 7.
+
+**Fechar o conteúdo** se faz em dois lugares: no formulário da sessão (*"Este conteúdo já acabou?"*,
+com **Ainda não terminei** por padrão) e no **card da agenda**, com **✓ terminei este conteúdo** —
+que é onde você costuma estar quando percebe que fechou o assunto. Ao fechar, a escada nasce inteira
+**a partir daquele dia**; as voltas já feitas não somem, elas foram sessões de estudo com tempo e
+questões registrados. Dá para **reabrir** também, e aí a fila volta a ser uma volta só.
+
+**Marcar uma volta como feita** abre a sessão já no tipo **Estudo** (e não *Revisão*), porque é o que
+normalmente está acontecendo — você continuou o conteúdo. Trocar para *Estudo/Revisão* ou *Revisão*
+continua a um clique.
+
+**Conteúdo esquecido:** passados 14 dias aberto, o card mostra *"em andamento · há N dias"* e o botão
+de fechar ganha destaque. Ninguém é bloqueado; é só um empurrão.
+
+**O que aconteceu com o que já existia:** na primeira abertura, **todo conteúdo passou a "em
+andamento"** e a fila automática de cada um foi reduzida à **volta mais próxima**. As revisões já
+**feitas** e as criadas **à mão** ficaram intactas. A plataforma avisa uma vez, e a migração roda
+uma vez só (`db.fasesMigradas`).
 
 ## Até quando o sistema agenda
 
