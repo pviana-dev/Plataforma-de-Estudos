@@ -66,7 +66,12 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
   await espera(400);
   const d2=lerDb(), volta=d2.registros.find(r=>r.id==="rHoje");
   ok("voltou a ser estudo", volta.tipo==="estudo", volta.tipo);
-  ok("a revisão foi desmarcada", d2.revisoes.find(r=>r.id==="vLAI").feita===false);
+  /* O vínculo deixou de depender do tipo: uma sessão de ESTUDO também pode
+     cumprir um item da agenda. Virar estudo não solta mais a revisão — é o que
+     permite ter uma sessão só, do tipo estudo, contando como revisão. */
+  ok("a revisão continua cumprida pela sessão", d2.revisoes.find(r=>r.id==="vLAI").feita===true,
+     d2.revisoes.find(r=>r.id==="vLAI"));
+  ok("e a sessão segue apontando para ela", volta.revisaoId==="vLAI", volta.revisaoId);
   ok("e continua sem cronograma próprio, como combinado",
      volta.plano==="sem" && !d2.revisoes.some(r=>r.registroId==="rHoje"),
      {plano:volta.plano, revs:d2.revisoes.filter(r=>r.registroId==="rHoje").length});

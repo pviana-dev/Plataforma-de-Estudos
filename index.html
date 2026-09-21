@@ -1742,6 +1742,7 @@ const ui = {
   eDisciplina: "", eAssunto: "", eSoImportantes: false, eJuntarTudo: false, qVisao: "disciplina",
   compondo: false, rascunhoAnot: "", editandoErro: null, prefill: null,
   editandoRevisao: null, editandoLancamento: null, prefRevisao: null, cronoDestino: "", rascunho: null,
+  ligarRevisao: "",                 // veio da agenda: a sessão aberta vai cumprir esta revisão
   verTodasProximas: false, verTodosAssuntos: false, mesCal: "",
   visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false,
   diaSel: D.hoje(),                 // o painel já abre mostrando o dia de hoje
@@ -2446,8 +2447,9 @@ function formRegistroHtml(){
   const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   const pre = !ed && ui.prefill ? ui.prefill : null;
   let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"", dificuldade:3, anotacoes:"" };
-  if (base.revisaoId && !base.assuntos.length &&
-      (ehTipoRevisao(base.tipo) || ehRetomada(acharRevisao(base.revisaoId)))){
+  // veio da agenda para uma sessão que já existia: ela passa a cumprir aquela revisão
+  if (ed && ui.ligarRevisao) base = Object.assign({}, base, { revisaoId: ui.ligarRevisao });
+  if (base.revisaoId && !base.assuntos.length){
     const ctxPre = contextoRevisao(acharRevisao(base.revisaoId) || {});
     if (ctxPre) base = Object.assign({}, base, { disciplina: ctxPre.disciplina, assuntos: ctxPre.assuntos.slice() });
   }
@@ -2514,8 +2516,9 @@ function telaHistorico(){
       [["todos","Tudo"],["7","Últimos 7 dias"],["30","Últimos 30 dias"],["futuro","A partir de hoje"]]
         .map(([k,n]) => '<option value="'+k+'"'+(ui.fPeriodo===k?" selected":"")+'>'+n+'</option>').join("") + '</select>') +
     campo("Tipo", '<select id="fTipo">' +
-      [["todos","Todos os tipos"],["estudo","Só estudo"],["revisao","Só revisão"],
-       ["misto","Só estudo/revisão"],["revisoes","Revisão e estudo/revisão"]]
+      ([["todos","Todos os tipos"],["estudo","Só estudo"],["revisao","Só revisão"]]
+        .concat(db.registros.some(r => r.tipo === "misto")      // rótulo antigo: só se ainda houver
+          ? [["misto","Só estudo/revisão"],["revisoes","Revisão e estudo/revisão"]] : []))
         .map(([k,n]) => '<option value="'+k+'"'+(ui.fTipo===k?" selected":"")+'>'+n+'</option>').join("") + '</select>') +
     campo("Ordenar por", '<select id="fOrdem">' +
       [["data-desc","Data (mais recente)"],["data-asc","Data (mais antiga)"],
@@ -2684,8 +2687,12 @@ function campoTipoSessao(v, ed){
     opcao("estudo",  "Estudo — conteúdo novo ou continuação",
                      (travado && atual !== "estudo") || semEstudo) +
     opcao("revisao", "Revisão — conteúdo que já fechei", travado && atual === "estudo") +
-    opcao("misto",   "Estudo/Revisão — revisei e ainda vi conteúdo novo",
-                     travado && atual === "estudo") +
+    /* Estudo/Revisão saiu de cena: com a fase do conteúdo respondendo "isto
+       ainda está aberto?", ele virou rótulo sem função. Só aparece em sessão
+       antiga que já esteja marcada assim, para ela não mudar de tipo sozinha. */
+    (atual === "misto"
+      ? opcao("misto", "Estudo/Revisão (rótulo antigo)", travado && atual === "estudo")
+      : "") +
     (avisos.length ? '<span class="dica-fmt">'+esc(avisos.join(" · "))+'</span>' : '') +
     '</div><div id="painelRevisao">' + htmlPainelRevisao(v, ed) + '</div></div>';
 }
@@ -2698,10 +2705,10 @@ function revisoesDisponiveis(v, ed){
     .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
 }
 function htmlPainelRevisao(v, ed){
-  const alvoRetomada = (v.revisaoId || (ed && ed.revisaoId)) &&
-                       ehRetomada(acharRevisao(v.revisaoId || (ed && ed.revisaoId)));
-  // volta de conteúdo aberto: a sessão é de estudo e mesmo assim fecha a volta
-  if (!ehTipoRevisao(v.tipo) && !alvoRetomada) return "";
+  /* O vínculo não depende mais do tipo: qualquer sessão pode cumprir um item
+     da agenda. O tipo é rótulo do que foi feito; o vínculo é outra coisa. */
+  const temAlvo = !!(v.revisaoId || (ed && ed.revisaoId));
+  if (!ehTipoRevisao(v.tipo) && !temAlvo) return "";
   const atual = (ed && ed.revisaoId) || v.revisaoId || "";
   const lista = revisoesDisponiveis(v, ed);
   const opcoes = '<option value=""'+(atual ? "" : " selected")+'>Escolha a revisão…</option>' +
@@ -4507,8 +4514,7 @@ function enviarRegistro(ev){
   const questoes = num(dado.questoes), acertos = num(dado.acertos);
   const tipo = TIPOS_SESSAO[dado.tipo] ? dado.tipo : "estudo";
   const anterior0 = anteriorId ? acharRegistro(anteriorId) : null;
-  const escolhida = acharRevisao(dado.revisaoAlvo || "");
-  const revAlvo = (ehTipoRevisao(tipo) || ehRetomada(escolhida)) ? escolhida : null;
+  const revAlvo = acharRevisao(dado.revisaoAlvo || "");   // qualquer tipo pode cumprir
   const ctxRev = revAlvo ? contextoRevisao(revAlvo) : null;
   if (ehTipoRevisao(tipo) && !revAlvo){
     erro.textContent = "Escolha qual revisão esta sessão cumpre (ou registre como estudo)."; return;
@@ -4642,7 +4648,7 @@ function enviarRegistro(ev){
   outrosGrupos.forEach(id => { if (id !== gid) gerarRevisoesGrupo(id); });
   limparGrupos();
   persistir();
-  ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false;
+  ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; ui.ligarRevisao = "";
   const n = gid ? db.revisoes.filter(r => r.grupoId === gid).length
                 : db.revisoes.filter(r => r.registroId === reg.id).length;
   const grupoFinal = gid ? acharGrupo(gid) : null;
@@ -4700,7 +4706,7 @@ function fecharModal(){
   if (eraForm){
     ui.editandoRegistro = null; ui.editandoRevisao = null; ui.editandoLancamento = null;
     ui.editandoErro = null;                       // a edição do ponto importante mora aqui também
-    ui.prefRevisao = null; ui.formAberto = false;
+    ui.prefRevisao = null; ui.formAberto = false; ui.ligarRevisao = "";
     render();
   }
 }
@@ -4710,11 +4716,31 @@ function fecharModal(){
    tipo Revisão e ela escolhida — as horas passam a morar num lugar só.       */
 function registrarRevisao(rev){
   if (!rev) return;
+  /* Já existe uma sessão DESTE conteúdo hoje? Então é nela que o tempo entra —
+     abrir uma segunda com o mesmo nome era o que duplicava a lista. A sessão
+     existente é aberta para edição, já apontando para esta revisão. */
+  const ctx = contextoRevisao(rev);
+  const jaHa = ctx ? sessaoDoDia(ctx, D.hoje(), rev.id) : null;
+  if (jaHa){
+    ui.ligarRevisao = rev.id;
+    ui.aba = "registros"; ui.editandoRegistro = jaHa.id; ui.formAberto = false; ui.foco = null;
+    redesenharTelaForm();
+    toast("Esta sessão de hoje já é deste conteúdo — o tempo entra nela.");
+    return;
+  }
   ui.prefill = { data: D.hoje(), tipo: ehRetomada(rev) ? "estudo" : "revisao", revisaoId: rev.id,
                  disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
                  dificuldade: 3, anotacoes: "" };
   ui.aba = "registros"; ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
   redesenharTelaForm();
+}
+/** a sessão daquele conteúdo naquele dia (a que deve receber o tempo) */
+function sessaoDoDia(ctx, data, exceto){
+  if (!ctx) return null;
+  const chave = chaveAssunto(ctx.disciplina, (ctx.assuntos || []).join(" | "));
+  return db.registros.filter(r => r.data === data && chaveSessao(r) === chave &&
+                                  (!r.revisaoId || r.revisaoId === exceto))
+    .sort((a,b) => (b.minutos || 0) - (a.minutos || 0))[0] || null;
 }
 
 /* A PROVA PASSOU, E AGORA? Antes o sistema simplesmente parava de agendar: a

@@ -639,9 +639,10 @@ Cada sessão tem um **tipo**:
 - **Revisão — conteúdo que já fechei**: cumpre um item agendado. **Não gera cronograma novo**, herda o
   conteúdo da revisão (as etiquetas ficam travadas) e some com as caixas de integração, que não
   fazem sentido ali.
-- **Estudo/Revisão — revisei e ainda vi conteúdo novo**: para o dia em que as duas coisas
-  aconteceram na mesma sentada. Com as fases, ele ficou para o caso de conteúdo **já fechado** — em
-  conteúdo aberto, continuar é *Estudo* fechando a volta. Funciona **exatamente como Revisão** (cumpre uma revisão agendada, marca a caixa dela,
+- **Estudo/Revisão** — **aposentado**. Ele existia para dizer "revisei e ainda vi conteúdo novo", que
+  é justamente o que a **fase do conteúdo** passou a responder. Não aparece mais no formulário nem no
+  filtro; sessões antigas marcadas assim continuam legíveis e, ao serem editadas, mostram o tipo como
+  *(rótulo antigo)* para não mudarem sozinhas. Funciona **exatamente como Revisão** (cumpre uma revisão agendada, marca a caixa dela,
   não gera plano próprio, as horas ficam na sessão): a diferença é **só o rótulo**, que aparece em
   *Hoje* e em *Sessões*. Internamente o tipo é `misto`, e nenhuma regra de comportamento testa
   `tipo === "revisao"` — tudo passa por `ehTipoRevisao`, justamente para o misto nunca divergir da
@@ -660,8 +661,15 @@ horas).
 **atrasadas em vermelho**; revisão já cumprida por outra sessão não aparece — **uma revisão vale por
 uma sessão só**. Ao salvar, a caixa dela é marcada sozinha.
 
-**Pela aba Agenda:** marcar a caixa abre a tela de sessão já preenchida (tipo Revisão, revisão travada,
-data de hoje). É o mesmo formulário, então você registra tempo, questões e descrição de uma vez.
+**Pela aba Agenda:** marcar a caixa abre a tela de sessão. Se **já existe uma sessão daquele conteúdo
+hoje**, é ela que abre — com o tempo que você já registrou e a revisão já escolhida —, em vez de
+nascer uma segunda sessão com o mesmo nome. Não havendo, abre o formulário de uma sessão nova, com
+data de hoje e a revisão travada.
+
+**O vínculo não depende do tipo.** Qualquer sessão pode cumprir um item da agenda — inclusive uma de
+**Estudo**. É isso que permite ter **uma sessão só**, do tipo estudo, cujas horas contam como
+revisão. Antes, marcar a revisão criava uma sessão de tipo *Revisão* ao lado da de *Estudo* que já
+existia, e ficavam duas com o mesmo nome.
 
 ### Trocar o tipo
 
