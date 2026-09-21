@@ -1,0 +1,7 @@
+{
+  "name": "revisor-conteudos-testes",
+  "private": true,
+  "description": "Suítes de teste da plataforma: rodam o index.html de verdade num DOM (jsdom).",
+  "scripts": { "test": "./rodar.sh" },
+  "dependencies": { "jsdom": "^30.0.1" }
+}

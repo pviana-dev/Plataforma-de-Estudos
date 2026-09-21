@@ -619,12 +619,15 @@ agenda: ela diz *o que* revisar e *quando*, não guarda horas.
 
 Cada sessão tem um **tipo**:
 
-- **Estudo** (padrão) — o que você já conhecia: gera o cronograma de revisões do conteúdo.
-- **Revisão** — cumpre uma revisão que estava agendada. **Não gera cronograma novo**, herda o
+- **Estudo — conteúdo novo ou continuação** (padrão): gera o plano do conteúdo (uma volta, se está em
+  andamento; a escada, se está concluído) e **pode fechar uma volta** quando você chega nela pela
+  agenda.
+- **Revisão — conteúdo que já fechei**: cumpre um item agendado. **Não gera cronograma novo**, herda o
   conteúdo da revisão (as etiquetas ficam travadas) e some com as caixas de integração, que não
   fazem sentido ali.
-- **Estudo/Revisão** — para o dia em que você revisou **e também viu conteúdo novo** na mesma
-  sentada. Funciona **exatamente como Revisão** (cumpre uma revisão agendada, marca a caixa dela,
+- **Estudo/Revisão — revisei e ainda vi conteúdo novo**: para o dia em que as duas coisas
+  aconteceram na mesma sentada. Com as fases, ele ficou para o caso de conteúdo **já fechado** — em
+  conteúdo aberto, continuar é *Estudo* fechando a volta. Funciona **exatamente como Revisão** (cumpre uma revisão agendada, marca a caixa dela,
   não gera plano próprio, as horas ficam na sessão): a diferença é **só o rótulo**, que aparece em
   *Hoje* e em *Sessões*. Internamente o tipo é `misto`, e nenhuma regra de comportamento testa
   `tipo === "revisao"` — tudo passa por `ehTipoRevisao`, justamente para o misto nunca divergir da
@@ -768,9 +771,12 @@ viu ou se continua de onde parou. A diferença é que, enquanto o conteúdo est�
 **não cresce** — crescer é para material já fechado.
 
 **Uma volta de cada vez.** Não adianta marcar cinco retornos de um assunto que você nem terminou de
-ver; o que serve é saber quando voltar da próxima. Feita a volta, a seguinte nasce dali. Isso também
-resolve a duplicação que existia: registrar outra sessão do mesmo assunto **move** a volta, em vez de
-abrir uma segunda fila.
+ver; o que serve é saber quando voltar da próxima. Feita a volta, a seguinte nasce dali.
+
+**Continuação.** Conteúdo grande leva várias sessões, e cada sessão é dona do próprio plano — sem
+cuidado, duas sessões do mesmo conteúdo marcariam duas voltas idênticas no mesmo dia. Havendo uma
+volta em aberto do mesmo conteúdo, ela **anda para a frente** e passa a pertencer à sessão nova, que
+é a que tem o contexto mais recente. Conteúdos **diferentes** continuam com voltas próprias.
 
 **De quanto em quanto tempo:** 1 dia se o conteúdo é difícil ou a taxa está abaixo de 60%, 4 dias se
 é tranquilo e você vai bem, 2 dias no resto — nunca mais que 7.
@@ -1047,6 +1053,25 @@ buraco de segurança. Daí duas consequências:
 
 **Firefox e Safari não têm essa API.** Lá o chip fica escondido e continua valendo o backup manual:
 **↓** exporta o `.json`, **↑** importa de volta. O painel explica isso quando não há suporte.
+
+## Os testes
+
+As suítes vivem em **`testes/`**, dentro do repositório — e é de propósito: elas moravam numa pasta
+temporária e o sistema apagou três delas numa limpeza do `/tmp`. Agora o git protege.
+
+```
+cd testes && ./rodar.sh          # todas
+cd testes && ./rodar.sh fases    # só as que casam com "fases"
+```
+
+São **64 suítes** que abrem o `index.html` **de verdade** num DOM (jsdom), clicam nos botões e
+conferem o resultado — nada de testar funções isoladas. Cada uma imprime `ok` por asserção e sai com
+código diferente de zero se alguma falhar. O `rodar.sh` instala o jsdom na primeira execução.
+
+**Uma lição registrada aqui:** as suítes calculavam "hoje" com `toISOString()`, que devolve a data em
+**UTC**, enquanto o app usa data **local**. Depois das 21h em UTC−3 as duas divergiam e **34 suítes
+quebravam sozinhas**, sem nenhuma mudança no código. Todas passaram a calcular a data local, do mesmo
+jeito que o `D.iso` do app.
 
 ## Cor com função
 

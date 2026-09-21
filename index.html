@@ -1299,6 +1299,16 @@ function diasDaVolta(dificuldade, taxa){
 }
 /** a revisão é uma volta (conteúdo aberto) ou revisão de verdade? */
 const ehRetomada = rev => !!rev && !!rev.retomada;
+/** a volta em aberto de OUTRA sessão do mesmo conteúdo (é ela que anda, em vez de duplicar) */
+function voltaEmAberto(reg){
+  const chave = chaveSessao(reg);
+  return db.revisoes.find(r => {
+    if (r.feita || r.manual || !ehRetomada(r) || !r.registroId || r.registroId === reg.id) return false;
+    if (r.id === reg.revisaoId) return false;          // é a volta que esta sessão está fechando
+    const dono = acharRegistro(r.registroId);
+    return !!dono && conteudoAberto(dono) && chaveSessao(dono) === chave;
+  }) || null;
+}
 const ROTULO_PLANO = { grupo: "integrado", sem: "sem revisão", manual: "revisão manual" };
 
 function gerarRevisoes(reg, opcoes){
@@ -1334,6 +1344,13 @@ function gerarRevisoes(reg, opcoes){
     const quando = D.soma(partida, diasDaVolta(dificuldadeDe(reg), est0.taxa));
     if (quando > ultimoDiaRevisao()) return;
     if (mantidas.some(r => r.data === quando)) return;
+    /* CONTINUAÇÃO. Conteúdo grande leva várias sessões, e cada sessão é dona do
+       próprio plano — sem isto, duas sessões do mesmo conteúdo marcariam duas
+       voltas idênticas no mesmo dia. Havendo uma volta em aberto do mesmo
+       conteúdo, ela ANDA para a frente e passa a pertencer à sessão nova, que
+       é a que tem o contexto mais recente.                                   */
+    const irma = voltaEmAberto(reg);
+    if (irma){ irma.registroId = reg.id; irma.data = quando; return; }
     db.revisoes.push({ id: uid(), registroId: reg.id, data: quando, ordem: mantidas.length + 1,
                        retomada: true, feita: false, feitaEm: null, minutos: null, questoes: null,
                        acertos: null, dificuldade: null, atividade: "", nota: "", manual: false });
@@ -2532,10 +2549,15 @@ function campoTipoSessao(v, ed){
     travado   ? "sessão de outro dia não vira revisão — só as de hoje" : "",
     semEstudo ? "estudo/revisão só volta a ser revisão: ela cumpre uma revisão que já está marcada" : ""
   ].filter(Boolean);
+  /* Os três tipos respondem "o que eu fiz nesta sessão" — e só isso. Se o
+     CONTEÚDO está aberto ou fechado é outra pergunta, que a fase responde.
+     Os rótulos dizem quando cada um cabe, porque com as fases o caminho comum
+     mudou: conteúdo aberto se continua com Estudo, fechando a volta.        */
   return '<div class="campo largo"><span>Esta sessão é *</span><div class="opcoes">' +
-    opcao("estudo",  "Estudo",                      (travado && atual !== "estudo") || semEstudo) +
-    opcao("revisao", "Revisão de algo já estudado", travado && atual === "estudo") +
-    opcao("misto",   "Estudo/Revisão — revisei e também vi conteúdo novo",
+    opcao("estudo",  "Estudo — conteúdo novo ou continuação",
+                     (travado && atual !== "estudo") || semEstudo) +
+    opcao("revisao", "Revisão — conteúdo que já fechei", travado && atual === "estudo") +
+    opcao("misto",   "Estudo/Revisão — revisei e ainda vi conteúdo novo",
                      travado && atual === "estudo") +
     (avisos.length ? '<span class="dica-fmt">'+esc(avisos.join(" · "))+'</span>' : '') +
     '</div><div id="painelRevisao">' + htmlPainelRevisao(v, ed) + '</div></div>';
@@ -4306,6 +4328,9 @@ function enviarRegistro(ev){
     db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id);   // o plano dela deixa de existir
     if (grupoAntes){ delete reg.grupoId; }                            // e ela sai do grupo
   }
+  // o vínculo é declarado ANTES de gerar o plano: a volta que esta sessão vem
+  // fechar não pode ser confundida com a volta em aberto que a continuação move
+  if (revAlvo) reg.revisaoId = revAlvo.id;
   salvarRegistro(reg);
   // vínculo com a revisão: marca a caixa dela, ou solta se deixou de ser revisão
   const salvo = acharRegistro(reg.id);
