@@ -32,11 +32,14 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      cabecalhos.indexOf("Tipo")===cabecalhos.indexOf("Revisões")-1, cabecalhos);
   ok("e a última coluna é a da ação", cabecalhos[cabecalhos.length-1]==="", cabecalhos);
   const linha=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
-  ok("cada sessão tem o botão de continuar",
+  ok("sessão de outro dia tem o botão de continuar",
      !!linha.querySelector('[data-acao="continuar-sessao"]'),
      [...linha.querySelectorAll("td")].map(td=>td.className));
   ok("o botão fica na última célula",
      [...linha.querySelectorAll("td")].pop().querySelector('[data-acao="continuar-sessao"]') !== null);
+  ok("a coluna de conteúdos é a que absorve o espaço",
+     /\.tab-sessoes \.col-larga\{width:100%\}/.test(html) &&
+     /\.tab-sessoes \.col-curta\{width:1%;white-space:nowrap\}/.test(html));
 
   /* ---- continuar abre a sessão de hoje já preenchida ---- */
   click(linha.querySelector('[data-acao="continuar-sessao"]')); await espera(450);
@@ -64,10 +67,17 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   ok("e o agendamento não duplica: uma volta só",
      d.revisoes.filter(r=>!r.feita).length===1, d.revisoes.map(r=>[r.registroId,r.data]));
 
-  /* ---- sessão de hoje: continuar leva para ela, em vez de criar outra ---- */
+  /* ---- sessão de HOJE não tem o botão: continuar nela é somar horas ali ---- */
   w=abrir(base({registros:[sess("r1"), sess("r2",{data:hoje,minutos:30})]})); await espera(450);
   doc=w.document; $=s=>doc.querySelector(s);
-  const l1=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
+  const deHoje=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r2");
+  const deOntem=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
+  ok("a sessão de hoje NÃO traz o botão", !deHoje.querySelector('[data-acao="continuar-sessao"]'),
+     [...deHoje.querySelectorAll("td")].pop().innerHTML);
+  ok("e a de outro dia continua trazendo", !!deOntem.querySelector('[data-acao="continuar-sessao"]'));
+
+  /* ---- continuar a partir de uma sessão antiga, havendo uma de hoje ---- */
+  const l1=deOntem;
   l1.querySelector('[data-acao="continuar-sessao"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(450);
   ok("havendo sessão de hoje do mesmo conteúdo, ela é que abre",

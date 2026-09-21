@@ -415,8 +415,14 @@ descrição que separa uma sessão da outra.
   passa a contar a partir desta sessão.
 - **Lembrete atrasado é dado por cumprido** ao salvar, como em qualquer sessão do conteúdo.
 
+O botão **só aparece em sessões de dias anteriores** — na sessão de hoje, continuar é somar horas
+nela mesma, e um botão ali só convidaria a criar uma segunda igual.
+
 A **coluna Tipo** mudou de lugar: ficou ao lado de *Revisões*, e a ponta direita da tabela passou a
-ser a coluna da ação.
+ser a coluna da ação. A distribuição das larguras também mudou: as colunas de dado curto (data,
+disciplina, tempo, dificuldade, tipo, revisões) ficam **do tamanho do próprio conteúdo** e a coluna
+de **Conteúdos** absorve o que sobra. Antes o espaço era repartido por igual, o que espremia as
+colunas e deixava um vão grande antes da última.
 
 ### Trocar o conteúdo de uma revisão
 

@@ -263,8 +263,14 @@ tbody tr:not(.sep-dia):hover{background:var(--accent-soft)}
 tbody tr.linha-clicavel{cursor:pointer}
 /* coluna Tipo: alinhada ao cabeçalho, com folga na margem — "estudo/revisão"
    é longo e antes ficava espremido na borda direita da tabela */
-.col-tipo{text-align:left;white-space:nowrap;padding-right:14px}
-.col-acao{text-align:right;white-space:nowrap;width:1%}
+/* Distribuição da tabela de Sessões: as colunas de dado curto ficam do
+   tamanho do conteúdo delas (width:1% + nowrap é o truque) e a de CONTEÚDOS
+   absorve o que sobra. Sem isso, a tabela espalhava o espaço igualmente e
+   sobrava um vão enorme antes da última coluna. */
+.col-tipo{text-align:left;white-space:nowrap}
+.col-acao{text-align:left;white-space:nowrap;width:1%;padding-left:4px}
+.tab-sessoes .col-curta{width:1%;white-space:nowrap}
+.tab-sessoes .col-larga{width:100%}
 .tab-rolagem{overflow-x:auto}
 tr.sep-dia td{background:var(--surface-2);font-size:12px;color:var(--text-2);font-weight:550;
   padding:6px 9px;border-bottom:1px solid var(--border);box-shadow:inset 3px 0 0 var(--accent)}
@@ -2569,10 +2575,11 @@ function telaHistorico(){
          db.registros.length + (db.registros.length === 1 ? " sessão registrada" : " sessões registradas"),
          "", "accent") + '</div>';
 
-  h += '<div class="tab-rolagem"><table><thead><tr>' +
-    '<th>Data</th><th>Disciplina</th><th>Assuntos</th><th class="num">Tempo</th>' +
-    '<th>Dificuldade</th><th class="col-tipo">Tipo</th><th>Revisões</th>' +
-    '<th></th></tr></thead><tbody>';
+  h += '<div class="tab-rolagem"><table class="tab-sessoes"><thead><tr>' +
+    '<th class="col-curta">Data</th><th class="col-curta">Disciplina</th>' +
+    '<th class="col-larga">Conteúdos</th><th class="num col-curta">Tempo</th>' +
+    '<th class="col-curta">Dificuldade</th><th class="col-tipo col-curta">Tipo</th>' +
+    '<th class="col-curta">Revisões</th><th class="col-acao"></th></tr></thead><tbody>';
   const emEdicao = ui.editandoRegistro;
   let ultimoDia = "";
   h += linhas.map(r => {
@@ -2598,21 +2605,24 @@ function telaHistorico(){
     }
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
       ' data-acao="editar-registro" data-id="'+r.id+'" title="Clique para abrir esta sessão">' +
-      '<td class="num">'+D.br(r.data)+'</td><td>'+esc(r.disciplina)+'</td>' +
-      '<td>'+esc(rotuloAssuntos(r)) +
+      '<td class="num col-curta">'+D.br(r.data)+'</td><td class="col-curta">'+esc(r.disciplina)+'</td>' +
+      '<td class="col-larga">'+esc(rotuloAssuntos(r)) +
         (r.anotacoes ? '<div class="pe" style="font-size:12px;color:var(--muted)">'+esc(r.anotacoes.slice(0,90))+(r.anotacoes.length>90?"…":"")+'</div>' : '') + '</td>' +
-      '<td class="num">'+(r.minutos ? hhmm(r.minutos) : "—") +
+      '<td class="num col-curta">'+(r.minutos ? hhmm(r.minutos) : "—") +
         (intervalosDe(r).length > 1
           ? '<div style="font-size:11px;color:var(--muted)">'+intervalosDe(r).length+' medições</div>' : '') +
         '</td>' +
-      '<td>'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
-      '<td class="col-tipo">'+badgeTipoSessao(r)+'</td>' +
-      '<td>'+rotuloRev+'</td>' +
+      '<td class="col-curta">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
+      '<td class="col-tipo col-curta">'+badgeTipoSessao(r)+'</td>' +
+      '<td class="col-curta">'+rotuloRev+'</td>' +
       /* Continuar o conteúdo dali: abre uma sessão de hoje com a mesma
          disciplina e os mesmos conteúdos. É o impulso que nasce olhando a
          sessão de terça — antes ele custava escolher tudo de novo. */
-      '<td class="col-acao"><button class="act" data-acao="continuar-sessao" data-id="'+r.id+'" ' +
-        'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ continuar</button></td></tr>';
+      // sessão de hoje não precisa de "continuar": continuar nela é somar horas ali
+      '<td class="col-acao">' + (r.data < D.hoje()
+        ? '<button class="act" data-acao="continuar-sessao" data-id="'+r.id+'" ' +
+          'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ continuar</button>'
+        : '') + '</td></tr>';
   }).join("");
   return h + '</tbody></table></div></div>';
 }
