@@ -511,6 +511,9 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
   background:var(--surface-2);padding:12px 13px;margin-bottom:16px}
 .grupo-rev:last-of-type{margin-bottom:4px}
 .grupo-rev.tem-atraso{border-left-color:var(--critico)}
+/* conteúdo ainda aberto: a barra lembra que ali a agenda é para voltar a estudar */
+.grupo-rev.aberto{border-left-style:dashed}
+.act.destaque{color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent)}
 .grupo-rev .cab{gap:9px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .grupo-rev .cab strong{font-size:14.5px;font-weight:600;letter-spacing:-.2px}
 .grupo-rev .item{margin-bottom:7px}
@@ -723,6 +726,13 @@ const CONFIG = {
   /* Quanto a dificuldade deixa o assunto ir fundo na escada: um assunto
      tranquilo não precisa das 9 revisões só porque há um ano de janela. */
   FOLGA_POR_DIFICULDADE: 4,
+
+  /* VOLTAS ao conteúdo ainda em andamento. Não é revisão: é continuar de onde
+     parou, então o intervalo NÃO cresce — crescer é para material já fechado.
+     Curto para o que está difícil, mais folgado para o que está indo bem. */
+  VOLTA_DIAS: { dificil: 1, normal: 2, facil: 4 },
+  VOLTA_TETO: 7,                        // nenhuma volta passa disso
+  AVISO_ABERTO_DIAS: 14,                // depois disso, o card sugere fechar o conteúdo
   ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na Revisão por assunto antes do "+"
   MAX_ANOTACAO: 2000,                   // caracteres por caixa de anotação (~2 KB por anotação)
 
@@ -899,6 +909,35 @@ function migrarIntegracoes(base){
   return antigos.map(r => r.id);
 }
 
+/* MIGRAÇÃO PARA AS FASES. O que já existia passa a "em andamento" — foi a
+   escolha feita: na prática, quase todo conteúdo que está no sistema ainda
+   está sendo estudado. Como conteúdo aberto tem UMA volta de cada vez, as
+   revisões automáticas ainda pendentes são reduzidas à mais próxima; as já
+   FEITAS e as criadas À MÃO continuam intocadas.
+   Devolve quantos conteúdos foram abertos, para a plataforma avisar uma vez. */
+function migrarFases(d){
+  if (d.fasesMigradas) return 0;
+  let abertos = 0;
+  const donos = [].concat(d.registros || [], d.grupos || []);
+  donos.forEach(alvo => { if (!alvo.fase){ alvo.fase = "andamento"; abertos++; } });
+  const pendentesDe = new Map();
+  (d.revisoes || []).forEach(r => {
+    if (r.feita || r.manual) return;
+    const dono = r.grupoId || r.registroId;
+    if (!dono) return;
+    const atual = pendentesDe.get(dono);
+    if (!atual || r.data < atual.data) pendentesDe.set(dono, r);
+  });
+  d.revisoes = (d.revisoes || []).filter(r => {
+    if (r.feita || r.manual) return true;
+    const dono = r.grupoId || r.registroId;
+    if (!dono) return true;
+    return pendentesDe.get(dono) === r;          // sobra só a volta mais próxima
+  });
+  d.revisoes.forEach(r => { if (!r.feita && !r.manual) r.retomada = true; });
+  d.fasesMigradas = true;
+  return abertos;
+}
 function carregar(){
   const base = estadoInicial();
   if (!temStorage) return { db: base, migrados: 0 };
@@ -915,7 +954,8 @@ function carregar(){
         grupos:    Array.isArray(d.grupos)    ? d.grupos    : [],
         lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
       });
-      return { db: carregado, migrados: 0, desintegrados: migrarIntegracoes(carregado) };
+      const abertos = migrarFases(carregado);
+      return { db: carregado, migrados: 0, desintegrados: migrarIntegracoes(carregado), abertos };
     } catch(e){ /* dado corrompido: começa limpo, sem apagar o original */ }
   }
   const migrados = migrarPrototipo(base);
@@ -1241,6 +1281,21 @@ function limparGrupos(){
    "sem"         → conteúdo de estudo diário: registra o tempo, mas não gera cronograma
    "manual"      → saiu de um grupo: nada é agendado automaticamente                    */
 const planoDe = reg => reg.plano || "individual";
+/* FASE DO CONTEÚDO. "andamento" (padrão) = você ainda está vendo aquilo pela
+   primeira vez; a agenda chama para VOLTAR ao assunto, uma volta de cada vez.
+   "concluido" = primeira passada fechada; aí começa a escada da repetição
+   espaçada, contada do dia em que você fechou.                              */
+const faseDe = alvo => (alvo && alvo.fase) === "concluido" ? "concluido" : "andamento";
+const conteudoAberto = alvo => faseDe(alvo) === "andamento";
+/** quantos dias até a próxima volta, num conteúdo ainda aberto */
+function diasDaVolta(dificuldade, taxa){
+  const dificil = dificuldade >= 4 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
+  const facil   = dificuldade <= 2 && (taxa === null || taxa >= CONFIG.TAXA_ATENCAO);
+  const dias = dificil ? CONFIG.VOLTA_DIAS.dificil : facil ? CONFIG.VOLTA_DIAS.facil : CONFIG.VOLTA_DIAS.normal;
+  return Math.min(dias, CONFIG.VOLTA_TETO);
+}
+/** a revisão é uma volta (conteúdo aberto) ou revisão de verdade? */
+const ehRetomada = rev => !!rev && !!rev.retomada;
 const ROTULO_PLANO = { grupo: "integrado", sem: "sem revisão", manual: "revisão manual" };
 
 function gerarRevisoes(reg, opcoes){
@@ -1266,6 +1321,23 @@ function gerarRevisoes(reg, opcoes){
   let partida = base < hoje ? hoje : base;                      // nunca agenda no passado
   const ultimaFeita = feitas.map(f => f.feitaEm || f.data).sort().pop();
   if (ultimaFeita && ultimaFeita > partida) partida = ultimaFeita;
+
+  /* CONTEÚDO AINDA ABERTO: uma volta de cada vez. Não adianta marcar cinco
+     retornos de um assunto que você nem terminou de ver — o que serve é saber
+     quando voltar da próxima vez. Feita a volta, a seguinte nasce dali.     */
+  if (conteudoAberto(reg)){
+    if (mantidas.some(r => !r.feita)) return;                   // já existe uma volta marcada à mão
+    const est0 = estatRegistro(reg);
+    const quando = D.soma(partida, diasDaVolta(dificuldadeDe(reg), est0.taxa));
+    if (quando > ultimoDiaRevisao()) return;
+    if (mantidas.some(r => r.data === quando)) return;
+    db.revisoes.push({ id: uid(), registroId: reg.id, data: quando, ordem: mantidas.length + 1,
+                       retomada: true, feita: false, feitaEm: null, minutos: null, questoes: null,
+                       acertos: null, dificuldade: null, atividade: "", nota: "", manual: false });
+    return;
+  }
+  // conteúdo fechado: a escada conta do dia em que você fechou
+  if (reg.concluidoEm && reg.concluidoEm > partida) partida = reg.concluidoEm;
 
   const limite = ultimoDiaRevisao();
   const dias = D.dif(partida, limite);                          // janela que ainda resta
@@ -1322,6 +1394,20 @@ function gerarRevisoesGrupo(gid, opcoes){
   const est = uniao.map(a => estatAssunto(disc, a));
   const taxa = est.reduce((m,e) => e.taxa === null ? m : (m === null ? e.taxa : Math.min(m, e.taxa)), null);
   const dificuldade = Math.max.apply(null, regs.map(dificuldadeDe));
+
+  /* Grupo aberto = uma volta de cada vez, igual ao conteúdo solto. O grupo só
+     está fechado quando VOCÊ o fecha — se um membro ainda está aberto, ele está. */
+  if (conteudoAberto(grupo) || regs.some(conteudoAberto)){
+    if (cards.some(r => !r.feita)) return;                      // já há uma volta marcada
+    const quando = D.soma(partida, diasDaVolta(dificuldade, taxa));
+    if (quando > limite || cards.some(r => r.data === quando)) return;
+    db.revisoes.push({ id: uid(), registroId: null, grupoId: gid, disciplina: disc, assuntos: uniao,
+                       integrada: true, retomada: true,
+                       data: quando, ordem: cards.length + 1, feita: false, feitaEm: null, minutos: null,
+                       questoes: null, acertos: null, dificuldade: null, atividade: "", nota: "", manual: false });
+    return;
+  }
+  if (grupo.concluidoEm && grupo.concluidoEm > partida) partida = grupo.concluidoEm;
   const alvo = numeroDeRevisoes(dificuldade, taxa, D.dif(partida, limite));
   const faltam = Math.max(0, alvo - cards.length);
   if (!faltam) return;
@@ -1429,13 +1515,15 @@ function chaveCard(rev){
 function nomeRevisao(rev){
   const proprio = (rev.rotulo || "").trim();
   if (proprio) return proprio;
+  if (ehRetomada(rev)) return "Retomar";      // conteúdo aberto: voltar, não revisar
   const n = ordemVisivel(rev);
   return n ? "Revisão " + n : "Revisão";
 }
 /** Número mostrado: a ordem é sempre por data, então a revisão mais próxima é a nº 1. */
 function ordemVisivel(rev){
+  if (ehRetomada(rev)) return 0;              // volta não ocupa número de revisão
   const k = chaveCard(rev);
-  const irmas = db.revisoes.filter(r => chaveCard(r) === k)
+  const irmas = db.revisoes.filter(r => chaveCard(r) === k && !ehRetomada(r))
     .sort((a,b) => a.data.localeCompare(b.data) || String(a.id).localeCompare(String(b.id)));
   const i = irmas.findIndex(r => r.id === rev.id);
   return i >= 0 ? i + 1 : (rev.ordem || 1);
@@ -2217,7 +2305,8 @@ function formRegistroHtml(){
   const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   const pre = !ed && ui.prefill ? ui.prefill : null;
   let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"", dificuldade:3, anotacoes:"" };
-  if (ehTipoRevisao(base.tipo) && base.revisaoId && !base.assuntos.length){
+  if (base.revisaoId && !base.assuntos.length &&
+      (ehTipoRevisao(base.tipo) || ehRetomada(acharRevisao(base.revisaoId)))){
     const ctxPre = contextoRevisao(acharRevisao(base.revisaoId) || {});
     if (ctxPre) base = Object.assign({}, base, { disciplina: ctxPre.disciplina, assuntos: ctxPre.assuntos.slice() });
   }
@@ -2457,7 +2546,10 @@ function revisoesDisponiveis(v, ed){
     .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
 }
 function htmlPainelRevisao(v, ed){
-  if (!ehTipoRevisao(v.tipo)) return "";
+  const alvoRetomada = (v.revisaoId || (ed && ed.revisaoId)) &&
+                       ehRetomada(acharRevisao(v.revisaoId || (ed && ed.revisaoId)));
+  // volta de conteúdo aberto: a sessão é de estudo e mesmo assim fecha a volta
+  if (!ehTipoRevisao(v.tipo) && !alvoRetomada) return "";
   const atual = (ed && ed.revisaoId) || v.revisaoId || "";
   const lista = revisoesDisponiveis(v, ed);
   const opcoes = '<option value=""'+(atual ? "" : " selected")+'>Escolha a revisão…</option>' +
@@ -2490,7 +2582,16 @@ function htmlPainelRevisao(v, ed){
 function campoIntegracao(v){
   const g = grupoDe(v);
   const alvo = g ? "g:" + g.id : "";
-  return '<div class="campo largo"><span>Revisões</span><div class="opcoes">' +
+  const aberto = conteudoAberto(v.id ? (acharRegistro(v.id) || v) : v);
+  return '<div class="campo largo"><span>Este conteúdo já acabou?</span><div class="opcoes">' +
+    '<label class="opcao"><input type="radio" name="fase" value="andamento"'+(aberto ? " checked" : "")+'>' +
+      '<span>Ainda não terminei</span></label>' +
+    '<label class="opcao"><input type="radio" name="fase" value="concluido"'+(aberto ? "" : " checked")+'>' +
+      '<span>Terminei — pode revisar</span></label>' +
+    '<span class="ajuda-campo">Enquanto não termina, a agenda marca <b>uma volta de cada vez</b> para você ' +
+    'continuar de onde parou. Ao terminar, começa a repetição espaçada (D+1, 3, 7, 16…) a partir daquele dia.</span>' +
+    '</div></div>' +
+    '<div class="campo largo"><span>Revisões</span><div class="opcoes">' +
     '<label class="opcao"><input type="checkbox" name="integrado" id="cxIntegrado"'+(g ? " checked" : "")+'>' +
       '<span>Integrar com outro conteúdo</span></label>' +
     '<select name="grupoAlvo" id="grupoAlvo" class="sel-grupo"'+(g ? "" : " hidden")+'>' +
@@ -2958,12 +3059,23 @@ function telaRevisoes(){
   const visiveis = ui.verTodosAssuntos ? ordenados : ordenados.slice(0, CONFIG.ASSUNTOS_VISIVEIS);
   h += visiveis.map(({g, est, temAtraso}) => {
     const itens = g.itens.slice().sort((a,b) => a.rev.data.localeCompare(b.rev.data));
-    return '<div class="grupo-rev'+(temAtraso ? " tem-atraso" : "")+'">' +
+    // o dono do card diz a fase: aberto = voltas; fechado = escada de revisões
+    const dono = donoDaRevisao(g.itens[0].rev);
+    const aberto = conteudoAberto(dono);
+    const desde = dono ? D.dif(dono.concluidoEm || dono.data || D.hoje(), D.hoje()) : 0;
+    return '<div class="grupo-rev'+(temAtraso ? " tem-atraso" : "")+(aberto ? " aberto" : "")+'">' +
       '<div class="linha cab"><strong>'+esc(g.assunto)+'</strong>' +
       (g.integrada ? '<span class="badge b-bom">plano integrado</span><span class="badge">'+esc(g.sub)+'</span>'
                    : '<span class="badge">'+esc(g.disciplina)+'</span>') +
+      (aberto ? '<span class="badge b-misto" title="A agenda está chamando para voltar ao assunto, não para revisar">' +
+                'em andamento' + (desde >= CONFIG.AVISO_ABERTO_DIAS ? ' · há ' + desde + ' dias' : '') + '</span>' : '') +
       (temAtraso ? '<span class="badge b-critico">tem atraso</span>' : '') +
       '<span class="spacer"></span>' +
+      (dono ? '<button class="act'+(aberto && desde >= CONFIG.AVISO_ABERTO_DIAS ? " destaque" : "")+'" ' +
+              'data-acao="'+(aberto ? "concluir-conteudo" : "reabrir-conteudo")+'" data-dono="'+esc(dono.id)+'" ' +
+              'title="'+(aberto ? "A primeira passada acabou: começa a repetição espaçada"
+                                : "Voltar a estudar este conteúdo do zero")+'">' +
+              (aberto ? "✓ terminei este conteúdo" : "↩ reabrir conteúdo") + '</button>' : '') +
       '<button class="act" data-acao="nova-revisao" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.ctx.assuntos.join("|"))+'">+ revisão</button>' +
       '<button class="act" data-acao="editar-card" data-card="'+esc(g.chave)+'">✎ editar card</button>' +
       '<button class="act" data-acao="ver-erros" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.primeiro)+'">pontos importantes →</button></div>' +
@@ -4067,7 +4179,8 @@ function enviarRegistro(ev){
   const questoes = num(dado.questoes), acertos = num(dado.acertos);
   const tipo = TIPOS_SESSAO[dado.tipo] ? dado.tipo : "estudo";
   const anterior0 = anteriorId ? acharRegistro(anteriorId) : null;
-  const revAlvo = ehTipoRevisao(tipo) ? acharRevisao(dado.revisaoAlvo || "") : null;
+  const escolhida = acharRevisao(dado.revisaoAlvo || "");
+  const revAlvo = (ehTipoRevisao(tipo) || ehRetomada(escolhida)) ? escolhida : null;
   const ctxRev = revAlvo ? contextoRevisao(revAlvo) : null;
   if (ehTipoRevisao(tipo) && !revAlvo){
     erro.textContent = "Escolha qual revisão esta sessão cumpre (ou registre como estudo)."; return;
@@ -4076,8 +4189,9 @@ function enviarRegistro(ev){
   if (anterior0 && anterior0.tipo === "misto" && tipo === "estudo"){
     erro.textContent = "Uma sessão de estudo/revisão só pode voltar a ser revisão — ela cumpre uma revisão marcada."; return;
   }
-  const listaAssuntos = ehTipoRevisao(tipo) ? (ctxRev ? ctxRev.assuntos.slice() : []) : lerAssuntosForm(f);
-  const disciplina = ehTipoRevisao(tipo) ? (ctxRev ? ctxRev.disciplina : "") : lerDisciplina(f);
+  const herda = ehTipoRevisao(tipo) && ctxRev;      // revisão de verdade: conteúdo travado
+  const listaAssuntos = herda ? ctxRev.assuntos.slice() : lerAssuntosForm(f);
+  const disciplina = herda ? ctxRev.disciplina : lerDisciplina(f);
   if (!disciplina){ erro.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
   if (!listaAssuntos.length){ erro.textContent = "Adicione ao menos um assunto."; return; }
   if (anterior0 && anterior0.tipo === "estudo" && ehTipoRevisao(tipo)){
@@ -4139,6 +4253,14 @@ function enviarRegistro(ev){
     criadoEm: anterior ? anterior.criadoEm : Date.now()
   });
   if (anterior && anterior.revisaoId) reg.revisaoId = anterior.revisaoId;
+  // fase do conteúdo: sessão nova nasce em andamento; fechar aqui dá partida na escada
+  const faseEscolhida = dado.fase === "concluido" ? "concluido" : "andamento";
+  const faseAntes = anterior ? faseDe(anterior) : "andamento";
+  reg.fase = faseEscolhida;
+  if (faseEscolhida === "concluido"){
+    reg.concluidoEm = (anterior && anterior.concluidoEm && faseAntes === "concluido")
+                      ? anterior.concluidoEm : D.hoje();
+  } else delete reg.concluidoEm;
   if (dado.inicio) { reg.inicio = dado.inicio; reg.fim = dado.fim || ""; }
   else if (anterior && anterior.inicio) { reg.inicio = anterior.inicio; reg.fim = anterior.fim; }
   // integrar / desintegrar: desmarcar NÃO recria o plano individual (passa a ser manual)
@@ -4184,8 +4306,13 @@ function enviarRegistro(ev){
   salvarRegistro(reg);
   // vínculo com a revisão: marca a caixa dela, ou solta se deixou de ser revisão
   const salvo = acharRegistro(reg.id);
-  if (ehTipoRevisao(tipo) && revAlvo) ligarSessaoRevisao(salvo, revAlvo);
+  if (revAlvo) ligarSessaoRevisao(salvo, revAlvo);
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
+  // trocou de fase: o plano inteiro é refeito na régua nova
+  if (faseAntes !== faseEscolhida){
+    const atual = acharRegistro(reg.id);
+    if (faseEscolhida === "concluido") concluirConteudo(atual); else reabrirConteudo(atual);
+  }
   if (anterior) propagarRenomeacao(disciplina, assuntosDe(anterior), listaAssuntos);
   if (grupoAntes && grupoAntes !== gid) gerarRevisoesGrupo(grupoAntes);   // o grupo antigo perdeu esta sessão
   outrosGrupos.forEach(id => { if (id !== gid) gerarRevisoesGrupo(id); });
@@ -4259,7 +4386,7 @@ function fecharModal(){
    tipo Revisão e ela escolhida — as horas passam a morar num lugar só.       */
 function registrarRevisao(rev){
   if (!rev) return;
-  ui.prefill = { data: D.hoje(), tipo: "revisao", revisaoId: rev.id,
+  ui.prefill = { data: D.hoje(), tipo: ehRetomada(rev) ? "estudo" : "revisao", revisaoId: rev.id,
                  disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
                  dificuldade: 3, anotacoes: "" };
   ui.aba = "registros"; ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
@@ -4322,6 +4449,35 @@ function salvarPosProva(){
   toast(escolha === "encerrei" ? "Agendamento encerrado — nada foi apagado."
        : escolha === "outra"   ? "Nova prova em " + D.brFull(nova) + " — cronograma refeito."
                                : "Estudo contínuo — revisões em intervalos crescentes.");
+}
+
+/* FECHAR E REABRIR UM CONTEÚDO. Fechar é o que dá partida na repetição
+   espaçada: a escada passa a contar do dia de hoje. As voltas já feitas não
+   somem — elas foram sessões de estudo, com tempo e questões registrados. */
+function concluirConteudo(alvo){
+  if (!alvo) return;
+  alvo.fase = "concluido";
+  alvo.concluidoEm = D.hoje();
+  // a volta que estava marcada some: no lugar dela entra a escada
+  db.revisoes = db.revisoes.filter(r => !(ehRetomada(r) && !r.feita &&
+                                          (r.registroId === alvo.id || r.grupoId === alvo.id)));
+  if (alvo.nome !== undefined) gerarRevisoesGrupo(alvo.id, { base: D.hoje() });   // é um grupo
+  else gerarRevisoes(alvo, { base: D.hoje() });
+}
+function reabrirConteudo(alvo){
+  if (!alvo) return;
+  alvo.fase = "andamento";
+  delete alvo.concluidoEm;
+  // as revisões automáticas ainda pendentes voltam a ser uma volta só
+  db.revisoes = db.revisoes.filter(r => r.feita || r.manual ||
+                                        (r.registroId !== alvo.id && r.grupoId !== alvo.id));
+  if (alvo.nome !== undefined) gerarRevisoesGrupo(alvo.id, { base: D.hoje() });
+  else gerarRevisoes(alvo, { base: D.hoje() });
+}
+/** o conteúdo (sessão ou grupo) a que uma revisão pertence */
+function donoDaRevisao(rev){
+  if (!rev) return null;
+  return rev.grupoId ? acharGrupo(rev.grupoId) : acharRegistro(rev.registroId);
 }
 
 /* Mudou o horizonte (prova, teto ou religar): todo mundo é replanejado. As
@@ -4957,6 +5113,19 @@ document.addEventListener("click", ev => {
     case "add-membro": adicionarMembroGrupo(alvo); return;
     case "remover-membro": removerMembroGrupo(alvo); return;
     case "editar-card": abrirEditorCard(alvo.dataset.card); break;
+    case "concluir-conteudo": {
+      const dono = acharRegistro(alvo.dataset.dono) || acharGrupo(alvo.dataset.dono);
+      if (!dono) break;
+      concluirConteudo(dono); persistir(); render();
+      toast("Conteúdo fechado — as revisões começam a partir de hoje.");
+      break; }
+    case "reabrir-conteudo": {
+      const dono = acharRegistro(alvo.dataset.dono) || acharGrupo(alvo.dataset.dono);
+      if (!dono) break;
+      if (!confirm("Reabrir este conteúdo? As revisões pendentes viram uma volta só, e a escada recomeça quando você fechar de novo.")) break;
+      reabrirConteudo(dono); persistir(); render();
+      toast("Conteúdo reaberto — a agenda volta a chamar para estudar.");
+      break; }
     case "salvar-card": salvarCard(); break;
     case "remover-assunto": {
       const t = alvo.closest(".tag"); if (t) t.remove();
@@ -5154,6 +5323,11 @@ if (!temStorage) $("#avisoStorage").hidden = false;
 render();
 // a prova passou e ninguém disse o que fazer: pergunta uma vez
 if (precisaPerguntarPosProva()) modalPosProva();
+if (inicio.abertos){
+  persistir();
+  toast(inicio.abertos + " conteúdo(s) passaram a “em andamento” — a agenda agora chama para voltar ao assunto. " +
+        "Marque “terminei” quando fechar cada um.");
+}
 iniciarArquivo();                 // religa o .json escolhido antes, se houver
 iniciarNuvem();                   // e a conta da nuvem, se houver sessão salva
 // voltou a ter conexão: sobe o que ficou pendente
