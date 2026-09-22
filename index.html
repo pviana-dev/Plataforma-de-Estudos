@@ -276,7 +276,7 @@ tbody tr.linha-clicavel{cursor:pointer}
 .tab-sessoes .col-nowrap{white-space:nowrap}
 .tab-sessoes .col-larga{width:100%;min-width:26ch}
 .tab-sessoes .col-curta .badge{white-space:normal}     /* etiqueta em duas linhas, se precisar */
-.tab-sessoes .col-rev{max-width:11ch}
+.tab-sessoes .col-rev{white-space:nowrap}      /* com a dificuldade fora, a etiqueta cabe numa linha */
 .tab-sessoes th.col-curta{white-space:normal}          /* "Dificuldade" pode quebrar no cabeçalho */
 .tab-sessoes .col-larga .pe{white-space:normal;line-height:1.45}
 .tab-rolagem{overflow-x:auto}
@@ -2586,7 +2586,7 @@ function telaHistorico(){
   h += '<div class="tab-rolagem"><table class="tab-sessoes"><thead><tr>' +
     '<th class="col-curta col-nowrap">Data</th><th class="col-curta">Disciplina</th>' +
     '<th class="col-larga">Conteúdos</th><th class="num col-curta col-nowrap">Tempo</th>' +
-    '<th class="col-curta">Dificul&shy;dade</th><th class="col-tipo col-curta col-nowrap">Tipo</th>' +
+    '<th class="col-tipo col-curta col-nowrap">Tipo</th>' +
     '<th class="col-curta col-rev">Revisões</th><th class="col-acao"></th></tr></thead><tbody>';
   const emEdicao = ui.editandoRegistro;
   let ultimoDia = "";
@@ -2608,7 +2608,7 @@ function telaHistorico(){
     let sep = "";
     if (r.data !== ultimoDia && (ui.fOrdem === "data-desc" || ui.fOrdem === "data-asc")){
       ultimoDia = r.data;
-      sep = '<tr class="sep-dia"><td colspan="8">'+esc(D.semana(r.data))+' · '+D.brFull(r.data) +
+      sep = '<tr class="sep-dia"><td colspan="7">'+esc(D.semana(r.data))+' · '+D.brFull(r.data) +
             ' <span class="meta">'+hhmm(minutosDoDia(r.data))+' no dia</span></td></tr>';
     }
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
@@ -2621,7 +2621,9 @@ function telaHistorico(){
         (intervalosDe(r).length > 1
           ? '<div style="font-size:11px;color:var(--muted)">'+intervalosDe(r).length+' medições</div>' : '') +
         '</td>' +
-      '<td class="col-curta">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
+      /* Dificuldade saiu da lista: é um dado de ajuste, não de leitura rápida —
+         continua no formulário da sessão, onde se define. O espaço foi para a
+         coluna de revisões, que estava quebrando feio em duas linhas. */
       '<td class="col-tipo col-curta col-nowrap">'+badgeTipoSessao(r)+'</td>' +
       '<td class="col-curta col-rev">'+rotuloRev+'</td>' +
       /* Continuar o conteúdo dali: abre uma sessão de hoje com a mesma

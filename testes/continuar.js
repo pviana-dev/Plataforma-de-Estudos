@@ -44,12 +44,15 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      /\.tab-sessoes \.col-curta \.badge\{white-space:normal\}/.test(html) &&
      /\.tab-sessoes \.col-nowrap\{white-space:nowrap\}/.test(html));
   const cel=[...linha.querySelectorAll("td")];
+  ok("a coluna de dificuldade saiu da lista",
+     !cabecalhos.includes("Dificuldade") && !cabecalhos.some(c=>/Dificul/.test(c)), cabecalhos);
+  ok("sobraram sete colunas", cel.length===7, cel.map(c=>c.className));
   ok("data, tempo e tipo não quebram",
      cel[0].className.includes("col-nowrap") && cel[3].className.includes("col-nowrap") &&
-     cel[5].className.includes("col-nowrap"), cel.map(c=>c.className));
-  ok("disciplina, dificuldade e revisões podem quebrar",
-     !cel[1].className.includes("col-nowrap") && !cel[4].className.includes("col-nowrap") &&
-     !cel[6].className.includes("col-nowrap"), cel.map(c=>c.className));
+     cel[4].className.includes("col-nowrap"), cel.map(c=>c.className));
+  ok("disciplina pode quebrar", !cel[1].className.includes("col-nowrap"), cel[1].className);
+  ok("e revisões volta a caber numa linha",
+     /\.tab-sessoes \.col-rev\{white-space:nowrap\}/.test(html));
 
   /* ---- continuar abre a sessão de hoje já preenchida ---- */
   click(linha.querySelector('[data-acao="continuar-sessao"]')); await espera(450);
