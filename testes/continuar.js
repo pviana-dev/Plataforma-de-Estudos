@@ -28,8 +28,10 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   let doc=w.document, $=s=>doc.querySelector(s);
   const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   const cabecalhos=[...doc.querySelectorAll("#view thead th")].map(t=>t.textContent.trim());
-  ok("Tipo ficou ao lado de Revisões",
-     cabecalhos.indexOf("Tipo")===cabecalhos.indexOf("Revisões")-1, cabecalhos);
+  ok("as colunas são data, disciplina, conteúdos, tempo, dificuldade, tipo e ação",
+     cabecalhos.length===7 && /Dificul/.test(cabecalhos[4]) && cabecalhos[5]==="Tipo",
+     cabecalhos);
+  ok("a coluna de revisões saiu da lista", !cabecalhos.includes("Revisões"), cabecalhos);
   ok("e a última coluna é a da ação", cabecalhos[cabecalhos.length-1]==="", cabecalhos);
   const linha=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1");
   ok("sessão de outro dia tem o botão de continuar",
@@ -44,15 +46,28 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      /\.tab-sessoes \.col-curta \.badge\{white-space:normal\}/.test(html) &&
      /\.tab-sessoes \.col-nowrap\{white-space:nowrap\}/.test(html));
   const cel=[...linha.querySelectorAll("td")];
-  ok("a coluna de dificuldade saiu da lista",
-     !cabecalhos.includes("Dificuldade") && !cabecalhos.some(c=>/Dificul/.test(c)), cabecalhos);
   ok("sobraram sete colunas", cel.length===7, cel.map(c=>c.className));
   ok("data, tempo e tipo não quebram",
      cel[0].className.includes("col-nowrap") && cel[3].className.includes("col-nowrap") &&
-     cel[4].className.includes("col-nowrap"), cel.map(c=>c.className));
-  ok("disciplina pode quebrar", !cel[1].className.includes("col-nowrap"), cel[1].className);
-  ok("e revisões volta a caber numa linha",
-     /\.tab-sessoes \.col-rev\{white-space:nowrap\}/.test(html));
+     cel[5].className.includes("col-nowrap"), cel.map(c=>c.className));
+  ok("disciplina e dificuldade podem quebrar",
+     !cel[1].className.includes("col-nowrap") && !cel[4].className.includes("col-nowrap"),
+     [cel[1].className, cel[4].className]);
+
+  /* ---- os sinais de plano acompanham o nome do conteúdo ---- */
+  const wSem=abrir(base({registros:[sess("r1",{plano:"sem"})]}));
+  await espera(450);
+  // a linha do separador de dia vem antes: pegar a célula da sessão, não dela
+  const linhaSem=[...wSem.document.querySelectorAll("tbody tr[data-id]")][0];
+  const celConteudo=[...linhaSem.querySelectorAll("td")][2];
+  ok("sessão sem cronograma avisa junto do conteúdo",
+     /sem revisão/.test(celConteudo.textContent), celConteudo.textContent.replace(/\s+/g," "));
+  const wNormal=abrir(base({registros:[sess("r9")]}));
+  await espera(450);
+  const linhaOk=[...wNormal.document.querySelectorAll("tbody tr[data-id]")][0];
+  ok("e a sessão comum não ganha etiqueta nenhuma ali",
+     ![...linhaOk.querySelectorAll("td")][2].querySelector(".badge"),
+     [...linhaOk.querySelectorAll("td")][2].innerHTML);
 
   /* ---- continuar abre a sessão de hoje já preenchida ---- */
   click(linha.querySelector('[data-acao="continuar-sessao"]')); await espera(450);
