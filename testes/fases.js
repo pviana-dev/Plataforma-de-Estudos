@@ -27,8 +27,9 @@ function porConteudo(doc, w, nome){
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
 const sess=(id,extra)=>Object.assign({id,data:hoje,disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",
-  minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",tipo:"estudo",criadoEm:1},extra||{});
+  minutos:60,questoes:0,acertos:0,dificuldade:2,anotacoes:"",tipo:"estudo",criadoEm:1},extra||{});   // 2 = médio
 const seedBase=extra=>Object.assign({versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
+  dificuldadesMigradas:true,                 // os seeds já usam a escala de três níveis
   disciplinas:["Legislação"],grupos:[],lancamentos:[],registros:[],revisoes:[],erros:[],cronometro:null},extra||{});
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
@@ -73,10 +74,10 @@ async function gravarSessao(w){
      w.document.querySelector(".grupo-rev .item .titulo").textContent);
 
   /* ---- 2. dificuldade encurta a volta ---- */
-  w=abrir(seedBase({registros:[sess("r1",{dificuldade:5})]})); await espera(400);
+  w=abrir(seedBase({registros:[sess("r1",{dificuldade:3})]})); await espera(400);   // difícil
   await gravarSessao(w);
   ok("conteúdo difícil chama de volta no dia seguinte", off(w)[0]===1, off(w));
-  w=abrir(seedBase({registros:[sess("r1",{dificuldade:1,questoes:10,acertos:9})]})); await espera(400);
+  w=abrir(seedBase({registros:[sess("r1",{dificuldade:1,questoes:10,acertos:9})]})); await espera(400);   // fácil
   await gravarSessao(w);
   ok("conteúdo tranquilo e indo bem dá mais folga", off(w)[0]===4, off(w));
 
@@ -174,7 +175,7 @@ async function gravarSessao(w){
   ok("conteúdo já fechado mantém a fila inteira",
      db(w).revisoes.filter(r=>!r.feita).length>=2, db(w).revisoes.map(r=>r.id));
   /* ---- 9. CONTINUAÇÃO: duas sessões do mesmo conteúdo, uma volta só ---- */
-  const duas=seedBase({fasesMigradas:true, registros:[
+  const duas=seedBase({fasesMigradas:true,dificuldadesMigradas:true, registros:[
     sess("r1",{data:dia(-2)}),
     Object.assign(sess("r2"),{minutos:50,criadoEm:2})]});
   w=abrir(duas,"registros"); await espera(400);
@@ -193,7 +194,7 @@ async function gravarSessao(w){
   ok("contada a partir da sessão nova", pend[0].data===dia(2), pend[0].data);
 
   /* ---- 10. conteúdo diferente continua tendo a sua própria volta ---- */
-  const outro=seedBase({fasesMigradas:true, registros:[
+  const outro=seedBase({fasesMigradas:true,dificuldadesMigradas:true, registros:[
     sess("r1"),
     Object.assign(sess("r3"),{assuntos:["Licitações"],assunto:"Licitações",criadoEm:3})]});
   w=abrir(outro,"registros"); await espera(400);

@@ -5,10 +5,10 @@ const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
 const sess=(id,extra)=>Object.assign({id,data:dia(-3),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",
-  minutos:90,questoes:10,acertos:7,dificuldade:4,anotacoes:"parei no art. 12",tipo:"estudo",
+  minutos:90,questoes:10,acertos:7,dificuldade:3,anotacoes:"parei no art. 12",tipo:"estudo",
   criadoEm:Number(id.slice(1))},extra||{});
 const base=extra=>Object.assign({versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
-  fasesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
+  fasesMigradas:true,dificuldadesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
   conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:1}],
   registros:[],revisoes:[],erros:[],cronometro:null},extra||{});
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
@@ -77,7 +77,7 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   ok("e o conteúdo também",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto).join()==="LAI",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
-  ok("a dificuldade é herdada", $('#modalCaixa [name="dificuldade"]').value==="4",
+  ok("a dificuldade é herdada", $('#modalCaixa [name="dificuldade"]').value==="3",
      $('#modalCaixa [name="dificuldade"]').value);
   ok("o tempo começa vazio, é sessão nova", !$('#modalCaixa [name="minutos"]').value,
      $('#modalCaixa [name="minutos"]').value);

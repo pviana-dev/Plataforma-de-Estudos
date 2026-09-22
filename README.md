@@ -78,6 +78,27 @@ digitação.
 Backups antigos continuam funcionando: as disciplinas que aparecem nos registros, revisões e
 aprendizados entram automaticamente na lista.
 
+### Dificuldade: três níveis
+
+**Fácil · Médio · Difícil**, e só. Cinco níveis pediam uma distinção que ninguém consegue fazer na
+hora de registrar ("pouca" × "média"?) e produziam planos quase idênticos. O padrão é **médio**.
+
+É desses três níveis que saem as duas regras do cronograma:
+
+| Nível | Volta ao conteúdo aberto | Revisões no conteúdo fechado |
+|---|---|---|
+| **Fácil** | a cada 4 dias | a partir de 2 |
+| **Médio** | a cada 2 dias | a partir de 3 |
+| **Difícil** | no dia seguinte | a partir de 5 |
+
+A taxa de acerto continua puxando para cima: abaixo de 60% o conteúdo é tratado como difícil
+(volta em 1 dia, pelo menos 4 revisões), mesmo marcado como fácil.
+
+**O dado antigo foi convertido uma vez, na carga:** 1 e 2 viraram **fácil**, 3 virou **médio**, 4 e 5
+viraram **difícil** (`db.dificuldadesMigradas`). A conversão acontece no dado cru, antes da
+normalização — convertê-lo depois leria um "3" novo (difícil) como o "3" velho (médio) e rebaixaria
+tudo a cada abertura.
+
 ### Dificuldade e quantas revisões cada assunto recebe
 
 O campo **Dificuldade do assunto** (Sem / Pouca / Média / Bastante / Muita) substituiu o antigo
@@ -619,7 +640,7 @@ Estão no objeto `CONFIG`, no topo do `<script>` do `index.html`:
 ```js
 DATA_DA_PROVA: "2026-10-11"        // trava: nenhuma revisão nesta data ou depois
 META_DIARIA_MIN: 180               // meta de estudo por dia
-REVISOES_POR_DIFICULDADE: {1:1, 2:2, 3:3, 4:4, 5:5}   // 1 = sem dificuldade … 5 = muita
+REVISOES_POR_DIFICULDADE: {1:2, 2:3, 3:5}   // fácil, médio, difícil   // 1 = sem dificuldade … 5 = muita
 DIAS_MINIMOS: {1:1, 2:4, 3:10, 4:30, 5:60, 6:120}     // janela necessária para N revisões
 TAXA_CRITICA: 60                   // % de acerto abaixo disso pede ao menos 4
 TAXA_ATENCAO: 75                   // abaixo disso garante ao menos 3

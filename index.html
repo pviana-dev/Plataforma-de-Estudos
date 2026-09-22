@@ -705,9 +705,9 @@ const CONFIG = {
   DATA_DA_PROVA: "2026-10-11",     // nenhuma revisão é agendada nesta data ou depois
   META_DIARIA_MIN: 180,            // meta padrão de estudo por dia (minutos)
 
-  // Quantas revisões o assunto PEDE conforme a dificuldade (1 = tranquilo … 5 = muito difícil).
+  // Quantas revisões o assunto PEDE conforme a dificuldade (1 = fácil, 3 = difícil).
   // Sistema Leitner: o que custa mais volta mais vezes e mais cedo.
-  REVISOES_POR_DIFICULDADE: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 },
+  REVISOES_POR_DIFICULDADE: { 1: 2, 2: 3, 3: 5 },
   TAXA_CRITICA: 60,                // % de acerto abaixo disso pede pelo menos 4 revisões
   TAXA_ATENCAO: 75,                // abaixo disso garante ao menos 3
   ESPACAMENTO_MIN_DIAS: 1,         // distância mínima entre duas revisões do mesmo assunto
@@ -786,12 +786,12 @@ const CONFIG = {
   ],
   ATIVIDADE_PADRAO: "",            // "A definir"
 
+  /* Três níveis, e só. Cinco davam diferenças que ninguém consegue julgar na
+     hora de registrar ("pouca" × "média"?) e produziam planos quase iguais. */
   DIFICULDADES: {
-    1: { nome: "Sem dificuldade",      curto: "Sem",      classe: "b-bom" },
-    2: { nome: "Pouca dificuldade",    curto: "Pouca",    classe: "b-bom" },
-    3: { nome: "Dificuldade média",    curto: "Média",    classe: "" },
-    4: { nome: "Bastante dificuldade", curto: "Bastante", classe: "b-alerta" },
-    5: { nome: "Muita dificuldade",    curto: "Muita",    classe: "b-critico" }
+    1: { nome: "Fácil",   curto: "Fácil",   classe: "b-bom" },
+    2: { nome: "Médio",   curto: "Médio",   classe: "" },
+    3: { nome: "Difícil", curto: "Difícil", classe: "b-critico" }
   },
   DICAS: [
     "Revisar é resolver questões, não reler o resumo — recordação ativa fixa muito mais.",
@@ -857,12 +857,39 @@ const ehRevisaoSessao = reg => !!reg && ehTipoRevisao(reg.tipo);
 const tipoDaSessao = reg => TIPOS_SESSAO[(reg && reg.tipo) || "estudo"] || TIPOS_SESSAO.estudo;
 const badgeTipoSessao = reg => { const t = tipoDaSessao(reg);
   return '<span class="badge'+(t.badge ? " "+t.badge : "")+'">'+t.curto+'</span>'; };
-/* Backups antigos guardavam "domínio" (1 = inseguro … 5 = dominado).
-   Agora guardamos "dificuldade" (1 = sem dificuldade … 5 = muita) = 6 - domínio. */
-function dificuldadeDe(x){
-  if (x && x.dificuldade) return Math.min(5, Math.max(1, Number(x.dificuldade)));
-  if (x && x.dominio)     return Math.min(5, Math.max(1, 6 - Number(x.dominio)));
+/* Dificuldade tem TRÊS níveis: 1 = fácil, 2 = médio, 3 = difícil.
+   O dado antigo vinha em cinco (e, mais antigo ainda, como "domínio", onde
+   1 = inseguro … 5 = dominado). A conversão acontece UMA VEZ, na carga
+   (migrarDificuldades) — traduzir a cada leitura corromperia o valor, porque
+   um "2" já convertido seria reinterpretado como a escala velha.          */
+const NIVEL_PADRAO = 2;                        // médio
+function deCincoParaTres(n){
+  const v = Number(n) || 0;
+  if (v <= 0) return NIVEL_PADRAO;
+  if (v <= 2) return 1;
+  if (v === 3) return 2;
   return 3;
+}
+const tresNiveis = n => Math.min(3, Math.max(1, Number(n) || NIVEL_PADRAO));
+function dificuldadeDe(x){
+  if (x && x.dificuldade) return tresNiveis(x.dificuldade);
+  if (x && x.dominio)     return deCincoParaTres(6 - Number(x.dominio));
+  return NIVEL_PADRAO;
+}
+/** converte a escala de cinco níveis para três, uma única vez */
+function migrarDificuldades(d){
+  if (d.dificuldadesMigradas) return 0;
+  let n = 0;
+  const converter = x => {
+    if (!x) return;
+    if (x.dificuldade){ const novo = deCincoParaTres(x.dificuldade);
+                        if (novo !== x.dificuldade){ x.dificuldade = novo; n++; } }
+    else if (x.dominio){ x.dificuldade = deCincoParaTres(6 - Number(x.dominio)); n++; }
+  };
+  (d.registros || []).forEach(converter);
+  (d.revisoes  || []).forEach(converter);
+  d.dificuldadesMigradas = true;
+  return n;
 }
 const normalizarRevisoes = lista => (lista||[]).map(r =>
   Object.assign({}, r, { dificuldade: r.dificuldade || (r.dominio ? 6 - Number(r.dominio) : null) }));
@@ -1011,6 +1038,10 @@ function carregar(){
   if (bruto){
     try {
       const d = JSON.parse(bruto);
+      /* A escala da dificuldade é convertida no dado CRU: normalizarRegistros
+         já limita o valor a 1..3, e converter depois disso leria um "3" novo
+         (difícil) como o "3" velho (médio), rebaixando tudo. */
+      migrarDificuldades(d);
       const carregado = Object.assign(base, d, {
         registros: normalizarRegistros(Array.isArray(d.registros) ? d.registros : []),
         revisoes:  normalizarRevisoes(Array.isArray(d.revisoes) ? d.revisoes : []),
@@ -1019,6 +1050,7 @@ function carregar(){
         grupos:    Array.isArray(d.grupos)    ? d.grupos    : [],
         lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
       });
+      carregado.dificuldadesMigradas = true;
       const abertos = migrarFases(carregado);
       const fichas = migrarConteudos(carregado);
       return { db: carregado, migrados: 0, desintegrados: migrarIntegracoes(carregado), abertos, fichas };
@@ -1209,7 +1241,7 @@ function numeroDeRevisoes(dificuldade, taxa, diasDisponiveis){
   if (taxa !== null){
     if (taxa < CONFIG.TAXA_CRITICA)      n = Math.max(n, 4);   // errando muito = trate como difícil
     else if (taxa < CONFIG.TAXA_ATENCAO) n = Math.max(n, 3);
-    else if (taxa >= 90 && dificuldade <= 2) n = Math.min(n, 2); // dominado: não gasta tempo à toa
+    else if (taxa >= 90 && dificuldade <= 1) n = Math.min(n, 2); // dominado: não gasta tempo à toa
   }
   /* Janela longa: a escada manda, porque revisar em intervalos crescentes é o
      que fixa. A dificuldade decide até onde subir — um assunto tranquilo não
@@ -1379,8 +1411,8 @@ function fechadoEm(alvo){
 const conteudoAberto = alvo => faseDe(alvo) === "andamento";
 /** quantos dias até a próxima volta, num conteúdo ainda aberto */
 function diasDaVolta(dificuldade, taxa){
-  const dificil = dificuldade >= 4 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
-  const facil   = dificuldade <= 2 && (taxa === null || taxa >= CONFIG.TAXA_ATENCAO);
+  const dificil = dificuldade >= 3 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
+  const facil   = dificuldade <= 1 && (taxa === null || taxa >= CONFIG.TAXA_ATENCAO);
   const dias = dificil ? CONFIG.VOLTA_DIAS.dificil : facil ? CONFIG.VOLTA_DIAS.facil : CONFIG.VOLTA_DIAS.normal;
   return Math.min(dias, CONFIG.VOLTA_TETO);
 }
@@ -1472,7 +1504,7 @@ function gerarRevisoes(reg, opcoes){
   const faltam = Math.max(0, alvo - mantidas.length);
   if (!faltam) return;
 
-  const prioritario = dificuldade >= 4 || (est.taxa !== null && est.taxa < CONFIG.TAXA_CRITICA);
+  const prioritario = dificuldade >= 3 || (est.taxa !== null && est.taxa < CONFIG.TAXA_CRITICA);
 
   const ocupadas = new Set(mantidas.map(r => r.data));           // nada de duas no mesmo dia
   calcularOffsets(dias, faltam, prioritario).forEach((off, i) => {
@@ -1537,7 +1569,7 @@ function gerarRevisoesGrupo(gid, opcoes){
   const alvo = numeroDeRevisoes(dificuldade, taxa, D.dif(partida, limite));
   const faltam = Math.max(0, alvo - cards.length);
   if (!faltam) return;
-  const prioritario = dificuldade >= 4 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
+  const prioritario = dificuldade >= 3 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
 
   // o que faltar entra DEPOIS do último card já marcado
   const ultimaMarcada = cards.map(r => r.data).sort().pop();
@@ -2051,13 +2083,13 @@ function redesenharTelaForm(){ telaForm = null; render(); }
 /* ---------- componentes reutilizados ---------- */
 /** Dificuldade percebida: quanto maior, mais revisões o assunto recebe. */
 function seletorDificuldade(valor){
-  const v = Number(valor) || 3;
+  const v = tresNiveis(valor);
   return '<select name="dificuldade" class="sel-dificuldade">' +
-    [1,2,3,4,5].map(n => '<option value="'+n+'"'+(v === n ? " selected" : "")+'>' +
+    [1,2,3].map(n => '<option value="'+n+'"'+(v === n ? " selected" : "")+'>' +
       esc(CONFIG.DIFICULDADES[n].nome) + '</option>').join("") + '</select>';
 }
 function badgeDificuldade(valor){
-  const d = CONFIG.DIFICULDADES[Number(valor) || 3];
+  const d = CONFIG.DIFICULDADES[tresNiveis(valor)];
   return '<span class="badge '+d.classe+'" title="'+esc(d.nome)+'">'+esc(d.curto)+'</span>';
 }
 const catDe = id => CONFIG.CATEGORIAS_ERRO.find(c => c.id === id) || null;   // "" = sem classificação
@@ -2354,7 +2386,7 @@ function encerrarCrono(){
   // --- nova sessão: abre o registro pré-preenchido
   ui.prefill = {
     data: bloco.data, disciplina: c.disciplina, assuntos: c.assunto ? [c.assunto] : [],
-    minutos, questoes: "", acertos: "", dificuldade: 3,
+    minutos, questoes: "", acertos: "", dificuldade: 2,
     inicio: bloco.inicio, fim: bloco.fim,
     anotacoes: "Sessão cronometrada: " + bloco.inicio + " → " + bloco.fim + " (" + hhmm(minutos) + ")."
   };
@@ -2464,7 +2496,8 @@ function infoDaSessao(reg){
 function formRegistroHtml(){
   const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   const pre = !ed && ui.prefill ? ui.prefill : null;
-  let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"", dificuldade:3, anotacoes:"" };
+  let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"",
+                            dificuldade: NIVEL_PADRAO, anotacoes:"" };
   // veio da agenda para uma sessão que já existia: ela passa a cumprir aquela revisão
   if (ed && ui.ligarRevisao) base = Object.assign({}, base, { revisaoId: ui.ligarRevisao });
   if (base.revisaoId && !base.assuntos.length){
@@ -4618,7 +4651,7 @@ function enviarRegistro(ev){
     data: dado.data, disciplina,
     assuntos: listaAssuntos, assunto: listaAssuntos[0],
     minutos: num(dado.minutos), questoes, acertos,
-    dificuldade: Number(dado.dificuldade || 3), anotacoes: (dado.anotacoes||"").trim(),
+    dificuldade: tresNiveis(dado.dificuldade), anotacoes: (dado.anotacoes||"").trim(),
     tipo,
     criadoEm: anterior ? anterior.criadoEm : Date.now()
   });
@@ -4767,7 +4800,7 @@ function registrarRevisao(rev){
   }
   ui.prefill = { data: D.hoje(), tipo: ehRetomada(rev) ? "estudo" : "revisao", revisaoId: rev.id,
                  disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
-                 dificuldade: 3, anotacoes: "" };
+                 dificuldade: 2, anotacoes: "" };
   ui.aba = "registros"; ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
   redesenharTelaForm();
 }

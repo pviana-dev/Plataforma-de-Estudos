@@ -8,7 +8,7 @@ const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
 const sess=(id,ass,extra)=>Object.assign({id,data:dia(-5),disciplina:"Legislação",assuntos:[ass],assunto:ass,
   minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",tipo:"estudo",criadoEm:Number(id.slice(1))},extra||{});
 const base=extra=>Object.assign({versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
-  fasesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],lancamentos:[],grupos:[],
+  fasesMigradas:true,dificuldadesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],lancamentos:[],grupos:[],
   conteudos:[{id:"c1",nome:"X",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:1},
              {id:"c2",nome:"Y",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:2}],
   registros:[],revisoes:[],erros:[],cronometro:null},extra||{});

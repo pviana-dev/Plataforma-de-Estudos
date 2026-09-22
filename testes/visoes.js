@@ -9,7 +9,7 @@ const sess=(id,ass)=>({id,data:dia(-10),disciplina:"Legislação",assuntos:[ass]
 const rev=(id,regId,data,extra)=>Object.assign({id,registroId:regId,data,ordem:1,feita:false,manual:false,
   minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},extra||{});
 const seed={versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
- fasesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
+ fasesMigradas:true,dificuldadesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
  conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"concluido",concluidoEm:dia(-10),criadoEm:1},
             {id:"c2",nome:"Licitações",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:2}],
  registros:[sess("r1","LAI"), sess("r2","Licitações")],
