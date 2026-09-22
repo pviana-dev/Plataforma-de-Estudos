@@ -278,7 +278,7 @@ tbody tr.linha-clicavel{cursor:pointer}
 .tab-sessoes .col-curta .badge{white-space:normal}     /* etiqueta em duas linhas, se precisar */
 /* os sinais de plano acompanham o nome do conteúdo, não uma coluna própria */
 .tab-sessoes .col-larga .badge{margin-left:6px;vertical-align:middle}
-.tab-sessoes th.col-curta{white-space:normal}          /* "Dificuldade" pode quebrar no cabeçalho */
+
 .tab-sessoes .col-larga .pe{white-space:normal;line-height:1.45}
 .tab-rolagem{overflow-x:auto}
 tr.sep-dia td{background:var(--surface-2);font-size:12px;color:var(--text-2);font-weight:550;
@@ -1318,7 +1318,9 @@ function entrarNoGrupo(reg, gid){
     if (r.registroId !== reg.id || r.grupoId) return true;      // de outra sessão, ou já é do grupo
     if (r.feita || r.manual){ r.grupoId = gid; r.integrada = true; return true; }
     if (grupoJaTemFila) return false;                           // não duplica a fila
-    r.grupoId = gid; r.integrada = true; return true;           // primeira fila do grupo
+    // vira fila DO GRUPO: o dono passa a ser ele, não a sessão (senão o item
+    // ficava com os dois donos e aparecia como revisão individual pendente)
+    r.grupoId = gid; r.integrada = true; r.registroId = null; return true;
   });
 }
 function sairDoGrupo(reg){
@@ -2586,8 +2588,9 @@ function telaHistorico(){
 
   h += '<div class="tab-rolagem"><table class="tab-sessoes"><thead><tr>' +
     '<th class="col-curta col-nowrap">Data</th><th class="col-curta">Disciplina</th>' +
-    '<th class="col-larga">Conteúdos</th><th class="num col-curta col-nowrap">Tempo</th>' +
-    '<th class="col-curta">Dificul&shy;dade</th>' +
+    '<th class="num col-curta col-nowrap">Tempo</th>' +
+    '<th class="col-larga">Conteúdos</th>' +
+    '<th class="col-curta col-nowrap">Dificuldade</th>' +
     '<th class="col-tipo col-curta col-nowrap">Tipo</th>' +
     '<th class="col-acao"></th></tr></thead><tbody>';
   const emEdicao = ui.editandoRegistro;
@@ -2616,17 +2619,16 @@ function telaHistorico(){
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
       ' data-acao="editar-registro" data-id="'+r.id+'" title="Clique para abrir esta sessão">' +
       '<td class="num col-curta col-nowrap">'+D.br(r.data)+'</td><td class="col-curta">'+esc(r.disciplina)+'</td>' +
-      '<td class="col-larga">'+esc(rotuloAssuntos(r)) + marcaPlano +
-        (r.anotacoes ? '<div class="pe" style="font-size:12px;color:var(--text-2)">' +
-          esc(r.anotacoes.slice(0,160))+(r.anotacoes.length>160?"…":"")+'</div>' : '') + '</td>' +
+      /* Tempo vem antes do conteúdo: assim a Dificuldade encosta na coluna larga
+         e sobra folga para o rótulo dela caber numa linha só. */
       '<td class="num col-curta col-nowrap">'+(r.minutos ? hhmm(r.minutos) : "—") +
         (intervalosDe(r).length > 1
           ? '<div style="font-size:11px;color:var(--muted)">'+intervalosDe(r).length+' medições</div>' : '') +
         '</td>' +
-      /* Dificuldade saiu da lista: é um dado de ajuste, não de leitura rápida —
-         continua no formulário da sessão, onde se define. O espaço foi para a
-         coluna de revisões, que estava quebrando feio em duas linhas. */
-      '<td class="col-curta">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
+      '<td class="col-larga">'+esc(rotuloAssuntos(r)) + marcaPlano +
+        (r.anotacoes ? '<div class="pe" style="font-size:12px;color:var(--text-2)">' +
+          esc(r.anotacoes.slice(0,160))+(r.anotacoes.length>160?"…":"")+'</div>' : '') + '</td>' +
+      '<td class="col-curta col-nowrap">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
       '<td class="col-tipo col-curta col-nowrap">'+badgeTipoSessao(r)+'</td>' +
       /* Continuar o conteúdo dali: abre uma sessão de hoje com a mesma
          disciplina e os mesmos conteúdos. É o impulso que nasce olhando a
@@ -4681,6 +4683,7 @@ function enviarRegistro(ev){
   if (grupoAntes && grupoAntes !== gid) gerarRevisoesGrupo(grupoAntes);   // o grupo antigo perdeu esta sessão
   outrosGrupos.forEach(id => { if (id !== gid) gerarRevisoesGrupo(id); });
   limparGrupos();
+  garantirRetomadas();           // nenhum conteúdo aberto pode ficar sem próxima volta
   persistir();
   ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; ui.ligarRevisao = "";
   const n = gid ? db.revisoes.filter(r => r.grupoId === gid).length
@@ -4859,6 +4862,7 @@ function marcarConteudos(fichas, fase){
                                         (!ids.has(r.registroId) && !grupos.has(r.grupoId)));
   afetados.forEach(r => { if (!r.grupoId) gerarRevisoes(r, { base: D.hoje() }); });
   grupos.forEach(gid => gerarRevisoesGrupo(gid, { base: D.hoje() }));
+  garantirRetomadas();
   return tocadas.length;
 }
 /* Renomear um conteúdo é renomear a FICHA e tudo o que apontava para ela: as
@@ -4902,6 +4906,63 @@ function resolverLembrete(reg){
   else gerarRevisoes(reg, { base: reg.data });               // e o próximo nasce daqui
   return alvo;
 }
+/* GARANTIA DE CONTINUIDADE. Conteúdo aberto sem nenhum item na agenda some do
+   radar: nada chama de volta e o estudo simplesmente para. Isso acontece por
+   caminhos que ninguém percebe — a última volta foi excluída à mão, um backup
+   antigo veio com tudo feito, a fila esvaziou num replanejamento. Esta função
+   varre os conteúdos abertos e devolve a volta que falta, com a mesma cadência
+   de sempre (1, 2 ou 4 dias conforme a dificuldade e a taxa), contada de hoje.
+   Não mexe em quem pediu para não ser lembrado: sessão marcada "sem revisão"
+   ou com plano manual é escolha sua, e continua valendo.                     */
+function garantirRetomadas(){
+  if (!agendamentoAtivo()) return 0;
+  const hoje = D.hoje();
+  const limite = ultimoDiaRevisao();
+  const temPendente = new Set();
+  db.revisoes.forEach(r => {
+    if (r.feita) return;
+    if (r.grupoId) temPendente.add("g:" + r.grupoId);
+    else if (r.registroId){
+      const dono = acharRegistro(r.registroId);
+      if (dono) temPendente.add("s:" + chaveSessao(dono));
+    }
+  });
+  let criadas = 0;
+  // uma sessão por conteúdo: a mais recente é a que carrega a volta
+  const porConteudo = new Map();
+  db.registros.forEach(r => {
+    if (ehRevisaoSessao(r)) return;                 // sessão de revisão não agenda
+    const plano = planoDe(r);
+    if (plano === "sem" || plano === "manual") return;   // você pediu para não lembrar
+    if (!conteudoAberto(r)) return;                 // conteúdo fechado tem escada, não volta
+    const chave = plano === "grupo" && r.grupoId ? "g:" + r.grupoId : "s:" + chaveSessao(r);
+    const atual = porConteudo.get(chave);
+    if (!atual || r.data > atual.data) porConteudo.set(chave, r);
+  });
+  porConteudo.forEach((reg, chave) => {
+    if (temPendente.has(chave)) return;             // já há o que fazer
+    const est = estatRegistro(reg);
+    const quando = D.soma(hoje, diasDaVolta(dificuldadeDe(reg), est.taxa));
+    if (quando > limite) return;                    // o teto que você definiu manda
+    if (db.revisoes.some(r => !r.feita && r.data === quando &&
+        (chave.slice(0,2) === "g:" ? r.grupoId === reg.grupoId : r.registroId === reg.id))) return;
+    if (chave.slice(0,2) === "g:"){
+      const g = acharGrupo(reg.grupoId);
+      db.revisoes.push({ id: uid(), registroId: null, grupoId: reg.grupoId,
+                         disciplina: g ? g.disciplina : reg.disciplina,
+                         assuntos: assuntosDoGrupo(reg.grupoId), integrada: true, retomada: true,
+                         data: quando, ordem: 1, feita: false, feitaEm: null, minutos: null,
+                         questoes: null, acertos: null, dificuldade: null, atividade: "", nota: "",
+                         manual: false });
+    } else {
+      db.revisoes.push({ id: uid(), registroId: reg.id, data: quando, ordem: 1, retomada: true,
+                         feita: false, feitaEm: null, minutos: null, questoes: null, acertos: null,
+                         dificuldade: null, atividade: "", nota: "", manual: false });
+    }
+    criadas++;
+  });
+  return criadas;
+}
 /** as sessões que falam destes conteúdos — é o alcance de fechar um deles */
 function sessoesDoConteudo(disc, nomes){
   const alvo = new Set((nomes || []).map(n => (n || "").toLowerCase()));
@@ -4929,6 +4990,7 @@ function replanejarTudo(){
   db.revisoes = db.revisoes.filter(r => r.feita || r.manual || r.data <= limite);
   db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
   (db.grupos || []).forEach(g => gerarRevisoesGrupo(g.id, { base: D.hoje() }));
+  garantirRetomadas();
 }
 
 /* TELA DE CONTEÚDOS. O cadastro num lugar só: criar, renomear (em todo o
@@ -5705,6 +5767,7 @@ document.addEventListener("click", ev => {
         const sv = rv ? sessaoDaRevisao(rv) : null;
         if (sv) delete sv.revisaoId;             // a sessão sobrevive, só perde o vínculo
         db.revisoes = db.revisoes.filter(r => r.id !== id);
+        garantirRetomadas();                     // conteúdo aberto não fica sem próxima volta
         ui.editandoRevisao = null; persistir(); render(); toast("Revisão excluída.");
       }
       break;
@@ -5853,6 +5916,7 @@ function verificarVirada(){
   diaCorrente = agora;
   if (seguiaHoje) ui.diaSel = agora;
   if (ui.mesCal === mesAnterior) ui.mesCal = agora.slice(0,7);
+  if (garantirRetomadas()) persistir();         // o dia virou: ninguém fica sem agendamento
   render();
   toast("Virou o dia: a tela agora mostra " + D.brFull(agora) + ".");
   if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
@@ -5866,6 +5930,11 @@ if (!temStorage) $("#avisoStorage").hidden = false;
 render();
 // a prova passou e ninguém disse o que fazer: pergunta uma vez
 if (precisaPerguntarPosProva()) modalPosProva();
+const repostas = garantirRetomadas();          // base antiga pode vir sem nenhum agendamento
+if (repostas){
+  persistir();
+  toast(repostas + " conteúdo(s) em andamento estavam sem agendamento — a próxima volta foi marcada.");
+}
 if (inicio.abertos){
   persistir();
   toast(inicio.abertos + " conteúdo(s) passaram a “em andamento” — a agenda agora chama para voltar ao assunto. " +

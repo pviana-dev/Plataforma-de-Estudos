@@ -421,7 +421,8 @@ nela mesma, e um botão ali só convidaria a criar uma segunda igual.
 A **coluna Tipo** mudou de lugar: ficou ao lado de *Revisões*, e a ponta direita da tabela passou a
 ser a coluna da ação. A distribuição das larguras também mudou: as colunas de dado curto ficam **do
 tamanho do próprio conteúdo** e a de **Conteúdos** absorve o que sobra, com no mínimo 26 caracteres
-de largura. Antes o espaço era repartido por igual, o que espremia as colunas e deixava um vão grande
+de largura. A ordem é **Data · Disciplina · Tempo · Conteúdos · Dificuldade · Tipo · ação**: o tempo
+foi para a esquerda de propósito, para a dificuldade encostar na coluna larga e caber numa linha só. Antes o espaço era repartido por igual, o que espremia as colunas e deixava um vão grande
 antes da última.
 
 **A coluna Revisões saiu; a Dificuldade voltou.** A de revisões contava `feitas/total` **da sessão**,
@@ -883,6 +884,17 @@ viu ou se continua de onde parou. A diferença é que, enquanto o conteúdo est�
 
 **Uma volta de cada vez.** Não adianta marcar cinco retornos de um assunto que você nem terminou de
 ver; o que serve é saber quando voltar da próxima. Feita a volta, a seguinte nasce dali.
+
+**Conteúdo aberto nunca fica sem agendamento.** Um conteúdo em andamento sem nenhum item na agenda
+some do radar: nada chama de volta e o estudo simplesmente para. Isso acontecia por caminhos que
+ninguém percebe — a última volta excluída à mão, um backup antigo com tudo já feito, a fila esvaziada
+num replanejamento. A plataforma agora **varre os conteúdos abertos e repõe a volta que falta**, com
+a cadência de sempre contada de hoje. A varredura roda no arranque, na virada do dia, ao salvar uma
+sessão, ao excluir uma revisão e em cada replanejamento; quando repõe alguma coisa no arranque, avisa.
+
+Duas exceções, de propósito: sessão marcada **"sem revisão"** e plano **manual** — nos dois casos
+você disse que cuida disso, e a varredura não insiste. Conteúdo **concluído** também fica de fora: lá
+quem manda é a escada.
 
 **Continuação.** Conteúdo grande leva várias sessões, e cada sessão é dona do próprio plano — sem
 cuidado, duas sessões do mesmo conteúdo marcariam duas voltas idênticas no mesmo dia. Havendo uma

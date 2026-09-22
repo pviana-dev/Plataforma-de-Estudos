@@ -41,7 +41,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
   click(doc.querySelector('[data-aba="registros"]')); await espera(300);
   const linha=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="rA");
-  const tempoCol=linha.querySelectorAll("td")[3].textContent.replace(/\s+/g," ").trim();
+  const tempoCol=linha.querySelectorAll("td")[2].textContent.replace(/\s+/g," ").trim();
   console.log("  coluna Tempo da sessão: \""+tempoCol+"\"");
   ok("no histórico a sessão continua com 1h", /^1h/.test(tempoCol), tempoCol);
 

@@ -32,7 +32,7 @@ const linhaDe=id=>[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==
 
 (async()=>{try{
   click(doc.querySelector('[data-aba="registros"]')); await espera(300);
-  const tempo=id=>{ const tr=linhaDe(id); return tr.querySelectorAll("td")[3].textContent.replace(/\s+/g," ").trim(); };
+  const tempo=id=>{ const tr=linhaDe(id); return tr.querySelectorAll("td")[2].textContent.replace(/\s+/g," ").trim(); };
   console.log("  coluna Tempo de cada sessão:");
   ["rA","rB","rC","rD"].forEach(id=>console.log("    "+id+": "+tempo(id)));
 
