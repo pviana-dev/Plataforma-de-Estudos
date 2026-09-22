@@ -419,10 +419,16 @@ O botão **só aparece em sessões de dias anteriores** — na sessão de hoje, 
 nela mesma, e um botão ali só convidaria a criar uma segunda igual.
 
 A **coluna Tipo** mudou de lugar: ficou ao lado de *Revisões*, e a ponta direita da tabela passou a
-ser a coluna da ação. A distribuição das larguras também mudou: as colunas de dado curto (data,
-disciplina, tempo, dificuldade, tipo, revisões) ficam **do tamanho do próprio conteúdo** e a coluna
-de **Conteúdos** absorve o que sobra. Antes o espaço era repartido por igual, o que espremia as
-colunas e deixava um vão grande antes da última.
+ser a coluna da ação. A distribuição das larguras também mudou: as colunas de dado curto ficam **do
+tamanho do próprio conteúdo** e a de **Conteúdos** absorve o que sobra, com no mínimo 26 caracteres
+de largura. Antes o espaço era repartido por igual, o que espremia as colunas e deixava um vão grande
+antes da última.
+
+Para a coluna de Conteúdos ficar **mais larga ainda** — é nela que mora a descrição, e é lá que a
+legibilidade importa —, as colunas curtas que **podem** quebrar linha quebram: disciplina,
+dificuldade e revisões (a etiqueta de revisão passa a caber em duas linhas). **Data, tempo e tipo
+não quebram**, porque quebrar `21/09` ou `1h30` no meio não ajuda ninguém. Com a largura extra, a
+descrição da sessão mostra **160 caracteres** em vez de 90.
 
 ### Trocar o conteúdo de uma revisão
 

@@ -37,9 +37,19 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      [...linha.querySelectorAll("td")].map(td=>td.className));
   ok("o botão fica na última célula",
      [...linha.querySelectorAll("td")].pop().querySelector('[data-acao="continuar-sessao"]') !== null);
-  ok("a coluna de conteúdos é a que absorve o espaço",
-     /\.tab-sessoes \.col-larga\{width:100%\}/.test(html) &&
-     /\.tab-sessoes \.col-curta\{width:1%;white-space:nowrap\}/.test(html));
+  ok("a coluna de conteúdos absorve o espaço e tem largura mínima",
+     /\.tab-sessoes \.col-larga\{width:100%;min-width:26ch\}/.test(html) &&
+     /\.tab-sessoes \.col-curta\{width:1%\}/.test(html));
+  ok("as colunas curtas que podem quebram linha, para sobrar largura",
+     /\.tab-sessoes \.col-curta \.badge\{white-space:normal\}/.test(html) &&
+     /\.tab-sessoes \.col-nowrap\{white-space:nowrap\}/.test(html));
+  const cel=[...linha.querySelectorAll("td")];
+  ok("data, tempo e tipo não quebram",
+     cel[0].className.includes("col-nowrap") && cel[3].className.includes("col-nowrap") &&
+     cel[5].className.includes("col-nowrap"), cel.map(c=>c.className));
+  ok("disciplina, dificuldade e revisões podem quebrar",
+     !cel[1].className.includes("col-nowrap") && !cel[4].className.includes("col-nowrap") &&
+     !cel[6].className.includes("col-nowrap"), cel.map(c=>c.className));
 
   /* ---- continuar abre a sessão de hoje já preenchida ---- */
   click(linha.querySelector('[data-acao="continuar-sessao"]')); await espera(450);
