@@ -36,6 +36,13 @@ const volta=w=>db(w).revisoes.filter(r=>!r.feita).map(r=>Math.round(
      ops.map(o=>o.textContent).join("|")==="Fácil|Médio|Difícil", ops.map(o=>o.textContent));
   ok("o padrão é médio", ops.find(o=>o.selected).value==="2", ops.find(o=>o.selected).value);
 
+  /* ---- a taxa de acerto não entra no cálculo ---- */
+  const comTaxa=abrir(base({registros:[sess("r1",{dificuldade:1,questoes:10,acertos:3})],   // 30% de acerto
+    revisoes:[{id:"v1",registroId:"r1",data:hoje,ordem:1,retomada:true,feita:true,feitaEm:hoje,
+      manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]}));
+  await espera(450);
+  ok("errando muito, o conteúdo fácil continua voltando em 4 dias", volta(comTaxa)===4, volta(comTaxa));
+
   /* ---- a cadência da volta sai do nível ---- */
   for (const [nivel,esperado,rot] of [[1,4,"fácil"],[2,2,"médio"],[3,1,"difícil"]]){
     const ww=abrir(base({registros:[sess("r1",{dificuldade:nivel,questoes:10,acertos:9})],
@@ -73,6 +80,20 @@ const volta=w=>db(w).revisoes.filter(r=>!r.feita).map(r=>Math.round(
   ok("3 vira médio", /rC:2/.test(niveis), niveis);
   ok("2 e 1 viram fácil", /rD:1/.test(niveis) && /rE:1/.test(niveis), niveis);
   ok("e a conversão não se repete", db(w).dificuldadesMigradas===true);
+
+  /* ---- e nem no tamanho do plano ---- */
+  const planoTaxa=abrir(base({revisarAte:dia(365),
+    conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"concluido",concluidoEm:hoje,criadoEm:1}],
+    registros:[sess("r1",{dificuldade:1,questoes:20,acertos:4})]}));      // 20% de acerto
+  await espera(450);
+  planoTaxa.document.querySelector('[data-aba="registros"]').dispatchEvent(new planoTaxa.MouseEvent("click",{bubbles:true}));
+  await espera(250);
+  planoTaxa.document.querySelector("tbody tr[data-id] td").dispatchEvent(new planoTaxa.MouseEvent("click",{bubbles:true}));
+  await espera(300);
+  planoTaxa.document.querySelector("#formRegistro").dispatchEvent(new planoTaxa.Event("submit",{bubbles:true,cancelable:true}));
+  await espera(400);
+  const nFacil=db(planoTaxa).revisoes.filter(r=>!r.feita).length;
+  ok("o plano do fácil não cresce por causa da taxa baixa", nFacil<=6, nFacil);
 
   /* ---- o badge da lista usa os nomes novos ---- */
   w=abrir(base({registros:[sess("r1",{dificuldade:3})]}), "registros"); await espera(450);

@@ -91,8 +91,12 @@ hora de registrar ("pouca" × "média"?) e produziam planos quase idênticos. O 
 | **Médio** | a cada 2 dias | a partir de 3 |
 | **Difícil** | no dia seguinte | a partir de 5 |
 
-A taxa de acerto continua puxando para cima: abaixo de 60% o conteúdo é tratado como difícil
-(volta em 1 dia, pelo menos 4 revisões), mesmo marcado como fácil.
+O nível também decide se o plano **começa antes**: difícil antecipa todas as revisões em 20%.
+
+**A taxa de acerto ficou de fora do cronograma.** Ela continua medindo desempenho nas telas e
+ordenando a prioridade da reta final, mas não mexe mais na cadência nem no tamanho do plano: a taxa
+oscila com o lote de questões do dia, e o cronograma balançava junto sem ninguém ter pedido. Quem
+decide o ritmo é a **dificuldade**, e ela é sua.
 
 **O dado antigo foi convertido uma vez, na carga:** 1 e 2 viraram **fácil**, 3 virou **médio**, 4 e 5
 viraram **difícil** (`db.dificuldadesMigradas`). A conversão acontece no dado cru, antes da
@@ -625,7 +629,7 @@ nesse caso um aviso laranja aparece no topo; use Chrome/Firefox ou sirva a pasta
 
 ## Metodologias aplicadas
 
-1. **Repetição espaçada** — o número de revisões sai da **dificuldade** do assunto e de **quantos degraus da escada cabem no horizonte**, sempre em intervalos crescentes.
+1. **Repetição espaçada** — o número de revisões sai da **dificuldade** do assunto (só dela) e de **quantos degraus da escada cabem no horizonte**, sempre em intervalos crescentes.
 2. **Curva do esquecimento (Ebbinghaus)** — a primeira revisão vem cedo, quando o esquecimento é mais rápido.
 3. **Recordação ativa** — toda revisão pede questões feitas e acertos; reler não conta como revisão.
 4. **Sistema Leitner** — dificuldade alta ou taxa de acerto abaixo de 60% = mais revisões, começando antes.
@@ -721,6 +725,11 @@ horas).
 **Pelo registro:** ao criar a sessão, escolha *Revisão* e aponte qual. A lista traz as de hoje e as
 **atrasadas em vermelho**; revisão já cumprida por outra sessão não aparece — **uma revisão vale por
 uma sessão só**. Ao salvar, a caixa dela é marcada sozinha.
+
+**A descrição do item vai junto.** O que você escreveu no item da agenda (*"refazer as 10 questões que
+errei da aula 3"*) é a instrução da sessão que vai cumpri-lo — então a sessão **nasce com aquilo na
+descrição**, em vez de você reescrever ou perder o combinado. Se a sessão já existia e já tinha
+descrição própria, a dela é preservada.
 
 **Pela aba Agenda:** marcar a caixa abre a tela de sessão. Se **já existe uma sessão daquele conteúdo
 hoje**, é ela que abre — com o tempo que você já registrou e a revisão já escolhida —, em vez de

@@ -1236,13 +1236,8 @@ function capacidadeDeRevisoes(diasDisponiveis){
 function degrausQueCabem(diasDisponiveis){
   return CONFIG.INTERVALOS_LIVRES.filter(d => d <= diasDisponiveis).length;
 }
-function numeroDeRevisoes(dificuldade, taxa, diasDisponiveis){
-  let n = CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? 3;
-  if (taxa !== null){
-    if (taxa < CONFIG.TAXA_CRITICA)      n = Math.max(n, 4);   // errando muito = trate como difícil
-    else if (taxa < CONFIG.TAXA_ATENCAO) n = Math.max(n, 3);
-    else if (taxa >= 90 && dificuldade <= 1) n = Math.min(n, 2); // dominado: não gasta tempo à toa
-  }
+function numeroDeRevisoes(dificuldade, diasDisponiveis){
+  let n = CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? CONFIG.REVISOES_POR_DIFICULDADE[2];
   /* Janela longa: a escada manda, porque revisar em intervalos crescentes é o
      que fixa. A dificuldade decide até onde subir — um assunto tranquilo não
      precisa das 9 revisões só porque há um ano pela frente. */
@@ -1410,10 +1405,13 @@ function fechadoEm(alvo){
 }
 const conteudoAberto = alvo => faseDe(alvo) === "andamento";
 /** quantos dias até a próxima volta, num conteúdo ainda aberto */
-function diasDaVolta(dificuldade, taxa){
-  const dificil = dificuldade >= 3 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
-  const facil   = dificuldade <= 1 && (taxa === null || taxa >= CONFIG.TAXA_ATENCAO);
-  const dias = dificil ? CONFIG.VOLTA_DIAS.dificil : facil ? CONFIG.VOLTA_DIAS.facil : CONFIG.VOLTA_DIAS.normal;
+/* Quem decide o ritmo é a DIFICULDADE, só ela. A taxa de acerto continua
+   medindo desempenho na tela, mas ficou fora do cronograma: ela oscila com o
+   lote de questões do dia e fazia o plano balançar junto, sem você ter pedido. */
+function diasDaVolta(dificuldade){
+  const dias = dificuldade >= 3 ? CONFIG.VOLTA_DIAS.dificil
+             : dificuldade <= 1 ? CONFIG.VOLTA_DIAS.facil
+             : CONFIG.VOLTA_DIAS.normal;
   return Math.min(dias, CONFIG.VOLTA_TETO);
 }
 /** a revisão é uma volta (conteúdo aberto) ou revisão de verdade? */
@@ -1472,8 +1470,7 @@ function gerarRevisoes(reg, opcoes){
      quando voltar da próxima vez. Feita a volta, a seguinte nasce dali.     */
   if (conteudoAberto(reg)){
     if (mantidas.some(r => !r.feita)) return;                   // já existe uma volta marcada à mão
-    const est0 = estatRegistro(reg);
-    const quando = D.soma(partida, diasDaVolta(dificuldadeDe(reg), est0.taxa));
+    const quando = D.soma(partida, diasDaVolta(dificuldadeDe(reg)));
     if (quando > ultimoDiaRevisao()) return;
     if (mantidas.some(r => r.data === quando)) return;
     /* CONTINUAÇÃO. Conteúdo grande leva várias sessões, e cada sessão é dona do
@@ -1500,11 +1497,11 @@ function gerarRevisoes(reg, opcoes){
   const dias = D.dif(partida, limite);                          // janela que ainda resta
   const est = estatRegistro(reg);
   const dificuldade = dificuldadeDe(reg);
-  const alvo = numeroDeRevisoes(dificuldade, est.taxa, dias);
+  const alvo = numeroDeRevisoes(dificuldade, dias);
   const faltam = Math.max(0, alvo - mantidas.length);
   if (!faltam) return;
 
-  const prioritario = dificuldade >= 3 || (est.taxa !== null && est.taxa < CONFIG.TAXA_CRITICA);
+  const prioritario = dificuldade >= 3;              // difícil começa antes; a taxa não entra
 
   const ocupadas = new Set(mantidas.map(r => r.data));           // nada de duas no mesmo dia
   calcularOffsets(dias, faltam, prioritario).forEach((off, i) => {
@@ -1548,15 +1545,14 @@ function gerarRevisoesGrupo(gid, opcoes){
 
   const limite = ultimoDiaRevisao();
   // o plano segue o conteúdo mais frágil do grupo
-  const est = uniao.map(a => estatAssunto(disc, a));
-  const taxa = est.reduce((m,e) => e.taxa === null ? m : (m === null ? e.taxa : Math.min(m, e.taxa)), null);
+  // o plano do grupo segue o membro mais difícil (a taxa não entra no cálculo)
   const dificuldade = Math.max.apply(null, regs.map(dificuldadeDe));
 
   /* Grupo aberto = uma volta de cada vez, igual ao conteúdo solto. O grupo só
      está fechado quando VOCÊ o fecha — se um membro ainda está aberto, ele está. */
   if (conteudoAberto(grupo) || regs.some(conteudoAberto)){
     if (cards.some(r => !r.feita)) return;                      // já há uma volta marcada
-    const quando = D.soma(partida, diasDaVolta(dificuldade, taxa));
+    const quando = D.soma(partida, diasDaVolta(dificuldade));
     if (quando > limite || cards.some(r => r.data === quando)) return;
     db.revisoes.push({ id: uid(), registroId: null, grupoId: gid, disciplina: disc, assuntos: uniao,
                        integrada: true, retomada: true,
@@ -1566,10 +1562,10 @@ function gerarRevisoesGrupo(gid, opcoes){
   }
   const fechouG = fechadoEm(grupo);
   if (fechouG && fechouG > partida) partida = fechouG;
-  const alvo = numeroDeRevisoes(dificuldade, taxa, D.dif(partida, limite));
+  const alvo = numeroDeRevisoes(dificuldade, D.dif(partida, limite));
   const faltam = Math.max(0, alvo - cards.length);
   if (!faltam) return;
-  const prioritario = dificuldade >= 3 || (taxa !== null && taxa < CONFIG.TAXA_CRITICA);
+  const prioritario = dificuldade >= 3;              // difícil começa antes; a taxa não entra
 
   // o que faltar entra DEPOIS do último card já marcado
   const ultimaMarcada = cards.map(r => r.data).sort().pop();
@@ -2498,8 +2494,14 @@ function formRegistroHtml(){
   const pre = !ed && ui.prefill ? ui.prefill : null;
   let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"",
                             dificuldade: NIVEL_PADRAO, anotacoes:"" };
-  // veio da agenda para uma sessão que já existia: ela passa a cumprir aquela revisão
-  if (ed && ui.ligarRevisao) base = Object.assign({}, base, { revisaoId: ui.ligarRevisao });
+  // veio da agenda para uma sessão que já existia: ela passa a cumprir aquele item
+  if (ed && ui.ligarRevisao){
+    const daAgenda = acharRevisao(ui.ligarRevisao);
+    base = Object.assign({}, base, { revisaoId: ui.ligarRevisao });
+    // a descrição do item só entra se a sessão ainda não tiver a dela
+    if (daAgenda && (daAgenda.nota || "").trim() && !(base.anotacoes || "").trim())
+      base = Object.assign({}, base, { anotacoes: daAgenda.nota.trim() });
+  }
   if (base.revisaoId && !base.assuntos.length){
     const ctxPre = contextoRevisao(acharRevisao(base.revisaoId) || {});
     if (ctxPre) base = Object.assign({}, base, { disciplina: ctxPre.disciplina, assuntos: ctxPre.assuntos.slice() });
@@ -4798,9 +4800,12 @@ function registrarRevisao(rev){
     toast("Esta sessão de hoje já é deste conteúdo — o tempo entra nela.");
     return;
   }
+  /* O que você escreveu no item da agenda ("refazer as 10 questões da aula 3")
+     é a instrução da sessão que vai cumpri-lo — então ela nasce com aquilo na
+     descrição, em vez de você reescrever ou perder o combinado. */
   ui.prefill = { data: D.hoje(), tipo: ehRetomada(rev) ? "estudo" : "revisao", revisaoId: rev.id,
                  disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
-                 dificuldade: 2, anotacoes: "" };
+                 dificuldade: 2, anotacoes: (rev.nota || "").trim() };
   ui.aba = "registros"; ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
   redesenharTelaForm();
 }
@@ -4974,8 +4979,7 @@ function garantirRetomadas(){
   });
   porConteudo.forEach((reg, chave) => {
     if (temPendente.has(chave)) return;             // já há o que fazer
-    const est = estatRegistro(reg);
-    const quando = D.soma(hoje, diasDaVolta(dificuldadeDe(reg), est.taxa));
+    const quando = D.soma(hoje, diasDaVolta(dificuldadeDe(reg)));
     if (quando > limite) return;                    // o teto que você definiu manda
     if (db.revisoes.some(r => !r.feita && r.data === quando &&
         (chave.slice(0,2) === "g:" ? r.grupoId === reg.grupoId : r.registroId === reg.id))) return;

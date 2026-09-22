@@ -59,6 +59,32 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      [d.revisoes[0].feita, d.revisoes[0].sessaoId]);
   ok("a sessão aponta de volta para a revisão", d.registros[0].revisaoId==="v1", d.registros[0].revisaoId);
 
+  /* ---- a descrição do item da agenda vai para a sessão ---- */
+  const wDesc=abrir(base({registros:[sess("rY","Y",{data:dia(-4)})],
+    revisoes:[{id:"v1",registroId:"rY",data:hoje,ordem:1,feita:false,manual:true,minutos:null,
+      questoes:null,acertos:null,dificuldade:null,atividade:"",
+      nota:"refazer as 10 questões que errei da aula 3"}]}));
+  await espera(450);
+  wDesc.document.querySelector('#view [data-acao="concluir"]')
+    .dispatchEvent(new wDesc.MouseEvent("click",{bubbles:true}));
+  await espera(450);
+  ok("a sessão nasce com a descrição escrita no item da agenda",
+     wDesc.document.querySelector('#modalCaixa [name="anotacoes"]').value
+       ==="refazer as 10 questões que errei da aula 3",
+     wDesc.document.querySelector('#modalCaixa [name="anotacoes"]').value);
+
+  /* ---- sessão que já existe e já tem descrição não é sobrescrita ---- */
+  const wJa=abrir(base({registros:[sess("rY","Y",{anotacoes:"parei no art. 12"})],
+    revisoes:[{id:"v1",registroId:"rY",data:hoje,ordem:1,feita:false,manual:true,minutos:null,
+      questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"refazer as questões"}]}));
+  await espera(450);
+  wJa.document.querySelector('#view [data-acao="concluir"]')
+    .dispatchEvent(new wJa.MouseEvent("click",{bubbles:true}));
+  await espera(450);
+  ok("a descrição que a sessão já tinha é preservada",
+     wJa.document.querySelector('#modalCaixa [name="anotacoes"]').value==="parei no art. 12",
+     wJa.document.querySelector('#modalCaixa [name="anotacoes"]').value);
+
   /* Sem sessão daquele conteúdo hoje, o caminho antigo continua: abre uma nova */
   const w2=abrir(base({registros:[sess("rY","Y",{data:dia(-4)})],
     revisoes:[{id:"v1",registroId:"rY",data:hoje,ordem:1,feita:false,manual:true,minutos:null,
