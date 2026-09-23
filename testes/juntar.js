@@ -49,10 +49,13 @@ const btn=()=>doc.querySelector('[data-acao="toggle-juntar"]');
      [...lai.querySelectorAll(".apr-data")].every(d=>/^\d\d\/\d\d$/.test(d.textContent.trim())),
      [...lai.querySelectorAll(".apr-data")].map(d=>d.textContent));
   const topo=lai.querySelector(".apr-topo");
-  const filhos=[...topo.children].map(x=>x.className.split(" ")[0]);
-  ok("a data vem à esquerda da estrela",
-     filhos.indexOf("apr-data")>=0 && filhos.indexOf("apr-data")<filhos.findIndex(c=>c==="act"),
-     filhos);
+  const filhos=[...topo.children];
+  // a alça de reordenar é o primeiro filho; a estrela é procurada pela ação,
+  // não por "o primeiro .act", que passou a ser a alça
+  const iData=filhos.findIndex(x=>x.classList.contains("apr-data"));
+  const iEstrela=filhos.findIndex(x=>x.dataset.acao==="erro-estrela");
+  ok("a data vem à esquerda da estrela", iData>=0 && iEstrela>=0 && iData<iEstrela,
+     filhos.map(x=>x.className+"/"+(x.dataset.acao||"")));
   ok("o cabeçalho deixa de mostrar uma data única e diz de quantos dias é",
      /3 dias/.test(lai.querySelector(".apr-cab .meta").textContent),
      lai.querySelector(".apr-cab .meta").textContent);

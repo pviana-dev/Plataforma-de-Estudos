@@ -56,7 +56,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   ok("e o texto da aba não selecionada saiu do cinza de desabilitado",
      /\.aba\{[^}]*?color:var\(--text-2\)/s.test(html));
   const abas=[...w.document.querySelectorAll(".aba")];
-  ok("as 6 abas continuam lá", abas.length===6, abas.map(a=>a.textContent));
+  ok("as 7 abas continuam lá", abas.length===7, abas.map(a=>a.textContent));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ncabeçalho ajustado");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

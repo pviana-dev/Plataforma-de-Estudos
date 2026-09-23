@@ -102,8 +102,10 @@ async function ajustes(w, fn){
   // responder "continuo" volta a agendar
   doc.querySelector('[data-acao="salvar-pos-prova"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(400);
-  ok("respondendo que continua, a prova sai e o agendamento volta",
-     db(w).dataProva==="" && db(w).posProva==="continuo", [db(w).dataProva, db(w).posProva]);
+  // a data NÃO é apagada: fica guardada no modo Concurso, e o objetivo vira Sem objetivo
+  ok("respondendo que continua, o objetivo vira Sem objetivo e o agendamento volta",
+     db(w).objetivo==="livre" && db(w).dataProva===dia(-3) && db(w).posProva==="continuo",
+     [db(w).objetivo, db(w).dataProva, db(w).posProva]);
   ok("e as revisões voltam a nascer", db(w).revisoes.length>0, db(w).revisoes.length);
   ok("a pergunta não se repete", w.document.getElementById("overlay").hidden);
 

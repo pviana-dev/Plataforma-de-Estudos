@@ -100,19 +100,20 @@ const opcoesConteudo=()=>[...doc.querySelectorAll("#campoAssunto option")].map(o
      ficha("Legislação","Licitações").fase==="andamento" && ficha("Português","Crase").fase==="andamento");
 
   /* ---- 5. concluir a disciplina inteira ---- */
-  click(doc.getElementById("btnAjuda")); await espera(300);
-  click($('[data-acao="abrir-conteudos"]')); await espera(350);
+  click($('#abas [data-aba="conteudos"]')); await espera(350);
   ok("a tela de conteúdos separa por disciplina",
-     [...doc.querySelectorAll("#modalCorpo .grupo-rev .cab strong")].map(e=>e.textContent).sort().join()
+     [...doc.querySelectorAll("#view .grupo-rev .cab strong")].map(e=>e.textContent).sort().join()
        ==="Legislação,Português",
-     [...doc.querySelectorAll("#modalCorpo .grupo-rev .cab strong")].map(e=>e.textContent));
+     [...doc.querySelectorAll("#view .grupo-rev .cab strong")].map(e=>e.textContent));
   click([...doc.querySelectorAll('[data-acao="concluir-disciplina"]')].find(b=>b.dataset.disc==="Legislação"));
   await espera(450);
   ok("concluir a disciplina fecha todos os conteúdos dela",
      (db().conteudos||[]).filter(c=>c.disciplina==="Legislação").every(c=>c.fase==="concluido"),
      db().conteudos.map(c=>[c.disciplina,c.nome,c.fase]));
   ok("sem tocar na outra disciplina", ficha("Português","Crase").fase==="andamento");
-  ok("e a tela continua aberta para seguir mexendo", !$("#overlay").hidden);
+  ok("e a aba continua na tela para seguir mexendo",
+     $('#abas [data-aba="conteudos"]').getAttribute("aria-selected")==="true" &&
+     /Disciplinas/.test($("#view").textContent), $("#view").textContent.slice(0,80));
 
   /* ---- 6. reabrir a disciplina ---- */
   click([...doc.querySelectorAll('[data-acao="reabrir-disciplina"]')].find(b=>b.dataset.disc==="Legislação"));

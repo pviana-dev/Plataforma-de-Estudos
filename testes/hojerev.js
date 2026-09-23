@@ -26,11 +26,19 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   let w=abrir(base([rev("v1","r1",hoje), rev("v2","r2",hoje), rev("v3","r1",ontem), rev("v4","r2",mais(4))]));
   await espera(400);
   let doc=w.document, $=s=>doc.querySelector(s);
-  const card=cardDe(doc,"Revisões de hoje");
-  ok("a aba Revisões abre com um card das revisões de hoje", !!card,
+  const card=cardDe(doc,"Agenda de hoje");
+  ok("a aba Agenda abre com um card do que é de hoje", !!card,
      [...doc.querySelectorAll("#view .card h2")].map(h=>h.textContent));
-  ok("o card é o primeiro da tela, antes do + Adicionar",
-     [...doc.querySelectorAll("#view .card, #view .btn-add")][0]===card);
+  /* ordem da aba: indicadores, + Adicionar revisão, o card de hoje (fixo,
+     fora do alcance dos filtros) e só então os filtros Situação / Organizar. */
+  const acima=[...doc.querySelectorAll("#view .card, #view .btn-add")].filter(e=>!e.classList.contains("tiles"));
+  ok("o + Adicionar revisão vem logo abaixo dos indicadores", acima[0].classList.contains("btn-add"),
+     acima[0].textContent.slice(0,60));
+  ok("o card de hoje vem logo depois", acima[1]===card,
+     acima.slice(0,3).map(e=>e.textContent.slice(0,40)));
+  ok("e os filtros Situação e Organizar depois dele, um abaixo do outro",
+     /Situação:/.test(acima[2].textContent) && /Organizar:/.test(acima[2].textContent) &&
+     acima[2].querySelectorAll(":scope > .linha").length>=2, acima[2].textContent.slice(0,60));
   ok("o cabeçalho traz a data de hoje",
      card.querySelector(".dica").textContent.includes(hoje.slice(8)+"/"+hoje.slice(5,7)),
      card.querySelector(".dica").textContent);
@@ -65,7 +73,7 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   seed.registros.push(sessaoHoje);
   w=abrir(seed); await espera(400);
   doc=w.document;
-  const c2=cardDe(doc,"Revisões de hoje");
+  const c2=cardDe(doc,"Agenda de hoje");
   const linhas=[...c2.querySelectorAll(".item")];
   ok("as concluídas hoje entram na lista", linhas.length===3, linhas.map(l=>l.textContent.replace(/\s+/g," ").slice(0,70)));
   ok("a concluída hoje é rotulada assim", /Concluída hoje/.test(c2.textContent), c2.textContent.replace(/\s+/g," "));
@@ -87,7 +95,7 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   seed.cronometro={ inicio:Date.now()-600000, disciplina:"", assunto:"", destinoTipo:"registro", destinoId:"s9" };
   w=abrir(seed); await espera(400);
   doc=w.document;
-  const c3=cardDe(doc,"Revisões de hoje");
+  const c3=cardDe(doc,"Agenda de hoje");
   ok("a revisão cronometrada aparece como em andamento", /Em andamento agora/.test(c3.textContent),
      c3.textContent.replace(/\s+/g," "));
   ok("e vem em primeiro lugar", c3.querySelector(".item").classList.contains("em-andamento"),
@@ -96,7 +104,7 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   /* ---- nenhuma para hoje, mas com atrasada ---- */
   w=abrir(base([rev("v3","r1",ontem), rev("v4","r2",mais(4))])); await espera(400);
   doc=w.document;
-  const vazio=cardDe(doc,"Revisões de hoje");
+  const vazio=cardDe(doc,"Agenda de hoje");
   ok("sem revisão hoje, o card explica", /Nada marcado para hoje/.test(vazio.textContent), vazio.textContent);
   ok("e aponta para as atrasadas", /1 revisão atrasada/.test(vazio.textContent),
      vazio.textContent.replace(/\s+/g," "));
@@ -104,7 +112,7 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   /* ---- nada hoje e nada atrasado ---- */
   w=abrir(base([rev("v4","r2",mais(4))])); await espera(400);
   doc=w.document;
-  const limpo=cardDe(doc,"Revisões de hoje");
+  const limpo=cardDe(doc,"Agenda de hoje");
   ok("sem nada pendente, o texto muda", /cronograma abaixo/.test(limpo.textContent), limpo.textContent);
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nrevisões de hoje na aba Revisões");
   process.exit(falhas?1:0);

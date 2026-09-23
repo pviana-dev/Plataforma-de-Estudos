@@ -5,7 +5,11 @@ const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(
 const dia=n=>iso(new Date(Date.now()+n*864e5));
 const reg=(id,d,ass,extra)=>Object.assign({id,data:d,disciplina:"Legislação",assuntos:[ass],assunto:ass,
   minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:1},extra||{});
-// X e Y já integrados no grupo "LAI"; Z é a sessão de hoje, ainda sozinha
+/* A INTEGRAÇÃO FOI APOSENTADA — esta suíte passou a guardar a MIGRAÇÃO que a
+   desfaz, com a forma mais difícil que existia: um grupo com duas sessões e um
+   card que já era do grupo (sem dono próprio), mais uma sessão solta.
+   O que não pode acontecer: revisão órfã, sessão sem agendamento, ou grupo
+   sobrevivendo. X e Y estavam integrados no grupo "LAI"; Z estava sozinha. */
 const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],lancamentos:[],
  grupos:[{id:"g1",nome:"LAI",disciplina:"Legislação",criadoEm:1}],
  registros:[
@@ -13,7 +17,10 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
    reg("rY",dia(-1),"LAI - prazos",{plano:"grupo",grupoId:"g1"}),
    reg("rZ",dia(0),"LAI - recursos")],
  revisoes:[{id:"v1",registroId:"rX",grupoId:"g1",integrada:true,disciplina:"Legislação",assuntos:["LAI","LAI - prazos"],
-            data:dia(2),ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}],
+            data:dia(2),ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},
+           {id:"vF",registroId:"rX",grupoId:"g1",integrada:true,disciplina:"Legislação",assuntos:["LAI"],
+            data:dia(-2),ordem:1,feita:true,feitaEm:dia(-2),manual:false,minutos:30,questoes:5,acertos:4,
+            dificuldade:2,atividade:"",nota:"revisei os arts. 1 a 10"}],
  erros:[],cronometro:null};
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
@@ -25,44 +32,39 @@ const change=el=>el.dispatchEvent(new w.Event("change",{bubbles:true}));
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
 (async()=>{try{
-  click(doc.querySelector('[data-aba="registros"]')); await espera(300);
-  const linha=[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="rZ");
-  click(linha); await espera(300);
-  const cx=$("#cxIntegrado"); cx.checked=true; change(cx); await espera(150);
-  const opts=[...$("#grupoAlvo").options].map(o=>o.value+" :: "+o.textContent);
-  console.log("  destinos oferecidos a Z:");
-  opts.forEach(o=>console.log("    "+o));
+  await espera(600);
+  const d = lerDb();
 
-  ok("o grupo de X e Y aparece como um destino só",
-     opts.some(o=>/^g:g1 :: LAI \(2 conteúdos\)/.test(o)), opts);
-  ok("X não aparece solto no seletor", !opts.some(o=>/r:rX/.test(o)), opts);
-  ok("Y também não", !opts.some(o=>/r:rY/.test(o)), opts);
+  ok("o grupo foi desfeito", !(d.grupos || []).length, d.grupos);
+  ok("nenhuma sessão continua com plano de grupo",
+     !d.registros.some(r => r.plano === "grupo" || r.grupoId),
+     d.registros.map(r => [r.id, r.plano, r.grupoId]));
+  ok("e nenhuma ficou em 'manual', que a deixaria sem agendamento para sempre",
+     !d.registros.some(r => r.plano === "manual"), d.registros.map(r => [r.id, r.plano]));
 
-  // integrar Z com o grupo
-  const sel=$("#grupoAlvo"); sel.value="g:g1"; change(sel); await espera(200);
-  const chips=[...doc.querySelectorAll("#listaMembros .tag")].map(t=>t.textContent.replace("✕",""));
-  console.log("  conteúdos que o grupo passa a reunir: "+chips.join(" | "));
-  ok("o painel já mostra X e Y dentro do grupo",
-     chips.some(c=>/^LAI ·/.test(c)) && chips.some(c=>/LAI - prazos/.test(c)), chips);
+  /* O HISTÓRICO NÃO SE REPLANEJA: a revisão já feita atravessa a migração
+     inteira, com o tempo, as questões e a nota. A pendente automática é
+     recalculada, como em qualquer replanejamento — o que não pode é sumir
+     sem deixar a sessão coberta (verificado no fim). */
+  const vF = d.revisoes.find(r => r.id === "vF");
+  ok("a revisão já FEITA sobrevive à migração", !!vF && vF.feita, d.revisoes.map(r => [r.id, r.feita]));
+  ok("com o tempo, as questões e a nota intactos",
+     !!vF && vF.minutos === 30 && vF.questoes === 5 && /arts\. 1 a 10/.test(vF.nota || ""), vF);
+  ok("e agora pertence a uma sessão de verdade, não a um grupo",
+     !!vF && !!d.registros.find(r => r.id === vF.registroId) && !vF.grupoId, vF && vF.registroId);
+  ok("nenhuma revisão ficou órfã",
+     d.revisoes.every(r => !r.registroId || !!d.registros.find(x => x.id === r.registroId)),
+     d.revisoes.map(r => [r.id, r.registroId]));
+  ok("sem sobras de integração no dado",
+     !d.revisoes.some(r => r.grupoId || r.integrada),
+     d.revisoes.map(r => [r.id, r.grupoId, r.integrada]));
 
-  $("#modalCorpo #formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
-  await espera(400);
-  const db=lerDb(), gid=db.grupos[0].id;
-  const dentro=db.registros.filter(r=>r.grupoId===gid).map(r=>r.assunto).sort();
-  ok("integrar com o grupo integra com TODAS as sessões dele",
-     dentro.join(", ")==="LAI, LAI - prazos, LAI - recursos", dentro);
-  ok("continua sendo um grupo só", db.grupos.length===1, db.grupos.map(g=>g.nome));
-  const cards=db.revisoes.filter(r=>r.grupoId===gid).sort((a,b)=>a.data.localeCompare(b.data));
-  console.log("  fila do grupo depois: "+cards.map(c=>c.data+(c.id==="v1"?" (a que já existia)":" (nova)")).join(" | "));
-  const antiga=cards.find(c=>c.id==="v1");
-  ok("o card que já existia continua lá, na mesma data", !!antiga && antiga.data===dia(2), antiga&&antiga.data);
-  ok("e passou a cobrir os três conteúdos",
-     (antiga.assuntos||[]).sort().join(", ")==="LAI, LAI - prazos, LAI - recursos", antiga.assuntos);
-  ok("os cards extras (se houver) vêm DEPOIS do que já estava marcado",
-     cards.filter(c=>c.id!=="v1").every(c=>c.data>=antiga.data), cards.map(c=>c.data));
-  // o plano agora segue a escada quando ela cabe na janela: D+1, 3, 7, 16…
-  ok("a fila não passa do que o plano pede", cards.length<=CONFIG_MAX, cards.length);
+  /* E o que importa no fim: ninguém ficou sem ser chamado de volta. */
+  const abertas = new Set(d.revisoes.filter(r => !r.feita).map(r => r.registroId));
+  ok("as três sessões seguem no radar da agenda",
+     ["rX","rY","rZ"].every(id => d.registros.some(r => r.id === id)) && abertas.size >= 2,
+     { abertas: [...abertas], revs: d.revisoes.map(r => [r.registroId, r.data]) });
 
-  console.log(falhas?"\n"+falhas+" FALHA(S)":"\nintegração pelo grupo alcança todo mundo");
+  console.log(falhas?"\n"+falhas+" FALHA(S)":"\nmigração desfaz o grupo encadeado sem deixar sobras");
   process.exit(falhas?1:0);
-}catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();
+}catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

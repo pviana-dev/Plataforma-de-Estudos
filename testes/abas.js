@@ -6,12 +6,12 @@ setTimeout(()=>{
   const abas=[...doc.querySelectorAll("#abas [data-aba]")];
   console.log("ordem na tela:");
   abas.forEach((b,i)=>console.log("  "+(i+1)+". "+b.textContent.trim()+"   ("+b.dataset.aba+")"));
-  const esperada="hoje,registros,revisoes,erros,questoes,painel";
+  const esperada="hoje,registros,revisoes,conteudos,erros,questoes,painel";
   const obtida=abas.map(b=>b.dataset.aba).join(",");
   console.log(obtida===esperada ? "\nordem correta" : "\nORDEM ERRADA: "+obtida);
   // os rótulos visíveis (os ids internos não mudam com o rebranding)
   const rotulos=abas.map(b=>b.textContent.trim().replace(/\s*\d+$/,""));
-  const alvo="Hoje,Sessões,Agenda,Pontos importantes,Questões,Progresso";
+  const alvo="Hoje,Sessões,Agenda,Disciplinas,Anotações,Questões,Progresso";
   const okRot = rotulos.join(",")===alvo;
   console.log(okRot ? "rótulos conferem" : "RÓTULOS ERRADOS: "+rotulos.join(","));
   // cada aba ainda abre a tela certa

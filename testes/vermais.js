@@ -57,7 +57,7 @@ setTimeout(()=>{
       verPorAssunto(doc, w);
       ok("“Rotina” não aparece mais em lugar nenhum",
          !/Rotina/.test(doc.body.textContent), doc.body.textContent.match(/.{0,30}Rotina.{0,30}/));
-      ok("o card se chama “Revisão por assunto”", /Revisão por assunto/.test(txt()));
+      ok("o card se chama “Agenda por assunto”", /Agenda por assunto/.test(txt()));
       ok("o nome antigo sumiu", !/Rotina por assunto/.test(txt()));
 
       // 2. só alguns assuntos, com "+" para ver todos

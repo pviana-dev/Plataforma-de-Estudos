@@ -60,6 +60,15 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   const celConteudo=[...linhaSem.querySelectorAll("td")][3];
   ok("sessão sem cronograma avisa junto do conteúdo",
      /sem revisão/.test(celConteudo.textContent), celConteudo.textContent.replace(/\s+/g," "));
+  /* plano feito à mão já teve etiqueta "manual" aqui; ela saiu por aparecer em
+     quase toda linha sem mudar nada do que se faz na lista */
+  const wMan=abrir(base({registros:[sess("r5",{plano:"manual"})]}));
+  await espera(450);
+  const linhaMan=[...wMan.document.querySelectorAll("tbody tr[data-id]")][0];
+  const celMan=[...linhaMan.querySelectorAll("td")][3];
+  ok("plano manual não ganha mais etiqueta na lista",
+     !/manual/i.test(celMan.textContent), celMan.textContent.replace(/\s+/g," "));
+
   const wNormal=abrir(base({registros:[sess("r9")]}));
   await espera(450);
   const linhaOk=[...wNormal.document.querySelectorAll("tbody tr[data-id]")][0];

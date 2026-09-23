@@ -35,11 +35,11 @@ setTimeout(()=>{
      blocos.map(b=>b.querySelector(".dia-rotulo").textContent.trim()));
   ok("o primeiro bloco diz 'amanhã'", /amanhã/.test(blocos[0].textContent), blocos[0].querySelector(".dia-rotulo").textContent);
   ok("os outros dizem em quantos dias", /em 3 dias/.test(blocos[1].textContent), blocos[1].querySelector(".dia-rotulo").textContent);
-  ok("a contagem de revisões aparece", /2 revisões/.test(blocos[0].textContent));
+  ok("a contagem de itens aparece", /2 itens/.test(blocos[0].textContent), blocos[0].textContent);
   ok("o card da revisão não repete a data", !/\d\d\/\d\d/.test(blocos[0].querySelector(".item").textContent),
      blocos[0].querySelector(".item").textContent.replace(/\s+/g," "));
   ok("a revisão de hoje não entrou nos próximos dias", !card.textContent.includes("Para hoje"));
-  const hojeCard=[...doc.querySelectorAll(".card")].find(c=>/Revisões de hoje e atrasadas/.test(c.textContent));
+  const hojeCard=[...doc.querySelectorAll(".card")].find(c=>/Agenda de hoje e atrasados/.test(c.textContent));
   ok("a de hoje segue no card de hoje, com o rótulo", /Para hoje/.test(hojeCard.textContent));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nos próximos 7 dias estão separados por dia");
   process.exit(falhas?1:0);

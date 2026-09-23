@@ -79,9 +79,8 @@ const põe=(txt,ini,fim)=>{ const t=ta(); t.value=txt; t.setSelectionRange(ini==
   ok("e avisa", /limite de 2000/.test($("#toast").textContent), $("#toast").textContent);
 
   /* ---- vocabulário da aba ---- */
-  ok("o botão fala em ponto importante",
-     /Anotar ponto importante/.test(doc.body.textContent) ||
-     /Anotar ponto importante/.test(html), "");
+  ok("o botão de anotar tem o nome da aba",
+     /Nova anotação/.test(doc.body.textContent) || /Nova anotação/.test(html), "");
   ok("o campo convida a não esquecer", /não quer esquecer/.test(ta().getAttribute("placeholder")),
      ta().getAttribute("placeholder"));
   ok("não sobrou 'aprendizado' na tela", !/aprendizado/i.test($("#view").textContent),

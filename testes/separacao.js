@@ -68,13 +68,22 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
   await passo(()=>{ click(doc.querySelector('[data-aba="painel"]')); });
   await passo(()=>{ ok("o Painel também não", !/desatenção/i.test($("#view").textContent)); });
 
-  // mas a aba de anotações mantém o bloco de desatenção e os de questões
+  /* A aba de Anotações também deixou de medir DESEMPENHO: taxa de acerto e
+     "por desatenção" saíram dos blocos dela. O que se anota ali vem de questão
+     ou não — desempenho tem a aba Questões inteira. A contagem de questões
+     ficou, como contexto. */
   await passo(()=>{ click(doc.querySelector('[data-aba="erros"]')); });
   await passo(()=>{
     const t=$("#view").textContent;
-    ok("a aba de anotações mantém o bloco 'Por desatenção'", /Por desatenção/.test(t));
-    ok("mantém a quantidade de questões", /Questões do conteúdo|Questões da disciplina/.test(t));
-    ok("mantém a taxa de acerto", /Taxa de acerto/.test(t));
+    ok("a aba de anotações não mede mais desatenção", !/Por desatenção/.test(t),
+       (t.match(/.{0,40}desatenção.{0,30}/i)||[""])[0]);
+    ok("nem taxa de acerto", !/Taxa de acerto/.test(t),
+       (t.match(/.{0,40}Taxa de acerto.{0,20}/)||[""])[0]);
+    ok("mantém a quantidade de questões como contexto",
+       /Questões do conteúdo|Questões da disciplina/.test(t));
+    ok("e a contagem de pontos anotados", /Pontos anotados/.test(t));
+    ok("sem o 'N refeitas e acertadas' embaixo dela", !/refeitas e acertadas/.test(t),
+       (t.match(/.{0,40}refeitas.{0,20}/)||[""])[0]);
   });
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nanotações e revisões estão separadas");

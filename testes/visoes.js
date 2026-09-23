@@ -41,7 +41,7 @@ const titulos=()=>[...doc.querySelectorAll("#view .card h2")].map(h=>h.textConte
   ok("e a padrão é Por dia", sel.find(b=>b.getAttribute("aria-selected")==="true").dataset.visao==="dia");
 
   /* ---- por dia ---- */
-  ok("o que é de hoje vem primeiro", /Revisões de hoje/.test($("#view").textContent));
+  ok("o que é de hoje vem primeiro", /Agenda de hoje/.test($("#view").textContent));
   ok("as atrasadas têm card próprio", !!$("#revisoes-atrasadas"));
   ok("e há o bloco dos próximos dias", /Próximos dias/.test($("#view").textContent), titulos());
   const blocos=[...doc.querySelectorAll(".dia-bloco")];

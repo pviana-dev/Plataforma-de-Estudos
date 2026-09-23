@@ -45,7 +45,7 @@ const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
   ok("e a revisão se distingue", itens.some(i=>i.classList.contains("rev")));
   ok("o tempo de cada um fica alinhado à direita", itens.every(i=>!!i.querySelector(".dia-tempo")),
      itens.map(i=>i.querySelector(".dia-tempo") && i.querySelector(".dia-tempo").textContent));
-  ok("o cabeçalho da lista conta os registros e as revisões", /2 registros · 1 revisão/.test(c.textContent.replace(/\s+/g," ")),
+  ok("o cabeçalho da lista conta os registros e as revisões", /2 registros · 1 item da agenda/.test(c.textContent.replace(/\s+/g," ")),
      c.textContent.replace(/\s+/g," ").match(/\d+ registros[^N]{0,20}/));
 
   /* ---- sem dia escolhido ---- */

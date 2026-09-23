@@ -103,7 +103,10 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
                     revAberta=b.dataset.id; click(b); });
   await passo(()=>{
     ok("editar revisão abre sobreposto", aberto() && !!$("#modalCorpo #formRevisao"));
-    ok("o título diz Editar revisão", titulo()==="Editar revisão", titulo());
+    /* o conteúdo desta seed nasce EM ANDAMENTO, então o item é uma volta —
+       e a tela de edição fala de retomada, não de revisão (ver termosDoItem) */
+    ok("o título diz Editar retomada, porque o conteúdo está em andamento",
+       titulo()==="Editar retomada", titulo());
     const alvo=JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).revisoes
                .find(r=>r.id===revAberta);
     ok("a revisão vem preenchida", $("#modalCorpo [name=data]").value===alvo.data,
@@ -116,14 +119,9 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
     ok("a revisão foi gravada", /aula 3/.test(lerDb().revisoes[0].nota||""), lerDb().revisoes[0].nota);
   });
 
-  /* ---- o editor de card continua funcionando (outro modal) ---- */
-  await passo(()=>{ click(doc.querySelector('[data-acao="editar-card"]')); });
-  await passo(()=>{
-    ok("o editor de card abre normal", aberto() && !!$("#tituloCard"));
-    ok("o editor de card NÃO usa a tela grande", !grande());
-    click(doc.querySelector('[data-acao="fechar-modal"]'));
-  });
-  await passo(()=>{ ok("e fecha sem quebrar nada", !aberto() && !!$("#view").textContent); });
+  /* o editor de card era o terceiro modal desta suíte; saiu com a integração */
+  await passo(()=>{ ok("o editor de card não existe mais", !doc.querySelector('[data-acao="editar-card"]')); });
+  await passo(()=>{ ok("e a tela segue inteira sem ele", !aberto() && !!$("#view").textContent); });
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ntodos os testes da tela sobreposta passaram");
   process.exit(falhas?1:0);

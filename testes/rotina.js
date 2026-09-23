@@ -47,9 +47,9 @@ setTimeout(()=>{
     ok("o título do conteúdo está no cabeçalho",
        blocos.map(b=>b.querySelector(".cab strong").textContent).sort().join(",")==="Crase,LAI",
        blocos.map(b=>b.querySelector(".cab strong").textContent));
-    // agora são 4: fechar o conteúdo, + revisão, editar card e pontos importantes
+    // agora são 3: fechar o conteúdo, + revisão e anotações ("editar card" saiu com a integração)
     ok("os botões do conteúdo seguem no cabeçalho",
-       blocos.every(b=>b.querySelectorAll('.cab [data-acao]').length===4),
+       blocos.every(b=>b.querySelectorAll('.cab [data-acao]').length===3),
        blocos.map(b=>[...b.querySelectorAll('.cab [data-acao]')].map(x=>x.dataset.acao)));
     console.log(falhas?"\n"+falhas+" FALHA(S)":"\nos blocos da Rotina estão separados");
     process.exit(falhas?1:0);

@@ -25,12 +25,17 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
     ok("sumiu o botão de criar conteúdo", !doc.querySelector('[data-acao="novo-conteudo"]'));
     ok("não existe mais formulário de novo conteúdo", !$("#formConteudo"));
     const discs=[...$("#eDisciplina").options].map(o=>o.value).filter(Boolean);
-    ok("disciplina sem sessão não aparece no filtro", !discs.includes("Disciplina sem sessão"), discs);
+    /* ANOTAR NÃO DEPENDE MAIS DE TER ESTUDADO. Você pode esbarrar num ponto
+       importante de uma matéria que ainda nem começou — e precisa ter onde
+       guardar. A disciplina sem sessão é um alvo legítimo. */
+    ok("disciplina sem sessão aparece no filtro", discs.includes("Disciplina sem sessão"), discs);
     ok("as disciplinas com sessão aparecem", discs.includes("Legislação")&&discs.includes("Português"), discs);
     const cont=[...$("#eAssunto").options].map(o=>o.textContent);
     ok("os conteúdos vêm das sessões registradas", cont.some(t=>/LAI/.test(t))&&cont.some(t=>/Crase/.test(t)), cont);
-    ok("a anotação antiga sem sessão continua acessível, marcada",
-       cont.some(t=>/Peculato — sem sessão de estudo/.test(t)), cont);
+    ok("o que ainda não tem sessão vem marcado, como aviso e não como trava",
+       cont.some(t=>/Peculato — ainda sem sessão/.test(t)), cont);
+    ok("e o que tem sessão não ganha marca",
+       cont.some(t=>/LAI$/.test(t.trim())), cont);
   });
 
   /* ---- anotar num conteúdo existente ---- */
@@ -50,16 +55,25 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
   await passo(()=>{ click(doc.querySelector('[data-acao="editar-erro"]')); });
   await passo(()=>{
     const f=$("#formEdicaoErro");
-    ok("o conteúdo virou seletor", !!f.querySelector('select[name=conteudo]'));
+    // onde entra virou dois campos em cascata
+    ok("a disciplina tem campo próprio", !!f.querySelector('[name="alvoDisciplina"]'));
+    ok("e o conteúdo também", !!f.querySelector('[name="alvoConteudo"]'));
     ok("não há campo livre de conteúdo", !f.querySelector('input[name=assunto]'));
     ok("não há seletor de disciplina com 'criar nova'", !f.querySelector('select.sel-disciplina'),
        [...f.querySelectorAll("select")].map(s=>s.name));
-    const opts=[...f.querySelector('select[name=conteudo]').options].map(o=>o.textContent);
-    ok("o seletor só oferece alvos de sessão registrada",
-       opts.every(t=>/Legislação|Português/.test(t)) && !opts.some(t=>/sem sessão de estudo/.test(t)), opts);
-    // troca o conteúdo para outro existente
-    const sel=f.querySelector('select[name=conteudo]');
-    sel.value=[...sel.options].find(o=>/Crase/.test(o.textContent)).value;
+    const discs2=[...f.querySelector('[name="alvoDisciplina"]').options].map(o=>o.textContent);
+    ok("a disciplina oferece tudo o que está no cadastro, com sessão ou sem",
+       discs2.includes("Legislação") && discs2.includes("Disciplina sem sessão") &&
+       discs2.includes("Direito Penal"), discs2);
+    // move para Português · Crase
+    const sd=f.querySelector('[name="alvoDisciplina"]');
+    sd.value="Português"; sd.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const sc=f.querySelector('[name="alvoConteudo"]');
+    ok("o conteúdo mostra só os da disciplina escolhida",
+       [...sc.options].some(o=>/Crase/.test(o.textContent)) &&
+       ![...sc.options].some(o=>/LAI/.test(o.textContent)),
+       [...sc.options].map(o=>o.textContent));
+    sc.value="Crase";
     f.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   });
   await passo(()=>{
@@ -73,10 +87,12 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
   await passo(()=>{ const s=$("#eAssunto"); s.value=[...s.options].find(o=>/Peculato/.test(o.textContent)).value; change(s); });
   await passo(()=>{ click(doc.querySelector('[data-acao="editar-erro"]')); });
   await passo(()=>{
-    const sel=$("#formEdicaoErro select[name=conteudo]");
-    ok("a órfã abre com o conteúdo dela selecionado", /Peculato/.test(sel.options[sel.selectedIndex].textContent),
-       sel.options[sel.selectedIndex].textContent);
-    sel.value=[...sel.options].find(o=>/LAI/.test(o.textContent)).value;
+    const sd=$('#formEdicaoErro [name="alvoDisciplina"]');
+    const sc=$('#formEdicaoErro [name="alvoConteudo"]');
+    ok("a órfã abre com a disciplina e o conteúdo dela selecionados",
+       sd.value==="Direito Penal" && sc.value==="Peculato", [sd.value, sc.value]);
+    sd.value="Legislação"; sd.dispatchEvent(new w.Event("change",{bubbles:true}));
+    $('#formEdicaoErro [name="alvoConteudo"]').value="LAI";
     $("#formEdicaoErro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   });
   await passo(()=>{

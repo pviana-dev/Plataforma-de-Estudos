@@ -53,94 +53,24 @@ const numeros=()=>[...doc.querySelectorAll("#view .meta")].map(m=>(m.textContent
   await passo(()=>{ click($('[data-aba="revisoes"]')); });
   await passo(()=>{ verPorAssunto(doc, w); });
   await passo(()=>{
-    const cards=[...doc.querySelectorAll('[data-acao="editar-card"]')];
+    // o card continua único; quem saiu foi o botão de editá-lo, com a integração
+    const cards=[...doc.querySelectorAll("#view .grupo-rev")];
     const ns=numeros();
-    ok("as duas sessões de LAI caem no mesmo card", cards.length===1, cards.map(c=>c.dataset.card));
+    ok("as duas sessões de LAI caem no mesmo card", cards.length===1,
+       cards.map(c=>c.querySelector(".cab strong").textContent));
     ok("a numeração é contínua (sem 1,2,3 repetido)", ns.join(",")===ns.map((_,i)=>i+1).join(","), ns);
   });
 
-  /* ---- o card agora pode ser editado: título + conteúdos ligados ---- */
-  await passo(()=>{ click(doc.querySelector('[data-acao="editar-card"]')); });
-  await passo(()=>{
-    ok("o editor do card abre com o título atual", $("#tituloCard") && $("#tituloCard").value==="LAI", $("#tituloCard")&&$("#tituloCard").value);
-    const chips=[...doc.querySelectorAll("#modalCorpo [data-membro]")].map(c=>c.dataset.membro).sort();
-    ok("mostra os conteúdos ligados ao card", chips.join(",")==="rA,rB", chips);
-    $("#tituloCard").value="LAI (Lei 12.527)";
-    click(doc.querySelector('[data-acao="salvar-card"]'));
-  },100);
-  const antesDaFusao = [];
+  /* Daqui para baixo esta suíte editava o título do card e integrava uma
+     terceira sessão. Saiu com a integração. O que ficou é o que a substituiu:
+     o card único já vem da regra de conteúdo, sem ninguém integrar nada. */
   await passo(()=>{
     const d=lerDb();
-    ok("editar o título transformou o card num grupo", d.grupos.length===1 && d.grupos[0].nome==="LAI (Lei 12.527)", d.grupos);
-    const gid=d.grupos[0].id;
-    ok("as duas sessões ficaram ligadas ao card", d.registros.filter(r=>r.grupoId===gid).length===2, d.registros.map(r=>r.id+":"+(r.grupoId||"-")));
-    d.revisoes.forEach(r=>antesDaFusao.push(r.data));
-    ok("o título do card aparece na Rotina", /LAI \(Lei 12\.527\)/.test($("#view").textContent));
-    console.log("      [fila depois de juntar as duas sessões: " + d.revisoes.length + " cards — " +
-                d.revisoes.map(r=>r.data.slice(5)).sort().join(", ") + "]");
+    ok("o card único não veio de grupo nenhum", !(d.grupos||[]).length, d.grupos);
+    ok("nem de revisão marcada como integrada",
+       !d.revisoes.some(r=>r.grupoId||r.integrada), d.revisoes.map(r=>[r.id,r.grupoId]));
+    ok("e não há botão de editar card na tela", !doc.querySelector('[data-acao="editar-card"]'));
+    console.log(falhas?"\n"+falhas+" FALHA(S)":"\ntodos os testes passaram");
+    process.exit(falhas?1:0);
   });
-
-  /* ---- integrar uma TERCEIRA sessão não pode criar cards novos ---- */
-  let datasAntes, qtdAntes;
-  await passo(()=>{
-    const d=lerDb(); qtdAntes=d.revisoes.length; datasAntes=d.revisoes.map(r=>r.data).sort().join(",");
-    click($('[data-aba="registros"]'));
-  });
-  await passo(()=>{
-    click($('[data-acao="toggle-form-registro"]'));
-  });
-  // trocar a disciplina redesenha o formulário (a lista de conteúdos é outra):
-  // tudo precisa ser consultado de novo depois disso
-  await passo(()=>{
-    const sd=$("#formRegistro select.sel-disciplina");
-    sd.value="Legislação"; change(sd);
-  });
-  await passo(()=>{
-    const f=$("#formRegistro");
-    porConteudo(doc, w, "LAI - prazos");
-    const cx=$("#cxIntegrado"); cx.checked=true; change(cx);
-    const sel=$("#grupoAlvo"); const opt=[...sel.options].find(o=>o.value.startsWith("g:"));
-    ok("o card existente aparece como destino da integração", !!opt, [...sel.options].map(o=>o.value));
-    sel.value=opt.value; change(sel);
-    f.querySelector("[name=minutos]").value="30";
-    f.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
-  });
-  await passo(()=>{
-    const d=lerDb();
-    ok("NENHUM card de revisão novo foi criado", d.revisoes.length===qtdAntes, {antes:qtdAntes, depois:d.revisoes.length});
-    ok("as datas das revisões continuam as mesmas", d.revisoes.map(r=>r.data).sort().join(",")===datasAntes,
-       {antes:datasAntes, depois:d.revisoes.map(r=>r.data).sort().join(",")});
-    const gid=d.grupos[0].id;
-    ok("o conteúdo novo entrou nos cards que já existiam",
-       d.revisoes.filter(r=>r.grupoId===gid).every(r=>(r.assuntos||[]).includes("LAI - prazos")),
-       d.revisoes.map(r=>(r.assuntos||[]).join("·")));
-    ok("as três sessões estão ligadas ao card", d.registros.filter(r=>r.grupoId===gid).length===3,
-       d.registros.map(r=>r.assunto+":"+(r.grupoId?"g":"-")));
-  });
-  await passo(()=>{ click($('[data-aba="revisoes"]')); });
-  await passo(()=>{ verPorAssunto(doc, w); });
-  await passo(()=>{
-    const ns=numeros();
-    ok("continua havendo um card só", doc.querySelectorAll('[data-acao="editar-card"]').length===1);
-    ok("a numeração segue contínua depois de integrar", ns.join(",")===ns.map((_,i)=>i+1).join(","), ns);
-    ok("o card lista os três conteúdos", /LAI · LAI - prazos|LAI - prazos/.test($("#view").textContent));
-  });
-
-  /* ---- remover um conteúdo pelo editor do card ---- */
-  await passo(()=>{ click(doc.querySelector('[data-acao="editar-card"]')); });
-  await passo(()=>{
-    const chip=doc.querySelector('#modalCorpo [data-membro="rA"]');
-    ok("o conteúdo aparece para ser removido", !!chip);
-    click(chip.querySelector('[data-acao="remover-membro"]'));
-    click(doc.querySelector('[data-acao="salvar-card"]'));
-  },100);
-  await passo(()=>{
-    const d=lerDb(), gid=d.grupos[0].id;
-    ok("o conteúdo saiu do card", !d.registros.some(r=>r.id==="rA" && r.grupoId===gid), d.registros.map(r=>r.id+":"+(r.grupoId||"-")));
-    ok("quem saiu ficou em revisão manual", d.registros.find(r=>r.id==="rA").plano==="manual");
-    ok("os cards do grupo continuam de pé", d.revisoes.some(r=>r.grupoId===gid && !r.feita));
-  });
-
-  console.log(falhas?"\n"+falhas+" FALHA(S)":"\ntodos os testes passaram");
-  process.exit(falhas?1:0);
-}catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,5).join("\n"));process.exit(2);}})();
+}catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,4).join("\n"));process.exit(2);}})();

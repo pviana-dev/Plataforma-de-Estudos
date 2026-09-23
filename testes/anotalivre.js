@@ -29,29 +29,42 @@ const erros=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).erro
   /* ---- o compositor traz o seletor ---- */
   click(doc.querySelector('[data-acao="abrir-composer"]')); await espera(300);
   ok("o compositor abriu", !!$("#txtNovo"));
-  const sel=$("#novoConteudo");
-  ok("com o seletor de onde entra", !!sel, $(".compositor").innerHTML.slice(0,120));
-  ok("o seletor oferece disciplinas e conteúdos",
-     [...sel.options].map(o=>o.textContent).some(t=>/LAI/.test(t)) &&
-     [...sel.options].map(o=>o.textContent).some(t=>/Crase/.test(t)),
+  /* Onde entra virou DOIS campos em cascata: disciplina e, dentro dela, o
+     conteúdo. Antes era um seletor só, com "Disciplina · Conteúdo" na mesma
+     linha — com muitas matérias, uma lista enorme. */
+  const sel=$("#novoConteudo");                      // o de disciplina
+  const cont=()=>$('.compositor [name="alvoConteudo"]');
+  ok("com o seletor de disciplina", !!sel, $(".compositor").innerHTML.slice(0,120));
+  ok("e o de conteúdo", !!cont());
+  ok("a disciplina lista as disciplinas",
+     [...sel.options].map(o=>o.textContent).some(t=>/Legislação/.test(t)) &&
+     [...sel.options].map(o=>o.textContent).some(t=>/Português/.test(t)),
+     [...sel.options].map(o=>o.textContent));
+  ok("e não mistura conteúdo no mesmo campo",
+     ![...sel.options].some(o=>/LAI|Crase/.test(o.textContent)),
      [...sel.options].map(o=>o.textContent));
 
   /* ---- salvar sem escolher é recusado ---- */
   $("#txtNovo").value="prazo de 20 dias";
   click(doc.querySelector('[data-acao="salvar-aprendizado"]')); await espera(250);
   ok("salvar sem escolher é recusado", erros().length===0, erros());
-  ok("com mensagem no compositor", /Escolha a disciplina ou o conteúdo/.test($("#erroComposer").textContent),
+  ok("com mensagem no compositor", /Escolha a disciplina/.test($("#erroComposer").textContent),
      $("#erroComposer").textContent);
-  ok("o aviso flutuante também aparece", /Escolha a disciplina ou o conteúdo/.test($("#toast").textContent),
+  ok("o aviso flutuante também aparece", /Escolha a disciplina/.test($("#toast").textContent),
      $("#toast").textContent);
   ok("e o seletor fica destacado", $("#novoConteudo").classList.contains("campo-errado"));
   ok("o texto digitado não se perde", $("#txtNovo").value==="prazo de 20 dias", $("#txtNovo").value);
 
-  /* ---- escolhendo, salva ---- */
-  const alvo=[...$("#novoConteudo").options].find(o=>/LAI/.test(o.textContent));
-  $("#novoConteudo").value=alvo.value;
+  /* ---- escolhendo a disciplina, o campo de conteúdo mostra SÓ os dela ---- */
+  $("#novoConteudo").value="Legislação";
   $("#novoConteudo").dispatchEvent(new w.Event("change",{bubbles:true}));
+  await espera(150);
   ok("escolher limpa o destaque na hora", !$("#novoConteudo").classList.contains("campo-errado"));
+  const opsC=[...cont().options].map(o=>o.textContent);
+  ok("o conteúdo mostra só os da disciplina escolhida",
+     opsC.some(t=>/LAI/.test(t)) && !opsC.some(t=>/Crase/.test(t)), opsC);
+  ok("e oferece a disciplina inteira como destino", /Toda a disciplina/.test(opsC[0]), opsC);
+  cont().value="LAI";
   click(doc.querySelector('[data-acao="salvar-aprendizado"]')); await espera(300);
   ok("agora a anotação é salva", erros().length===1, erros());
   ok("no conteúdo escolhido", erros()[0].disciplina==="Legislação" && erros()[0].assunto==="LAI",
@@ -60,7 +73,7 @@ const erros=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).erro
   ok("o compositor segue aberto para a próxima", !!$("#txtNovo"));
 
   /* ---- salvar sem texto avisa ---- */
-  $("#novoConteudo").value=alvo.value;
+  $("#novoConteudo").value="Legislação";
   click(doc.querySelector('[data-acao="salvar-aprendizado"]')); await espera(250);
   ok("sem texto, também avisa", /Escreva a anotação/.test($("#erroComposer").textContent),
      $("#erroComposer").textContent);

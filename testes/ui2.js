@@ -66,83 +66,23 @@ const passo = (fn, ms=300) => new Promise(r => setTimeout(() => { fn(); r(); }, 
        d.revisoes.map(r => r.registroId));
   });
 
-  /* ---- criar um grupo NOVO pelo nome, a partir da sessão de hoje ---- */
+  /* Daqui para baixo esta suíte criava grupos de revisão pelo formulário. A
+     integração foi aposentada — o que se verifica agora é que ela não está
+     mais lá, nem no formulário nem no dado. */
   click($('[data-aba="registros"]'));
   await passo(() => {
     editar("rC");
-    const cx = $("#cxIntegrado"); cx.checked = true; change(cx);
-    const sel = $("#grupoAlvo"); sel.value = "__novo"; change(sel);
-    ok("criar novo grupo abre o editor com o nome vazio", $("#grupoNome") && $("#grupoNome").value === "", $("#grupoNome") && $("#grupoNome").value);
-    submit();
-    ok("grupo novo sem nome é recusado", /nome ao grupo/.test($("#erroForm").textContent), $("#erroForm").textContent);
-  });
-  await passo(() => {
-    // traz a sessão da LAI para dentro antes de salvar
-    const add = $("#addMembro");
-    ok("o editor oferece as outras sessões da disciplina", [...add.options].some(o => o.value === "rA"), [...add.options].map(o=>o.textContent));
-    add.value = "rA";
-    click([...doc.querySelectorAll('[data-acao="add-membro"]')][0]);
-    const chips = [...doc.querySelectorAll("#listaMembros [data-membro]")].map(t => t.dataset.membro);
-    ok("a sessão trazida vira uma etiqueta na lista", chips.join(",") === "rA", chips);
-    ok("a sessão trazida sai do seletor", ![...$("#addMembro").options].some(o => o.value === "rA"));
-    $("#grupoNome").value = "LAI";
-    submit();
-  });
-  await passo(() => {
-    const d = lerDb(), g = d.grupos[0];
-    ok("o grupo novo foi criado", d.grupos.length === 1 && g.nome === "LAI", d.grupos);
-    const dentro = d.registros.filter(r => r.grupoId === g.id).map(r => r.id).sort();
-    ok("o grupo reúne a sessão de hoje e a que foi trazida", dentro.join(",") === "rA,rC", dentro);
-    ok("as revisões que a sessão trazida já tinha viraram cards do grupo",
-       d.revisoes.filter(r => r.registroId === "rA" && !r.feita).every(r => r.grupoId === g.id),
-       d.revisoes.filter(r=>r.registroId==="rA").map(r=>r.data+":"+(r.grupoId||"-")));
-    ok("o plano do grupo existe", d.revisoes.some(r => r.grupoId === g.id && !r.feita));
-  });
-
-  /* ---- a Rotina mostra o nome do grupo ---- */
-  await passo(() => {
-    click($('[data-aba="revisoes"]'));
-    setTimeout(()=>verPorAssunto(doc, w), 60);
-  });
-  await passo(() => {
-    const txt = $("#view").textContent;
-    ok("a aba Rotina mostra o grupo pelo nome", /LAI/.test(txt) && /plano integrado/.test(txt));
-    ok("a Rotina lista os conteúdos reunidos", /LAI · LAI - prazos|LAI - prazos · LAI/.test(txt), txt.slice(txt.indexOf("plano integrado")-120, txt.indexOf("plano integrado")+80));
-  });
-
-  /* ---- tirar um conteúdo do grupo ---- */
-  click($('[data-aba="registros"]'));
-  await passo(() => {
-    editar("rC");
-    const chip = doc.querySelector('#listaMembros [data-membro="rA"]');
-    ok("o conteúdo trazido aparece na etiqueta ao reabrir", !!chip);
-    click(chip.querySelector('[data-acao="remover-membro"]'));
-    ok("a etiqueta sai da lista", !doc.querySelector('#listaMembros [data-membro="rA"]'));
-    ok("e volta para o seletor", [...$("#addMembro").options].some(o => o.value === "rA"));
-    submit();
-  });
-  await passo(() => {
-    const d = lerDb(), g = d.grupos[0];
-    ok("quem saiu não está mais no grupo", d.registros.filter(r => r.grupoId === g.id).map(r=>r.id).join(",") === "rC",
-       d.registros.map(r => r.id+":"+(r.grupoId||"-")));
-    ok("quem saiu ficou em revisão manual", d.registros.find(r => r.id === "rA").plano === "manual");
-    ok("o grupo continua com a sessão de hoje", d.revisoes.some(r => r.grupoId === g.id));
-  });
-
-  /* ---- desmarcar a integração ---- */
-  await passo(() => {
-    editar("rC");
-    const cx = $("#cxIntegrado"); cx.checked = false; change(cx);
-    ok("desmarcar esconde o seletor", $("#grupoAlvo").hidden);
-    ok("desmarcar fecha o editor do grupo", $("#painelGrupo").innerHTML === "");
+    ok("o formulário não oferece mais integrar", !$("#cxIntegrado") && !$("#grupoAlvo"));
+    ok("nem o editor de grupo", !$("#grupoNome") && !$("#addMembro"));
     submit();
   });
   await passo(() => {
     const d = lerDb();
-    ok("a sessão saiu do grupo", d.registros.find(r => r.id === "rC").plano === "manual");
-    ok("o grupo vazio foi descartado", d.grupos.length === 0, d.grupos);
+    ok("salvar não cria grupo nenhum", !(d.grupos || []).length, d.grupos);
+    ok("e a sessão fica com plano próprio",
+       d.revisoes.some(r => r.registroId === "rC") || d.registros.find(r => r.id === "rC").plano !== "grupo",
+       d.revisoes.map(r => r.registroId));
+    console.log(falhas ? "\n"+falhas+" FALHA(S)" : "\ntodos os testes de tela (2) passaram");
+    process.exit(falhas ? 1 : 0);
   });
-
-  console.log(falhas ? "\n"+falhas+" FALHA(S)" : "\ntodos os testes de tela (2) passaram");
-  process.exit(falhas ? 1 : 0);
-} catch(e){ console.error("ERRO:", e.message, "\n", e.stack.split("\n").slice(0,5).join("\n")); process.exit(2); } })();
+} catch(e){ console.error("ERRO:", e.message, "\n", e.stack.split("\n").slice(0,4).join("\n")); process.exit(2); } })();

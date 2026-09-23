@@ -30,19 +30,12 @@ setTimeout(()=>{
       console.log("  faixa 'Editando'  bg/borda/texto:", cor($("#modalCorpo .faixa-edicao")));
       console.log("  campo de texto    bg/borda:", cor($("#modalCorpo [name=minutos]")).split(" / ").slice(0,2).join(" / "));
       click(doc.querySelector('#overlay [data-acao="fechar-modal"]'));
+      /* aqui a referência era a tela do editor de card, que saiu com a
+         integração; a etiqueta do formulário da sessão faz o mesmo papel */
       setTimeout(()=>{
-        click($('[data-aba="revisoes"]'));
-        setTimeout(()=>verPorAssunto(doc, w), 60);
-        setTimeout(()=>{
-          click(doc.querySelector('[data-acao="editar-card"]'));
-          setTimeout(()=>{
-            console.log("\n[tela de edição do título do card — a referência]");
-            console.log("  caixa do editor   bg/borda/texto:", cor($("#modalCorpo .grupo-editor")));
-            console.log("  campo de texto    bg/borda:", cor($("#tituloCard")).split(" / ").slice(0,2).join(" / "));
-            console.log("  etiqueta          bg/borda/texto:", $("#modalCorpo .tag") ? cor($("#modalCorpo .tag")) : "—");
-            process.exit(0);
-          },150);
-        },150);
+        console.log("\n[etiquetas do formulário — a referência]");
+        console.log("  etiqueta          bg/borda/texto:", $("#modalCorpo .tag") ? cor($("#modalCorpo .tag")) : "—");
+        process.exit(0);
       },150);
     },150);
   },150);

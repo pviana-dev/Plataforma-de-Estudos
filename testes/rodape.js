@@ -82,13 +82,8 @@ async function abrir(sel){ click(doc.querySelector(sel)); await espera(300); }
      !corpo().querySelector(".acoes-form"));
   click(doc.querySelector('[data-acao="fechar-modal"]')); await espera(250);
 
-  /* ---- editar card de revisão ---- */
-  click(doc.querySelector('[data-aba="revisoes"]')); await espera(300);
-  verPorAssunto(doc, w); await espera(250);
-  await abrir('[data-acao="editar-card"]');
-  const rod3=caixa().querySelector(":scope > .acoes-form");
-  ok("o editor de card também prende o rodapé", !!rod3, caixa().className);
-  ok("e o salvar de lá continua achável", !!rod3.querySelector('[data-acao="salvar-card"]'));
+  /* o editor de card de revisão saiu junto com a integração; fechar continua
+     tendo de limpar a tela sobreposta */
   click(doc.querySelector('[data-acao="fechar-modal"]')); await espera(250);
   ok("fechar limpa tudo", $("#overlay").hidden && corpo().innerHTML==="" &&
      !caixa().querySelector(":scope > .acoes-form"));

@@ -49,7 +49,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   ok("sem data, o topo mostra estudo contínuo", /Estudo contínuo/.test($("#regressiva").textContent),
      $("#regressiva").textContent);
-  ok("e o chip do cabeçalho avisa", /Sem data de prova/.test($("#chipData").textContent), $("#chipData").textContent);
+  ok("e o chip do cabeçalho diz o objetivo", /Sem objetivo/.test($("#chipData").textContent), $("#chipData").textContent);
   click(doc.querySelector('[data-aba="registros"]')); await espera(200);
   click(doc.querySelector('[data-acao="editar-registro"]')); await espera(200);
   ok("o formulário fala em ritmo, não em data", /no seu ritmo/.test($("#modalCorpo").textContent) ||
@@ -83,12 +83,12 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   /* ---- 4. alternar entre os dois modos pelos ajustes ---- */
   doc.getElementById("btnAjuda").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(200);
-  ok("os ajustes trazem a caixa de estudo contínuo", !!$("#formAjustes [name=semProva]"));
-  ok("e ela vem marcada", $("#formAjustes [name=semProva]").checked);
-  ok("o campo de data começa desligado", $("#campoDataProva").disabled);
-  const cx=$("#formAjustes [name=semProva]"); cx.checked=false;
-  cx.dispatchEvent(new w.Event("change",{bubbles:true}));
-  ok("desmarcar religa o campo de data", !$("#campoDataProva").disabled);
+  const radio=v=>$('#formAjustes [name=objetivo][value="'+v+'"]');
+  ok("os ajustes trazem o seletor de objetivo", !!radio("livre") && !!radio("concurso") && !!radio("vestibular"));
+  ok("e ele vem em Sem objetivo", radio("livre").checked);
+  ok("o painel da data começa fechado", !$("#painelConcurso").classList.contains("aberto"));
+  radio("concurso").checked=true; radio("concurso").dispatchEvent(new w.Event("change",{bubbles:true}));
+  ok("escolher Concurso abre o campo de data", $("#painelConcurso").classList.contains("aberto"));
   $("#campoDataProva").value=dia(40);
   $("#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(300);

@@ -25,7 +25,7 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   await espera(400);
   /* ---- 1. a plataforma abre do zero ---- */
   ok("abre sem dados, na aba Hoje", !!$("#view") && $('[data-aba="hoje"]').getAttribute("aria-selected")==="true");
-  ok("as seis abas estão lá", doc.querySelectorAll("#abas .aba").length===6);
+  ok("as sete abas estão lá", doc.querySelectorAll("#abas .aba").length===7);
   ok("o cronômetro aparece logo no topo", !!$(".card-crono"));
 
   /* ---- 2. registrar a primeira sessão ---- */
@@ -90,8 +90,14 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   click($('[data-aba="erros"]')); await espera(300);
   click($('[data-acao="abrir-composer"]')); await espera(300);
   $("#txtNovo").value="prazo de 20 dias, prorrogável por mais 10";
+  // onde entra virou dois campos: disciplina e, dentro dela, o conteúdo
   const onde=$("#novoConteudo");
-  if (onde){ onde.value=[...onde.options].find(o=>/LAI/.test(o.textContent)).value; }
+  if (onde){
+    onde.value="Legislação";
+    onde.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const c=$('.compositor [name="alvoConteudo"]');
+    if (c) c.value="LAI";
+  }
   click($('[data-acao="salvar-aprendizado"]')); await espera(350);
   ok("o ponto é salvo", (db().erros||[]).length===1, db().erros);
   ok("e aparece na lista", /prorrogável/.test($("#view").textContent));

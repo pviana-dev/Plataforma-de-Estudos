@@ -40,10 +40,13 @@ const $ = s => doc.querySelector(s);
 const lerDb = () => JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click = el => el.dispatchEvent(new w.MouseEvent("click", { bubbles:true }));
 const change = el => el.dispatchEvent(new w.Event("change", { bubbles:true }));
+const corpoForm = () => ($("#modalCorpo") || {}).textContent || "";
 
 setTimeout(() => {
   try {
-    // 1. abrir a aba Registros e editar a sessão de hoje
+    /* A INTEGRAÇÃO FOI APOSENTADA. Ela existia para isto: duas sessões do mesmo
+       conteúdo abriam duas filas de revisão. Hoje a agenda resolve sozinha, e o
+       formulário não oferece mais caixa nenhuma. É o que esta suíte verifica. */
     click($('[data-aba="registros"]'));
     const btnEditar = [...doc.querySelectorAll('[data-acao="editar-registro"]')].find(b => b.dataset.id === "rB");
     ok("a sessão de hoje pode ser editada pelo histórico", !!btnEditar);
@@ -51,69 +54,56 @@ setTimeout(() => {
 
     const form = $("#formRegistro");
     ok("formulário abriu em modo edição", !!form);
-    const cx = $("#cxIntegrado"), sel = $("#grupoAlvo");
-    ok("existe a caixa de integrar", !!cx);
-    ok("o seletor de destino existe e começa escondido", sel && sel.hidden, sel && sel.hidden);
-    ok("sem integrar, o editor do grupo não aparece", $("#painelGrupo").innerHTML === "");
+    ok("a caixa de integrar não existe mais", !$("#cxIntegrado"));
+    ok("nem o seletor de destino", !$("#grupoAlvo"));
+    ok("nem o editor do grupo", !$("#painelGrupo"));
+    ok("a caixa de 'sem revisão' continua", !!$('#formRegistro [name=semRevisao]'));
+    ok("e a fase dos conteúdos continua aparecendo", /Fase dos conte/.test(corpoForm()),
+       corpoForm().slice(0, 80));
 
-    // 2. marcar a caixa: o seletor obrigatório aparece
-    cx.checked = true; change(cx);
-    ok("marcar a caixa mostra o seletor", !$("#grupoAlvo").hidden);
-    const opcoes = [...$("#grupoAlvo").options].map(o => o.value + "|" + o.textContent);
-    ok("o seletor lista a outra sessão da disciplina", opcoes.some(o => o.startsWith("r:rA")), opcoes);
-    ok("o seletor oferece criar um grupo novo", opcoes.some(o => o.startsWith("__novo")), opcoes);
-    ok("a sessão que está sendo editada não aparece como destino", !opcoes.some(o => o.startsWith("r:rB")), opcoes);
-
-    // 3. tentar salvar sem escolher o destino → tem que ser recusado
+    /* Salvar sem integrar nada: a sessão agenda o plano dela, normalmente. */
     form.dispatchEvent(new w.Event("submit", { bubbles:true, cancelable:true }));
-    ok("salvar sem escolher o destino é recusado", /Escolha com qual conte/.test($("#erroForm").textContent), $("#erroForm").textContent);
-    ok("nada foi integrado ainda", lerDb().grupos.length === 0);
-
-    // 4. escolher a sessão da LAI de ontem
-    const alvo = $("#grupoAlvo"); alvo.value = "r:rA"; change(alvo);
-    const nome = $("#grupoNome");
-    ok("o editor do grupo aparece", !!nome);
-    ok("o nome vem preenchido com o conteúdo escolhido", nome && nome.value === "LAI", nome && nome.value);
-    const chips = [...doc.querySelectorAll("#listaMembros .tag")].map(t => t.textContent.replace("✕",""));
-    ok("os conteúdos do grupo ficam listados", chips.length === 2 && chips.some(c => /esta sessão/.test(c)) && chips.some(c => /^LAI ·/.test(c)), chips);
-    ok("dá para trazer mais sessões", !!$("#addMembro"));
-
-    // 5. renomear e salvar
-    nome.value = "LAI";
-    form.dispatchEvent(new w.Event("submit", { bubbles:true, cancelable:true }));
-
     setTimeout(() => {
       const d = lerDb();
-      ok("o grupo foi criado com o nome escolhido", d.grupos.length === 1 && d.grupos[0].nome === "LAI", d.grupos);
-      const gid = d.grupos[0] && d.grupos[0].id;
-      const dentro = d.registros.filter(r => r.plano === "grupo" && r.grupoId === gid).map(r => r.id).sort();
-      ok("as DUAS sessões entraram no mesmo grupo", dentro.join(",") === "rA,rB", dentro);
-      const revs = d.revisoes;
-      ok("existe um plano único do grupo", revs.filter(r => r.grupoId === gid).length > 0, revs.length);
-      ok("nenhuma revisão individual pendente sobrou", !revs.some(r => r.registroId && !r.feita),
-         revs.filter(r => r.registroId).map(r => r.registroId));
-      ok("nenhum card com o nome da disciplina", !revs.some(r => r.integrada && !r.grupoId));
+      ok("salvar não pede destino nenhum", !$("#erroForm") || !$("#erroForm").textContent.trim(),
+         $("#erroForm") && $("#erroForm").textContent);
+      ok("nenhum grupo é criado", !(d.grupos || []).length, d.grupos);
+      ok("nenhuma revisão nasce integrada", !d.revisoes.some(r => r.grupoId || r.integrada),
+         d.revisoes.map(r => [r.id, r.grupoId, r.integrada]));
 
-      // 6. reabrir a sessão: o editor do grupo já vem carregado
-      click([...doc.querySelectorAll('[data-acao="editar-registro"]')].find(b => b.dataset.id === "rA"));
-      ok("ao reabrir, a caixa já está marcada", $("#cxIntegrado").checked);
-      ok("ao reabrir, o destino aparece escolhido", $("#grupoAlvo").value === "g:"+gid, $("#grupoAlvo").value);
-      ok("ao reabrir, o nome do grupo está no editor", $("#grupoNome").value === "LAI", $("#grupoNome") && $("#grupoNome").value);
-      const membros = [...doc.querySelectorAll("#listaMembros .tag")].map(t => t.textContent.replace("✕",""));
-      ok("o editor lista os conteúdos do grupo", membros.length === 2, membros);
+      /* O QUE SUBSTITUIU A INTEGRAÇÃO: duas sessões do MESMO conteúdo dividem
+         um plano só, sem ninguém marcar nada. rA e rB falam de conteúdos
+         diferentes, então cada uma tem o seu — o que está certo. */
+      const porSessao = {};
+      d.revisoes.filter(r => !r.feita).forEach(r => {
+        porSessao[r.registroId] = (porSessao[r.registroId] || 0) + 1;
+      });
+      ok("cada sessão tem plano próprio, porque os conteúdos são diferentes",
+         Object.keys(porSessao).length === 2, porSessao);
 
-      // 7. renomear o grupo por dentro da sessão
-      $("#grupoNome").value = "LAI (Lei 12.527)";
-      $("#formRegistro").dispatchEvent(new w.Event("submit", { bubbles:true, cancelable:true }));
+      /* Agora uma sessão NOVA do mesmo conteúdo de rA: não pode abrir fila nova. */
+      const antes = d.revisoes.filter(r => !r.feita).length;
+      click($('[data-acao="toggle-form-registro"]'));
       setTimeout(() => {
-        const d2 = lerDb();
-        ok("renomear o grupo funciona", d2.grupos[0].nome === "LAI (Lei 12.527)", d2.grupos.map(g=>g.nome));
-        ok("o grupo continua com as duas sessões",
-           d2.registros.filter(r => r.grupoId === d2.grupos[0].id).length === 2);
-        const cards = [...doc.querySelectorAll("#app")].length;
-        console.log(falhas ? "\n"+falhas+" FALHA(S)" : "\ntodos os testes de tela passaram");
-        process.exit(falhas ? 1 : 0);
-      }, 300);
-    }, 300);
+        $('#modalCaixa [name="data"]').value = hoje;
+        const ds = $('#modalCaixa select.sel-disciplina');
+        ds.value = "Legislação"; change(ds);
+        setTimeout(() => {
+          porConteudo(doc, w, "LAI");
+          $('#modalCaixa [name="minutos"]').value = "30";
+          $("#formRegistro").dispatchEvent(new w.Event("submit", { bubbles:true, cancelable:true }));
+          setTimeout(() => {
+            const d2 = lerDb();
+            const depois = d2.revisoes.filter(r => !r.feita).length;
+            ok("estudar LAI de novo cria a sessão", d2.registros.length === 3, d2.registros.length);
+            ok("mas NÃO abre uma fila nova — era para isto que servia integrar",
+               depois === antes, { antes, depois, revs: d2.revisoes.map(r => [r.registroId, r.data]) });
+            ok("e continua sem grupo nenhum", !(d2.grupos || []).length, d2.grupos);
+            console.log(falhas ? "\n"+falhas+" FALHA(S)" : "\ntodos os testes de tela passaram");
+            process.exit(falhas ? 1 : 0);
+          }, 400);
+        }, 250);
+      }, 350);
+    }, 400);
   } catch(e){ console.error("ERRO:", e.message, "\n", e.stack.split("\n").slice(0,4).join("\n")); process.exit(2); }
-}, 300);
+}, 350);

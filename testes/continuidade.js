@@ -81,12 +81,14 @@ const pend=w=>db(w).revisoes.filter(r=>!r.feita);
   await espera(500);
   ok("com o agendamento encerrado, nada é reposto", pend(w).length===0, db(w).revisoes);
 
-  /* ---- 8. grupo aberto também é coberto ---- */
+  /* ---- 8. dado antigo com grupo: a migração desfaz e a sessão volta a agendar ---- */
   w=abrir(base({grupos:[{id:"g1",nome:"Bloco LAI",disciplina:"Legislação",criadoEm:1}],
     registros:[sess("r1",{plano:"grupo",grupoId:"g1"})]}));
   await espera(500);
-  ok("card integrado sem agendamento também ganha volta",
-     pend(w).length===1 && pend(w)[0].grupoId==="g1", db(w).revisoes);
+  ok("backup com grupo é desfeito e a sessão ganha a volta dela",
+     pend(w).length===1 && pend(w)[0].registroId==="r1" && !pend(w)[0].grupoId &&
+     (db(w).grupos||[]).length===0,
+     {revs:db(w).revisoes, grupos:db(w).grupos});
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ncontinuidade garantida");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

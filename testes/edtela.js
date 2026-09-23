@@ -23,7 +23,7 @@ const erros=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).erro
 
   /* ---- abre centralizado, como as outras telas de edição ---- */
   ok("a edição abre na tela sobreposta", !$("#overlay").hidden && !!$("#modalCorpo #formEdicaoErro"));
-  ok("com título próprio", $("#modalTitulo").textContent==="Editar ponto importante", $("#modalTitulo").textContent);
+  ok("com título próprio", $("#modalTitulo").textContent==="Editar anotação", $("#modalTitulo").textContent);
   ok("na versão larga da caixa", $("#modalCaixa").classList.contains("grande"));
   ok("o overlay centraliza a caixa", /\.overlay\{[^}]*place-items:center/s.test(html));
 

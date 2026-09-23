@@ -41,14 +41,13 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   click($('#modalCaixa [data-acao="cancelar-edicao"]')); await espera(250);
 
   /* ---- a tela de conteúdos existe e lista por disciplina ---- */
-  click(doc.getElementById("btnAjuda")); await espera(300);
-  click($('[data-acao="abrir-conteudos"]')); await espera(350);
-  ok("a tela de conteúdos abre", /Disciplinas e conteúdos/.test($("#modalTitulo").textContent),
-     $("#modalTitulo").textContent);
-  const fichas=[...doc.querySelectorAll("#modalCorpo .item .titulo")].map(t=>t.textContent);
+  click($('#abas [data-aba="conteudos"]')); await espera(350);
+  ok("a aba Disciplinas abre", /Disciplinas/.test($("#view h2").textContent),
+     $("#view h2").textContent);
+  const fichas=[...doc.querySelectorAll("#view .item .titulo")].map(t=>t.textContent);
   ok("as fichas dos conteúdos em uso já estão lá", fichas.sort().join("|")==="Crase|LAI", fichas);
   ok("diz em quantas sessões cada conteúdo aparece",
-     /2 sessões/.test($("#modalCorpo").textContent), $("#modalCorpo").textContent.slice(0,200));
+     /2 sessões/.test($("#view").textContent), $("#view").textContent.slice(0,200));
 
   /* ---- renomear propaga para tudo ---- */
   click([...doc.querySelectorAll('[data-acao="renomear-conteudo"]')].find(b=>b.dataset.cont==="Crase"));

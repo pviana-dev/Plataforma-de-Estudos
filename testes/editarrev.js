@@ -1,4 +1,4 @@
-/* Trocar o conteúdo de uma revisão — inclusive uma que está num card integrado.
+/* Trocar o conteúdo de uma revisão.
    Era aqui que a alteração parecia não salvar: o dado mudava, mas a tela
    continuava lendo o conteúdo do grupo. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
@@ -48,23 +48,10 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      [...w.document.querySelectorAll(".grupo-rev .cab strong")].some(e=>e.textContent==="Y"),
      [...w.document.querySelectorAll(".grupo-rev .cab strong")].map(e=>e.textContent));
 
-  /* ---- 2. revisão dentro de um card integrado (o caso que não salvava) ---- */
-  w=abrir(base({grupos:[{id:"g1",nome:"Bloco LAI",disciplina:"Legislação",criadoEm:1}],
-    registros:[sess("rX","X",{plano:"grupo",grupoId:"g1"}), sess("rY","Y",{data:hoje})],
-    revisoes:[{id:"v1",registroId:null,grupoId:"g1",disciplina:"Legislação",assuntos:["X"],integrada:true,
-      data:hoje,ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,
-      atividade:"",nota:""}]}));
-  await espera(450);
-  ok("o card começa como o grupo", [...w.document.querySelectorAll(".grupo-rev .cab strong")]
-     .some(e=>e.textContent==="Bloco LAI"));
-  await trocarConteudo(w,"X","Y");
-  v=db(w).revisoes.find(r=>r.id==="v1");
-  ok("trocando o conteúdo, a revisão SAI do card integrado", !v.grupoId, v.grupoId);
-  ok("e deixa de ser marcada como integrada", !v.integrada, v.integrada);
-  ok("passa a apontar para a sessão do conteúdo escolhido", v.registroId==="rY", v.registroId);
-  ok("o card na tela acompanha", [...w.document.querySelectorAll(".grupo-rev .cab strong")]
-     .some(e=>e.textContent==="Y"),
-     [...w.document.querySelectorAll(".grupo-rev .cab strong")].map(e=>e.textContent));
+  /* A parte 2 desta suíte cobria "trocar o conteúdo de uma revisão dentro de um
+     CARD INTEGRADO", o defeito de 32281db. Saiu com a integração: não há mais
+     card de grupo para a revisão sair. Trocar o conteúdo de uma revisão comum
+     continua coberto pela parte 1. */
   const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   click(w.document.querySelector('[data-acao="editar-revisao"]')); await espera(400);
   ok("e REABRINDO a revisão, o conteúdo novo é o que aparece",
@@ -72,13 +59,7 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      [...w.document.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
   click(w.document.querySelector('[data-acao="cancelar-revisao"]')); await espera(250);
 
-  /* ---- 3. mexer em outra coisa NÃO tira do grupo ---- */
-  w=abrir(base({grupos:[{id:"g1",nome:"Bloco LAI",disciplina:"Legislação",criadoEm:1}],
-    registros:[sess("rX","X",{plano:"grupo",grupoId:"g1"})],
-    revisoes:[{id:"v1",registroId:null,grupoId:"g1",disciplina:"Legislação",assuntos:["X"],integrada:true,
-      data:hoje,ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,
-      atividade:"",nota:""}]}));
-  await espera(450);
+  /* ---- 3. mexer só na data não mexe no conteúdo ---- */
   const doc3=w.document;
   doc3.querySelector('[data-acao="editar-revisao"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(400);
@@ -86,8 +67,9 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   doc3.querySelector("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(450);
   v=db(w).revisoes.find(r=>r.id==="v1");
-  ok("mudar só a data mantém a revisão no card integrado", v.grupoId==="g1", v.grupoId);
-  ok("e a data nova foi salva", v.data===dia(3), v.data);
+  ok("a data nova foi salva", v.data===dia(3), v.data);
+  ok("e o conteúdo continua o que foi escolhido antes",
+     (v.assuntos||[]).join()==="Y" || !!v.registroId, {assuntos:v.assuntos, reg:v.registroId});
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ntrocar o conteúdo da revisão funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

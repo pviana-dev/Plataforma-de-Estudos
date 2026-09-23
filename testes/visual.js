@@ -20,7 +20,7 @@ const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 setTimeout(()=>{
   const tiles=[...doc.querySelectorAll(".tile")].map(t=>t.className+" :: "+t.textContent.replace(/\s+/g," ").slice(0,42));
   console.log("  blocos da aba Hoje:"); tiles.forEach(t=>console.log("    "+t));
-  ok("atraso pinta o bloco de crítico", tiles.some(t=>/t-critico/.test(t)&&/atrasada/i.test(t)), tiles);
+  ok("atraso pinta o bloco de crítico", tiles.some(t=>/t-critico/.test(t)&&/atrasad/i.test(t)), tiles);
   ok("meta batida pinta de bom", tiles.some(t=>/t-bom/.test(t)&&/Estudo de hoje/.test(t)), tiles);
   const it=[...doc.querySelectorAll(".item")].map(e=>e.className);
   ok("a revisão atrasada tem o estado próprio", it.some(c=>/atrasada/.test(c)), it);

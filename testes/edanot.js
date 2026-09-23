@@ -34,9 +34,9 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
      f.querySelector("[name=fonte]").placeholder);
 
   const ta=f.querySelector("[name=ensinamento]");
-  ok("o campo da anotação ficou maior", ta.classList.contains("texto-grande"));
+  ok("o campo da anotação nasce pequeno e cresce", ta.classList.contains("cresce"));
   const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
-  ok("e a altura maior está no CSS", /textarea\.texto-grande\{min-height:170px\}/.test(css));
+  ok("e o teto está no CSS", /textarea\.cresce\{[^}]*max-height:52vh/.test(css));
 
   /* ---- salvar não apaga o que já estava escrito no campo removido ---- */
   ta.value="prazo de 20 dias — confirmado";

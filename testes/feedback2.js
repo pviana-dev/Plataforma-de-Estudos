@@ -70,15 +70,18 @@ const anotar=texto=>{ click(doc.querySelector('[data-acao="abrir-composer"]')); 
   /* ---- editar: move entre as dimensões, sem criar nada ---- */
   await passo(()=>{ click(doc.querySelectorAll('[data-acao="editar-erro"]')[0]); });
   await passo(()=>{
-    const sel=$("#formEdicaoErro select[name=conteudo]");
-    ok("o seletor tem as duas dimensões",
-       [...sel.options].some(o=>/Legislação · toda a disciplina/.test(o.textContent)) &&
-       [...sel.options].some(o=>/Legislação · LAI/.test(o.textContent)), [...sel.options].map(o=>o.textContent));
+    const sd=$('#formEdicaoErro [name="alvoDisciplina"]');
+    const sc=$('#formEdicaoErro [name="alvoConteudo"]');
+    ok("as duas dimensões continuam: disciplina inteira ou um conteúdo dela",
+       [...sc.options].some(o=>/Toda a disciplina/.test(o.textContent)) &&
+       [...sc.options].some(o=>/LAI/.test(o.textContent)), [...sc.options].map(o=>o.textContent));
     ok("nenhum campo livre ou criação de disciplina",
        !$("#formEdicaoErro input[name=assunto]") && !$("#formEdicaoErro select.sel-disciplina"));
-    ok("nenhuma opção de disciplina sem sessão",
-       ![...sel.options].some(o=>/Disciplina sem sessão/.test(o.textContent)), [...sel.options].map(o=>o.textContent));
-    sel.value=[...sel.options].find(o=>/Português · Crase/.test(o.textContent)).value;
+    ok("a disciplina sem sessão também é um destino válido",
+       [...sd.options].some(o=>/Disciplina sem sessão/.test(o.textContent)),
+       [...sd.options].map(o=>o.textContent));
+    sd.value="Português"; sd.dispatchEvent(new w.Event("change",{bubbles:true}));
+    $('#formEdicaoErro [name="alvoConteudo"]').value="Crase";
     $("#formEdicaoErro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   });
   await passo(()=>{

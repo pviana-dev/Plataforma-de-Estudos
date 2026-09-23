@@ -48,8 +48,8 @@ const txt=c=>c.textContent.replace(/\s+/g," ");
      /56%/.test(geral), geral);
   ok("estudo na semana continua somando a semana", /Estudo na semana/.test(tiles.join("")),
      tiles.find(t=>/Estudo na semana/.test(t)));
-  ok("a prioridade da reta final não é filtrada por dia",
-     /Improbidade|LAI|Crase/.test(txt(card("Prioridade"))), txt(card("Prioridade")).slice(0,120));
+  ok("a tabela de prioridade da reta final não existe mais", !card("Prioridade"),
+     [...doc.querySelectorAll("#view .card h2")].map(txt));
 
   /* ---- trocar de dia muda os gráficos ---- */
   const celula=doc.querySelector('.cal-dia[data-dia="'+dia(-3)+'"]');

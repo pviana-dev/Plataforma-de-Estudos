@@ -39,11 +39,12 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
   // no editar, o destino "toda a disciplina" continua existindo, com o novo nome
   click(doc.querySelector('[data-acao="editar-erro"]')); await espera(250);
-  const dest=[...$("#formEdicaoErro select[name=conteudo]").options].map(o=>o.textContent);
-  console.log("  onde entra: "+dest.join(" | "));
+  const dest=[...$('#formEdicaoErro [name="alvoConteudo"]').options].map(o=>o.textContent);
+  console.log("  conteúdo: "+dest.join(" | "));
   ok("no editar não há mais 'só as da disciplina'", !dest.some(t=>/só as da disciplina/.test(t)), dest);
   ok("mas ainda dá para apontar para a disciplina toda",
-     dest.some(t=>/Legislação · toda a disciplina/.test(t)), dest);
+     dest.some(t=>/Toda a disciplina/.test(t)), dest);
+  ok("e a disciplina tem campo próprio", !!$('#formEdicaoErro [name="alvoDisciplina"]'));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nrótulos e contador ajustados");
   process.exit(falhas?1:0);
 }catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();
