@@ -21,7 +21,7 @@
   /* superfície do chrome ativo: o mesmo verde claro do resto da identidade */
   --chrome:var(--accent-soft); --chrome-borda:var(--accent);
   --border:#dedbd2; --text:#333a3c; --text-2:#5c6568; --muted:#7d8589;
-  --accent:#5f8a7d; --accent-ink:#3f6c5f; --accent-soft:#e3ece8; --accent-forte:#53786d;
+  --accent:#5f8a7d; --accent-ink:#3f6c5f; --accent-soft:#e3ece8; --filtro-fundo:#eef3f0; --filtro-borda:#d3e1da; --accent-forte:#53786d;
   --star:#b8912f; --danger:#b0706a;
   /* séries categóricas (ordem fixa, nunca cíclica) */
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
@@ -48,7 +48,7 @@ html[data-tema="escuro"]{
   --campo-fundo:#2a3133; --campo-borda:#616b6d;
   --chrome:var(--accent-soft); --chrome-borda:var(--accent);
   --border:#394143; --text:#dde2e0; --text-2:#b6bfbe; --muted:#8d9899;
-  --accent:#7fae9f; --accent-ink:#9cc4b7; --accent-soft:#2b3a36; --accent-forte:#7fae9f;
+  --accent:#7fae9f; --accent-ink:#9cc4b7; --accent-soft:#2b3a36; --filtro-fundo:#2a3533; --filtro-borda:#3d4b47; --accent-forte:#7fae9f;
   --star:#cfae5c; --danger:#c68983;
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
   --seq0:var(--surface); --seq1:#24332e; --seq2:#2f463f; --seq3:#3a5950; --seq4:#466d61;
@@ -149,6 +149,13 @@ nav.abas{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--borde
 .aba{display:inline-flex;align-items:center;gap:7px;padding:10px 19px;border-radius:999px;
   border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:14.5px;transition:.15s}
 .aba:hover{color:var(--text);border-color:var(--accent)}
+/* AS BARRAS DE FILTRO (rótulo + botões de aba: Progresso, Questões, Agenda e
+   Disciplinas) ganham um fundo próprio, um verde-acinzentado entre a superfície
+   e o accent-soft: o bastante para a barra se separar dos cards de conteúdo,
+   sem competir com o botão escolhido, que continua sendo o verde cheio. */
+.barra-filtro,.card.barra-filtro{background:var(--filtro-fundo);border-color:var(--filtro-borda)}
+.barra-filtro .hl-tema{color:var(--text-2)}     /* o cinza claro some no fundo tingido */
+.barra-filtro:not(.card){padding:9px 12px;border:1px solid var(--filtro-borda);border-radius:var(--radius)}
 .aba[aria-selected="true"],.aba[aria-pressed="true"]{background:var(--accent-forte);border-color:var(--accent-forte);color:#fff;font-weight:550;
   box-shadow:0 1px 7px var(--brilho)}
 html[data-tema="escuro"] .aba[aria-selected="true"],
@@ -167,6 +174,14 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(0,0,0,.
 .card > h2{font-size:15px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px}
 .card > h2::before{content:"";flex:none;width:3px;height:15px;border-radius:2px;background:var(--accent)}
 .card > h2 .dica{font-size:12px;font-weight:400;color:var(--muted)}
+/* a Agenda de hoje, na aba Agenda: é por ela que se começa o dia, então se
+   destaca do resto — moldura verde mais grossa e o título numa faixa própria */
+.card-hoje{border:2px solid var(--accent);box-shadow:0 2px 14px var(--brilho),var(--shadow);
+  padding-top:0;overflow:hidden}
+.card-hoje > h2{font-size:18px;background:var(--accent-soft);margin:0 -17px 12px;padding:12px 17px;
+  border-bottom:1px solid var(--accent);flex-wrap:wrap;row-gap:2px}
+.card-hoje > h2::before{width:4px;height:18px;background:var(--accent-forte)}
+.card-hoje > h2 .dica{color:var(--accent-ink);font-weight:500}
 .sub{font-size:12.5px;color:var(--muted);margin:0 0 12px}
 .grid{display:grid;gap:14px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start}
@@ -340,6 +355,10 @@ tr.sep-dia .meta{font-weight:400;color:var(--text-2)}
 .badge.b-alerta{background:var(--alerta-soft);color:var(--alerta-ink)}
 .badge.b-estrela{background:var(--star-soft);color:var(--star)}
 /* estudo/revisão: nem o âmbar da revisão pura, nem o neutro do estudo */
+/* "estudo" tinha o cinza neutro, o mesmo do "Médio" da dificuldade, e as duas
+   etiquetas lado a lado na lista de sessões pareciam a mesma coisa. Ganha o
+   verde-claro da identidade, sem a borda do b-misto ("em andamento"). */
+.badge.b-estudo{background:var(--accent-soft);color:var(--accent-ink)}
 .badge.b-misto{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent)}
 .ponto{display:inline-block;width:9px;height:9px;border-radius:3px;flex:none}
 
@@ -559,6 +578,13 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .grupo-rev .cab{gap:9px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .grupo-rev .cab strong{font-size:14.5px;font-weight:600;letter-spacing:-.2px}
 .grupo-rev .item{margin-bottom:7px}
+.grupo-rev .minimizar{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:inherit;
+  padding:3px 6px;margin-left:-6px;border-radius:6px;cursor:pointer;font:inherit;text-align:left}
+.grupo-rev .minimizar:hover{background:var(--surface)}
+.grupo-rev .minimizar .seta{flex:none;width:7px;height:7px;margin:0 3px 3px 2px;border-right:2px solid var(--accent-ink);
+  border-bottom:2px solid var(--accent-ink);transform:rotate(45deg);transition:transform .15s}
+.grupo-rev.minimizado .minimizar .seta{transform:rotate(-45deg);margin:0 4px 0 1px}
+.grupo-rev.minimizado .cab{margin-bottom:0;padding-bottom:0;border-bottom:none}
 
 /* --- o item do card de hoje leva ao original no cronograma --- */
 .corpo.saltavel{cursor:pointer;border-radius:5px;margin:-3px -6px;padding:3px 6px;
@@ -949,7 +975,7 @@ const normalizarRegistros = lista => (lista||[]).map(r => {
    "revisao" — só o rótulo muda. Por isso todo teste de comportamento passa por
    ehRevisaoSessao/ehTipoRevisao, e nunca por (tipo === "revisao").          */
 const TIPOS_SESSAO = {
-  estudo:  { rotulo: "Estudo",           curto: "estudo",          badge: "" },
+  estudo:  { rotulo: "Estudo",           curto: "estudo",          badge: "b-estudo" },
   revisao: { rotulo: "Revisão",          curto: "revisão",         badge: "b-alerta" },
   misto:   { rotulo: "Estudo/Revisão",   curto: "estudo/revisão",  badge: "b-misto" }
 };
@@ -2066,6 +2092,21 @@ const ABAS = [
    é estado, não dado: fica neste navegador, num registro à parte, e NÃO entra no
    backup nem na nuvem. Recarregar devolve a tela como você deixou.            */
 const CHAVE_TELA = "plataforma-estudos:tela";
+/* CARDS MINIMIZADOS NA AGENDA POR ASSUNTO. Ficam no sessionStorage, não no
+   localStorage: sobrevivem ao F5 (a mesma aba continua aberta), e somem ao
+   fechar e abrir de novo — aí a agenda volta inteira, como a pessoa pediu.
+   A chave é a do card (disciplina + conteúdos), que não muda com o reload.
+   É estado de tela: não entra no db, no backup nem na nuvem. */
+const CHAVE_MINIMIZADOS = "plataforma-estudos:minimizados";
+const minimizados = (function(){
+  try { const l = JSON.parse(sessionStorage.getItem(CHAVE_MINIMIZADOS) || "[]");
+        return new Set(Array.isArray(l) ? l : []); }
+  catch(e){ return new Set(); }
+})();
+function alternarMinimizado(chave){
+  if (minimizados.has(chave)) minimizados.delete(chave); else minimizados.add(chave);
+  try { sessionStorage.setItem(CHAVE_MINIMIZADOS, JSON.stringify([...minimizados])); } catch(e){}
+}
 const CHAVE_ABA  = "plataforma-estudos:aba";      // formato antigo: só a aba
 const CAMPOS_TELA = ["aba",
   "fDisciplina","fPeriodo","fOrdem","fBusca","fTipo",           // filtros de Registros
@@ -3367,7 +3408,7 @@ function telaQuestoes(){
   /* O filtro vem depois da ação e antes de tudo o que ele recorta — assim a
      linha de chips fica encostada no primeiro bloco que muda com ela. */
   if (discsQ.length > 1)
-    h += '<div class="card" style="padding:11px 13px;margin-bottom:14px">' +
+    h += '<div class="card barra-filtro" style="padding:11px 13px;margin-bottom:14px">' +
       '<div class="linha filtro-chips">' +
         '<span class="hl-tema fixo">Filtrar:</span>' +
         '<div class="chips-rolagem">' +
@@ -3604,7 +3645,7 @@ function telaRevisoes(){
     deHoje.sort((a,b) => peso(a) - peso(b) || a.rev.data.localeCompare(b.rev.data));
     const nFeitasHoje = deHoje.filter(x => x.rev.feita).length;
     const nAbertas = deHoje.length - nFeitasHoje;
-    h += '<div class="card"><h2>Agenda de hoje ' +
+    h += '<div class="card card-hoje"><h2>Agenda de hoje ' +
          '<span class="dica">' + D.extenso(agora) +
          (deHoje.length ? ' · ' + nAbertas + ' em aberto · ' + nFeitasHoje + ' concluída(s)' : '') +
          '</span></h2>';
@@ -3641,7 +3682,7 @@ function telaRevisoes(){
     if (!opcoesAssunto.has(k)) opcoesAssunto.set(k, { rotulo: x.ctx.rotulo, disciplina: x.ctx.disciplina });
   });
   const filtroAssunto = opcoesAssunto.has(ui.aAssunto) ? ui.aAssunto : "";
-  h += '<div class="card filtros-agenda" style="padding:11px 13px;margin-bottom:14px">' +
+  h += '<div class="card filtros-agenda barra-filtro" style="padding:11px 13px;margin-bottom:14px">' +
     '<div class="linha"><span class="hl-tema">Situação:</span>' +
     [["abertos","A fazer",nPorFazer],["concluidos","Concluídos",det.length - nPorFazer]].map(([k,rot,n]) =>
       '<button class="aba" data-acao="fase-agenda" data-fase="'+k+'" aria-selected="'+(fase===k)+'">' +
@@ -3716,9 +3757,18 @@ function telaRevisoes(){
     const dono = donoDaRevisao(g.itens[0].rev);
     const aberto = conteudoAberto(dono);
     const desde = dono ? D.dif(dono.concluidoEm || dono.data || D.hoje(), D.hoje()) : 0;
-    return '<div class="grupo-rev'+(temAtraso ? " tem-atraso" : "")+(aberto ? " aberto" : "")+'">' +
-      '<div class="linha cab"><strong>'+esc(g.assunto)+'</strong>' +
+    const mini = minimizados.has(g.chave);
+    // minimizado, o card fica só no cabeçalho — e diz quanto guarda e quando é o próximo
+    const proximo = itens.find(x => !x.rev.feita);
+    return '<div class="grupo-rev'+(temAtraso ? " tem-atraso" : "")+(aberto ? " aberto" : "")+(mini ? " minimizado" : "")+'">' +
+      '<div class="linha cab">' +
+      // a seta e o nome são um botão só: o nome inteiro é área de clique
+      '<button class="minimizar" type="button" data-acao="minimizar-assunto" data-chave="'+esc(g.chave)+'" ' +
+        'aria-expanded="'+(!mini)+'" title="'+(mini ? "Mostrar os itens" : "Minimizar este card")+'">' +
+        '<span class="seta" aria-hidden="true"></span><strong>'+esc(g.assunto)+'</strong></button>' +
       '<span class="badge">'+esc(g.disciplina)+'</span>' +
+      (mini ? '<span class="badge">'+itens.length+(itens.length === 1 ? " item" : " itens") +
+              (proximo ? ' · próximo ' + D.br(proximo.rev.data) : '')+'</span>' : '') +
       (aberto ? '<span class="badge b-misto" title="A agenda está chamando para voltar ao assunto, não para revisar">' +
                 'em andamento' + (desde >= CONFIG.AVISO_ABERTO_DIAS ? ' · há ' + desde + ' dias' : '') + '</span>' : '') +
       (temAtraso ? '<span class="badge b-critico">tem atraso</span>' : '') +
@@ -3731,7 +3781,7 @@ function telaRevisoes(){
         (aberto ? "✓ terminei este conteúdo" : "↩ reabrir conteúdo") + '</button>' +
       '<button class="act" data-acao="nova-revisao" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.ctx.assuntos.join("|"))+'">+ revisão</button>' +
       '<button class="act" data-acao="ver-erros" data-disc="'+esc(g.disciplina)+'" data-ass="'+esc(g.primeiro)+'">anotações →</button></div>' +
-      itens.map(linhaRevisao).join("") + '</div>';
+      (mini ? '' : itens.map(linhaRevisao).join("")) + '</div>';
   }).join("");
   if (ordenados.length > CONFIG.ASSUNTOS_VISIVEIS){
     h += '<button class="act ver-mais' + (atrasoEscondido ? " destaque" : "") + '" data-acao="toggle-assuntos">' +
@@ -4681,7 +4731,6 @@ function telaPainel(){
   const nAtras  = naAgenda.filter(r => statusRevisao(r) === "atrasada").length;
   const nPend   = naAgenda.length - nFeitas;
   const escopo  = disc ? "apenas " + disc : "todas as disciplinas";
-  const cores   = coresDisciplina();
   /* Dia escolhido no calendário: filtra os gráficos e o card de revisões. Ficam
      de fora, de propósito, os números que só fazem sentido no acumulado —
      semana, sequência e acerto geral. */
@@ -4698,11 +4747,11 @@ function telaPainel(){
     : '';
 
   // ----- filtro por disciplina (uma linha acima dos gráficos)
-  let h = '<div class="card" style="padding:11px 13px;margin-bottom:14px"><div class="linha">' +
+  let h = '<div class="card barra-filtro" style="padding:11px 13px;margin-bottom:14px"><div class="linha">' +
     '<span class="hl-tema">Filtrar:</span>' +
     '<button class="aba" data-acao="filtrar-disc" data-disc="" aria-selected="'+(!disc)+'">Todas</button>' +
     disciplinas().map(d => '<button class="aba" data-acao="filtrar-disc" data-disc="'+esc(d)+'" aria-selected="'+(disc===d)+'">' +
-      '<span class="ponto" style="background:'+cores.get(d)+'"></span>'+esc(d)+'</button>').join("") +
+      esc(d)+'</button>').join("") +
     (disc ? '<span class="spacer"></span><button class="act" data-acao="filtrar-disc" data-disc="'+esc(disc)+'">limpar filtro ✕</button>' : '') +
   '</div></div>';
 
@@ -4754,7 +4803,6 @@ function telaPainel(){
 
 /** barras por disciplina; com uma disciplina filtrada, por assunto dela */
 function barrasGrupo(modo, regs, revs, disc, porDia){
-  const cores = coresDisciplina();
   const nomes = disc ? [...new Set(regs.flatMap(r => assuntosDe(r)))]
                      : disciplinas().filter(d => regs.some(r => r.disciplina === d));
   const dados = nomes.map(nome => {
@@ -4762,7 +4810,7 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
       const e = estatAssunto(disc, nome);
       return { nome, q: e.questoes, valor: modo === "taxa" ? e.taxa : e.minutos,
                rot: modo === "taxa" ? (e.taxa === null ? "—" : e.taxa+"%") : hhmm(e.minutos),
-               cor: cores.get(disc) };
+               cor: COR_BARRAS };
     }
     if (disc){                                   // com um dia escolhido, conta só o que caiu nele
       const rs = regs.filter(r => assuntosDe(r).includes(nome));
@@ -4772,7 +4820,7 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
       const min = rs.reduce((t,r)=>t+(r.minutos||0)/n(r),0);
       return { nome, q: Math.round(q), valor: modo === "taxa" ? pct(a,q) : Math.round(min),
                rot: modo === "taxa" ? (pct(a,q) === null ? "—" : pct(a,q)+"%") : hhmm(Math.round(min)),
-               cor: cores.get(disc) };
+               cor: COR_BARRAS };
     }
     const rs = regs.filter(r => r.disciplina === nome);
     const idsr = new Set(rs.map(r => r.id));
@@ -4783,7 +4831,7 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
     const min = rs.reduce((t,r)=>t+(r.minutos||0),0) + rvTodas.reduce((t,r)=>t+(r.minutos||0),0);
     return { nome, q, valor: modo === "taxa" ? pct(a,q) : min,
              rot: modo === "taxa" ? (pct(a,q) === null ? "—" : pct(a,q)+"%") : hhmm(min),
-             cor: cores.get(nome) };
+             cor: COR_BARRAS };
   }).filter(x => modo === "taxa" ? x.q > 0 : x.valor > 0);
 
   if (!dados.length) return '<div class="vazio">Sem dados suficientes ainda.</div>';
@@ -4807,12 +4855,12 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
   return '<svg viewBox="0 0 '+larg+' '+alt+'" width="100%" role="img" aria-label="Barras">'+corpo+'</svg>';
 }
 /** cor de série estável por disciplina (ordem fixa, nunca cíclica; da 7ª em diante, neutra) */
-function coresDisciplina(){
-  const slots = ["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)","var(--s6)"];
-  const mapa = new Map();
-  disciplinas().forEach((d,i) => mapa.set(d, i < slots.length ? slots[i] : "var(--muted)"));
-  return mapa;
-}
+/* AS DISCIPLINAS NÃO TÊM COR. Tinham seis cores, e da sétima em diante todas
+   ficavam cinza — não há paleta que separe dez ou vinte disciplinas a olho, e
+   inventar cores novas as deixaria parecidas demais. A cor também não fazia
+   falta: nas barras o nome vem escrito ao lado, e no filtro está no próprio
+   botão. Uma cor só para as barras (uma série, uma cor). */
+const COR_BARRAS = "var(--s1)";
 
 /* Calendário no formato de sempre: um mês por vez, semana começando no domingo,
    o número do dia dentro de um círculo. O tom do círculo é quanto você estudou
@@ -5717,7 +5765,7 @@ function telaConteudos(){
     '</button>';
 
   if (todas.length > 1)
-    h += '<div class="linha" style="margin-bottom:12px">' +
+    h += '<div class="linha barra-filtro" style="margin-bottom:12px">' +
       '<span class="hl-tema">Filtrar:</span>' +
       '<button class="aba" data-acao="filtrar-conteudos" data-disc="" aria-selected="'+(!filtro)+'">Todas</button>' +
       todas.map(d => {
@@ -6538,6 +6586,7 @@ document.addEventListener("click", ev => {
   const id = alvo.dataset.id;
   switch (alvo.dataset.acao){
     case "abrir-ajustes": modalAjuda(); break;
+    case "minimizar-assunto": alternarMinimizado(alvo.dataset.chave); render(); break;
     /* dias do vestibular: a lista cresce e encolhe no lugar, sem redesenhar —
        redesenhar apagaria o que já foi digitado nos outros campos */
     case "add-dia-prova": {

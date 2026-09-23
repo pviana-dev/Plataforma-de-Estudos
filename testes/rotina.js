@@ -49,7 +49,8 @@ setTimeout(()=>{
        blocos.map(b=>b.querySelector(".cab strong").textContent));
     // agora são 3: fechar o conteúdo, + revisão e anotações ("editar card" saiu com a integração)
     ok("os botões do conteúdo seguem no cabeçalho",
-       blocos.every(b=>b.querySelectorAll('.cab [data-acao]').length===3),
+       // o minimizar (seta + nome) é da tela, não do conteúdo: fica fora da conta
+       blocos.every(b=>b.querySelectorAll('.cab [data-acao]:not([data-acao="minimizar-assunto"])').length===3),
        blocos.map(b=>[...b.querySelectorAll('.cab [data-acao]')].map(x=>x.dataset.acao)));
     console.log(falhas?"\n"+falhas+" FALHA(S)":"\nos blocos da Rotina estão separados");
     process.exit(falhas?1:0);

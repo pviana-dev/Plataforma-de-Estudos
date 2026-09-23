@@ -7,7 +7,7 @@ O **README.md** explica *como a plataforma funciona*; este arquivo diz *onde par
 
 | Ramo | O que é |
 |---|---|
-| **`main`** | a versão em uso no dia a dia. Último commit: agendamento de longo prazo (horizonte, teto, pós-prova). |
+| **`main`** | a versão em uso no dia a dia. Recebeu o ramo `fases-do-conteudo` por fast-forward em 23/09 (até `0cb2287`). |
 | **`fases-do-conteudo`** | tudo o que veio depois, **ainda não mergeado**. É o que está em teste. |
 | tag **`v1-antes-das-fases`** | marca o estado anterior a esse trabalho todo. |
 
@@ -267,9 +267,35 @@ git diff main fases-do-conteudo   # ver a diferença
    - **Revisão à mão liberada depois da prova** (decisão do Pedro, 23/09): as travas de `enviarRevisao` só
      valem com a prova à frente. "Encerrei" para só o automático (`gerarRevisoes` e `garantirRetomadas`).
 
+28. **Depois do merge na `main`** (23/09): o card **Agenda de hoje** da aba Agenda ganhou destaque (`.card-hoje`:
+   moldura verde de 2px, título maior numa faixa própria). As **disciplinas perderam as cores** no Progresso:
+   eram 6 cores, e da sétima disciplina em diante tudo ficava cinza. Pelo método do skill dataviz, cor não se
+   inventa depois da paleta acabar, e ali ela não identificava nada, porque o nome já está escrito ao lado da
+   barra e dentro do botão. As barras ficaram numa cor só (`COR_BARRAS`) e o filtro perdeu o pontinho;
+   `coresDisciplina` saiu.
+
+29. **Barras de filtro com fundo próprio** (`.barra-filtro`, tokens `--filtro-fundo`/`--filtro-borda` nos dois
+   temas): Progresso, Questões, Agenda (Situação/Organizar) e Disciplinas, que são as que usam rótulo + botões de
+   aba. É um verde-acinzentado entre a superfície e o `accent-soft`: discreto, e sem competir com o botão
+   escolhido. O rótulo "Filtrar:" passou do `--muted` para o `--text-2` dentro delas: sobre o fundo tingido o
+   cinza claro cairia para 3,35:1 (já era 3,6:1 antes); ficou em 5,3:1 no claro e 6,8:1 no escuro. Ficaram de
+   fora os filtros de listas suspensas (Sessões, Anotações) e o "Agrupar por", que é um alternador dentro de um card.
+
+30. **Minimizar um card da Agenda por assunto** (seta + nome do conteúdo viram um botão só). Só aquele card
+   fecha; minimizado, ele mostra "N itens · próximo DD/MM", e a etiqueta "tem atraso" continua visível. O estado
+   fica no **sessionStorage** (`plataforma-estudos:minimizados`): sobrevive ao F5 e some ao fechar e abrir de novo,
+   como o Pedro pediu. Não entra no db, no backup nem na nuvem. A chave é a do card (`chaveCard`: disciplina +
+   conteúdos); renomear o conteúdo reabre o card. Suíte `testes/minimizar.js`; `rotina.js` passou a contar os
+   botões do conteúdo sem o de minimizar. Conferido no Chromium com F5 real (`page.reload`) e aba nova.
+
+31. **Badge "estudo" com cor própria** (`.badge.b-estudo`: accent-soft + accent-ink, 4,95:1 no claro e 6,24:1 no
+   escuro). Antes ele era cinza neutro, igual ao "Médio" da dificuldade, e na lista de Sessões os dois ficavam lado
+   a lado. Não usa verde/vermelho/âmbar porque essas cores já significam Fácil, Difícil e revisão; e não tem
+   a borda do `b-misto` ("em andamento").
+
 ## Pendências
 
-- **Merge do ramo na `main`** — depende do Pedro testar com os dados dele.
+- ~~**Merge do ramo na `main`**~~ — **FEITO** em 23/09, depois do teste do Pedro.
 - ~~**Reestruturação da aba Agenda**~~ — **FEITO**, ver item 23. O botão *Adicionar revisão* ficou
   logo abaixo dos indicadores.
 - ~~**Unificação por CONTEÚDO (item (b))**~~ — **FEITO**, ver item 16. O que segue abaixo é o
@@ -312,11 +338,11 @@ git diff main fases-do-conteudo   # ver a diferença
 ## Testes
 
 ```
-cd testes && ./rodar.sh          # todas (90 suítes)
+cd testes && ./rodar.sh          # todas (91 suítes)
 cd testes && ./rodar.sh fases    # só as que casam com "fases"
 ```
 
-Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **90 suítes verdes** no ramo.
+Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **91 suítes verdes** na `main`.
 
 **Duas armadilhas já conhecidas do banco de testes:**
 - data: usar sempre a data **local** (`iso()` local), nunca `toISOString()`, que vira o dia em UTC e
