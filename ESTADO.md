@@ -10,7 +10,7 @@ O **README.md** explica *como a plataforma funciona*; este arquivo diz *onde par
 | **`main`** | a versão em uso no dia a dia. Recebeu o ramo `fases-do-conteudo` por fast-forward em 23/09 (até `0cb2287`). |
 | **`fases-do-conteudo`** | já mergeado na `main`; não recebe mais trabalho. |
 | **`escada-por-conteudo`** | itens 32 e 33; **mergeado na `main`** (fast-forward) em 23/09. |
-| **`rotina-propria`** | itens 34 a 39, **commitados em 24/09; ainda não mergeados na `main`**. |
+| **`rotina-propria`** | itens 34 a 46, **commitados em 24/09; ainda não mergeados na `main`**. |
 | tag **`v1-antes-das-fases`** | marca o estado anterior a esse trabalho todo. |
 
 ```
@@ -406,6 +406,53 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    Depois, a pedido do Pedro: o índice em botões virou um **sumário lateral** fixo (`.aj-sumario`, marca a seção
    escolhida; no celular, a caixa `#ajudaIr`), e cada subtópico ganhou um **fio separador** (`.aj-item`, itens de
    lista; tracejado entre blocos de texto).
+
+40. **Ajustes finos (24/09, depois do commit `729c4bb`)**: nos ajustes, as opções de **objetivo** voltaram a ficar
+   lado a lado (`.opcoes.lado-a-lado`), os **títulos dos campos** ficaram maiores e mais fortes (14px, 600, cor do
+   texto) e a opção do **agendamento automático** ficou maior, numa linha só (quebra só abaixo de 480px).
+   **Ancoragem de rolagem** ao minimizar/expandir um card da Agenda por assunto (`manterNoLugar`): o cabeçalho
+   clicado continua embaixo do mouse e o resto da página se acomoda — antes a página "pulava". Teste em `minimizar.js`.
+
+41. **Remanejar leva as seguintes junto** (24/09). Pergunta do Pedro: com o dia cheio, mover um card para o dia
+   seguinte arrasta os que dependem dele? Medido: **não** pelo botão *remarcar* (e a ordem podia inverter), e pela
+   edição da data **sim, mas com a distância errada** (+6 virava +11: `fixarPassos` lia a sequência sem o item
+   editado). Agora os dois passam por `remanejarItem`: lê as distâncias com as datas de antes e empurra as revisões
+   do mesmo conteúdo que vinham **depois** (pela data antiga), cada uma mantendo a distância. Puxar para mais cedo
+   não mexe nas outras. Retomada não tem seguintes. `nomerev` e `rotinarev` ajustados; casos novos em `escada.js`.
+
+42. **"Retomar" virou "Continuar"** (24/09, pedido do Pedro, para uma linguagem mais comum). Só textos da tela: o
+   item se chama **Continuar**; onde é preciso substantivo, **card** (*Editar card*, *Excluir card*, *Data/Nome/
+   Detalhes do card* — escolha do Pedro, mais genérica); "volta" também saiu da tela (*card de continuar*). Ajustes:
+   *Dias até continuar um conteúdo em andamento*; Ajuda: seção *Continuar e revisar*. **O dado e o código continuam
+   `retomada`** (`ehRetomada`, `garantirRetomadas`…) — renomear exigiria migrar os dados salvos. O botão
+   *▶ continuar* das Sessões passa a combinar com o item da agenda. Testes com texto: `retomada`, `fases`,
+   `salvarsemmexer`, `ui5`.
+
+43. **▶ continuar herda da sessão de origem** (24/09, pedido do Pedro): disciplina, conteúdos, **dificuldade** e
+   **sem revisão**; não herda tempo, questões nem descrição. Revoga, só para o *continuar*, a regra do item 35
+   ("continuar também pede a dificuldade de hoje"); a sessão nova do zero continua sem padrão. De passagem:
+   `guardarRascunhoRegistro` passou a guardar o *sem revisão*, que se perdia quando o formulário era redesenhado.
+
+44. **O botão "/" das anotações era o itálico** (24/09). O Pedro pediu itálico e perguntou o que fazia o "/": o
+   itálico já existia (`_texto_` → `<em>`), mas o **I** inclinado sem serifa parecia uma barra. Agora ele tem serifa
+   (`.fmt-i`, Georgia itálico), como nos editores de texto, e a dica diz o que faz.
+
+45. **Conteúdo já estudado traz a dificuldade** (24/09, pedido do Pedro). A dificuldade já era guardada por
+   conteúdo (a da sessão mais recente, `dificuldadeDaFicha`), só não preenchia o formulário. Agora, numa sessão
+   nova, escolher um conteúdo com sessão (`adicionarAssuntoForm`) ou abrir o formulário já com ele (item da
+   agenda) preenche o campo (`dificuldadeHerdada`; vários conteúdos → a mais alta) e mostra de onde veio
+   (`#dicaDificuldade`). Conteúdo nunca estudado segue sem padrão e obrigatório.
+
+46. **Frases-guia tiradas das abas** (24/09, pedido do Pedro): Hoje ("Só para conferência…"); Sessões (dica dos
+   conteúdos, "sessão de outro dia não vira revisão…", o texto da fase no formulário); Agenda, edição (a ajuda do
+   nome — também a versão do card de continuar — e "Tempo e questões não ficam aqui…"); Disciplinas (o parágrafo do
+   topo); Anotações (o parágrafo do topo, a ajuda do "Sim — caiu numa questão", a do conteúdo em branco e a frase da
+   barra de formatação); Questões ("se editam lá…" e a lista "Sem questões ainda"); Progresso ("todas as disciplinas."
+   só sai quando não há filtro; "só este dia" → "só o dia selecionado"; saiu o bloco *Prática intercalada* e a função
+   `sugestaoIntercalada`). O que só essas frases explicavam foi para a **Ajuda** (seção *As abas, uma a uma*):
+   descrição que diferencia sessões, só sessão de hoje vira revisão, nome em branco segue a ordem, tempo e questões
+   entram pela sessão, + Novo conteúdo e Excluir, anotação na disciplina inteira, "caiu numa questão", atalhos da
+   caixa de texto (`-`, `--`, `---`, `\==`), onde se editam as questões. 7 testes passaram a conferir a ausência.
 
 ## O que falta (sinalizado em 23/09)
 

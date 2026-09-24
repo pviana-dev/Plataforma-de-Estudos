@@ -105,8 +105,8 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
     ok("editar revisão abre sobreposto", aberto() && !!$("#modalCorpo #formRevisao"));
     /* o conteúdo desta seed nasce EM ANDAMENTO, então o item é uma volta —
        e a tela de edição fala de retomada, não de revisão (ver termosDoItem) */
-    ok("o título diz Editar retomada, porque o conteúdo está em andamento",
-       titulo()==="Editar retomada", titulo());
+    ok("o título diz Editar card, porque o conteúdo está em andamento",
+       titulo()==="Editar card", titulo());
     const alvo=JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).revisoes
                .find(r=>r.id===revAberta);
     ok("a revisão vem preenchida", $("#modalCorpo [name=data]").value===alvo.data,

@@ -201,6 +201,32 @@ async function novaSessao(w, data, conteudos, dificuldade){
   ok("com prova daqui a 10 dias, a escada segue depois dela", l.some(r=>off(r.data)>10), mostra(l));
   ok("e nada cai no dia da prova", !l.some(r=>off(r.data)===10), mostra(l));
 
+  /* ---- 12. REMANEJAR (dia cheio): as seguintes andam junto ----
+     Fechado em -3; revisões em -1 (atrasada), +2 e +6 — distâncias 2, 3 e 4. */
+  const seed12=()=>base({revisarAte:dia(12),conteudos:[ficha("LAI",{concluidoEm:dia(-3)})],
+    registros:[sess("r1",{data:dia(-3)})], revisoes:[rev("a","r1",dia(-1)), rev("b","r1",dia(2)), rev("c","r1",dia(6))]});
+  w=abrir(seed12()); await espera(400);
+  w.prompt=()=>dia(3);
+  click(w, w.document.querySelector('[data-acao="remarcar-revisao"][data-id="a"]')); await espera(300);
+  l=escada(w);
+  const pos=id=>off(l.find(r=>r.id===id).data);
+  ok("remarcar a atrasada para +3 leva as seguintes junto, sem inverter a ordem (+6, +10)",
+     pos("a")===3 && pos("b")===6 && pos("c")===10, mostra(l));
+  w=abrir(seed12()); await espera(400);
+  click(w, w.document.querySelector('[data-acao="editar-revisao"][data-id="b"]')); await espera(300);
+  const f12=w.document.querySelector("#formRevisao"); f12.querySelector("[name=data]").value=dia(4);
+  f12.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+  l=escada(w);
+  ok("editar a data de +2 para +4 empurra a seguinte mantendo a distância (+6 → +8)",
+     pos("b")===4 && pos("c")===8 && pos("a")===-1, mostra(l));
+  w=abrir(seed12()); await espera(400);
+  click(w, w.document.querySelector('[data-acao="agenda-completa"][data-valor="true"]')); await espera(250);   // a de +6 é a 3ª
+  click(w, w.document.querySelector('[data-acao="editar-revisao"][data-id="c"]')); await espera(300);
+  const f13=w.document.querySelector("#formRevisao"); f13.querySelector("[name=data]").value=dia(5);
+  f13.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+  l=escada(w);
+  ok("puxar uma revisão para mais cedo não mexe nas outras", pos("c")===5 && pos("b")===2, mostra(l));
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nescada por conteúdo funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

@@ -19,7 +19,7 @@ mouse). Fica em todas as abas: é a referência de "hoje", "atrasado" e "amanhã
 | **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. **Filtros** de **Disciplina** e, embaixo, de **Conteúdo** (só os da disciplina escolhida; sem ela, todos, com a disciplina ao lado), valendo nas três visões, com um **✕ limpar** que tira os dois — o card *Agenda de hoje* não obedece a eles. **Revisões:** por padrão, **só as 2 próximas** — de cada conteúdo, as **2 próximas revisões** e a **próxima retomada** (cumprida uma, a seguinte aparece); **Todas as agendadas** mostra a escada inteira, e a escolha fica lembrada. Vale também para os próximos 7 dias da aba **Hoje**. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
 | **Disciplinas** | O **cadastro** de disciplinas e conteúdos, agrupado por disciplina. Cada conteúdo mostra **em quantas sessões ele aparece** e a fase (*em andamento* ou *concluído em DD/MM*), com **✎ renomear** — que muda o nome **em todo o sistema** — e **✓ concluir / ↩ reabrir**. No cabeçalho de cada disciplina, **✓ concluir disciplina** fecha de uma vez todos os conteúdos abertos dela (e **↩ reabrir disciplina**, quando já está tudo fechado). Fechar um conteúdo fecha **todas as sessões que falam dele** e começa a escada de revisões daquele dia. Aqui não se cria disciplina nem conteúdo: eles nascem no formulário da aba **Sessões**. |
 | **Anotações** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
-| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; os conteúdos ainda sem questões são listados à parte. Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
+| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
 | **Progresso** | Meta diária, **estudo na semana** e **questões da semana**, calendário de horas por dia, % de acerto por disciplina, tempo por disciplina e situação das revisões. **Clique numa disciplina** (no filtro ou na própria barra) para restringir os gráficos a ela; **clique num dia do calendário** para ver o que foi feito naquele dia e filtrar a aba (ver abaixo). |
 
 ### Salvar uma sessão só replaneja quando o plano mudou
@@ -166,10 +166,20 @@ tudo a cada abertura.
 
 ### Dificuldade é obrigatória
 
-Toda sessão nova — inclusive a que vem do cronômetro, do *continuar* ou de um item da agenda — começa
-com a dificuldade em **Escolha a dificuldade…** e **não salva** sem ela (Difícil, Médio ou Fácil). Não
-há padrão de propósito: é dela que saem a retomada e a escada, e um "médio" por inércia faria o plano
+Toda sessão nova — inclusive a que vem do cronômetro ou de um item da agenda — começa com a
+dificuldade em **Escolha a dificuldade…** e **não salva** sem ela (Difícil, Médio ou Fácil). Não há
+padrão de propósito: é dela que saem a retomada e a escada, e um "médio" por inércia faria o plano
 mentir. Sessões antigas mantêm a que tinham.
+
+**Conteúdo já estudado traz a dificuldade dele.** Ela já é guardada: é a da sessão mais recente do
+conteúdo (a mesma que a agenda usa). Numa sessão nova, ao escolher um conteúdo que já teve sessão — ou
+quando o formulário já abre com ele, vindo de um item da agenda —, o campo vem preenchido com ela, com o
+aviso *"Veio da última sessão deste conteúdo — troque se mudou."*. Com vários conteúdos de dificuldades
+diferentes, vale a mais alta. Conteúdo **nunca estudado** continua sem padrão: a escolha é sua.
+
+**A exceção é o ▶ continuar** (aba Sessões): a sessão nova **herda** da sessão de origem a disciplina,
+os conteúdos, a **dificuldade** e o **sem revisão** — é o mesmo estudo seguindo. Não herda o que é do
+dia: tempo, questões e a descrição. Dá para trocar qualquer um antes de salvar.
 
 ### Dificuldade e quantas revisões cada assunto recebe
 
@@ -835,7 +845,7 @@ nesse caso um aviso laranja aparece no topo; use Chrome/Firefox ou sirva a pasta
 os **Ajustes**: objetivo, datas de prova, revisar até, meta diária, tempo de estudo previsto, dias da
 retomada e a chave do agendamento automático. O **?** abre a **Ajuda**, um **tutorial** em seções que
 abrem e fecham, com um **sumário lateral** (no celular, uma caixa "Ir para…") e um fio separando cada subtópico: *Comece por aqui*, *As abas, uma a uma*, *Como as abas se ligam*,
-*Retomadas e revisões*, *Cronômetro*, *Sua própria rotina*, *Ajustes*, *Seus dados* e *Metodologias*. Os
+*Continuar e revisar*, *Cronômetro*, *Sua própria rotina*, *Ajustes*, *Seus dados* e *Metodologias*. Os
 números que dependem dos ajustes (dias da retomada, degraus, horizonte) saem do cálculo de verdade. Um leva ao outro, e o botão da prova também abre os ajustes.
 
 ## Parâmetros configuráveis
@@ -1171,7 +1181,7 @@ estudo — e é essa a metade que costuma assustar, então a confirmação diz a
 ```
 Excluir o conteúdo “LAI” de Legislação?
 
-SAI da agenda: 3 itens marcados (revisões e voltas deste conteúdo).
+SAI da agenda: 3 itens marcados (revisões e cards de continuar deste conteúdo).
 FICA o estudo: 2 sessões continuam registradas, com as horas e as questões.
               Nada muda na aba Sessões.
 
@@ -1223,7 +1233,12 @@ de **atrasadas** só existem em *A fazer* — hoje e o atraso são, por definiç
 
 ### “Revisão” só onde é mesmo uma revisão
 
-A aba deixou de se chamar *Revisões* quando passou a carregar duas naturezas — **voltas** (*Retomar*,
+> **Vocabulário (24/09):** na tela, o item de conteúdo em andamento se chama **Continuar** (antes,
+> *Retomar*); onde é preciso um substantivo, ele é o **card** (*Editar card*, *Excluir card*, *Data do
+> card*). Neste documento e no código, **volta** e **retomada** continuam sendo o nome interno dele — o
+> dado salvo é `retomada`, e não foi renomeado.
+
+A aba deixou de se chamar *Revisões* quando passou a carregar duas naturezas — **voltas** (*Continuar*,
 de conteúdo em andamento) e **revisões** (de conteúdo concluído). Os rótulos seguiram atrás. A regra
 que vale hoje:
 
@@ -1234,7 +1249,7 @@ Por isso *Revisões de hoje* virou **Agenda de hoje**, *Revisão por assunto* vi
 assunto**, *Revisões atrasadas* virou **Atrasados** (lembrete de conteúdo aberto também atrasa), e os
 blocos de número passaram a contar **itens**, não revisões — na aba *Hoje*, no resumo das *Sessões*,
 no *Progresso* e no card do dia. Marcar o ✓ diz *“marcar como feito”*, e uma volta cumprida aparece
-como *“retomada em 21/09”*, não *“revisada em”*.
+como *“continuado em 21/09”*, não *“revisada em”*.
 
 O que **continua** dizendo revisão diz porque é verdade: a **escada** da repetição espaçada, o texto
 de *Como o cronograma é montado?*, as metodologias em *Ajustes* — e o botão **+ Adicionar revisão**.
@@ -1288,7 +1303,7 @@ sessão que cobre vários conteúdos fica aberta enquanto **algum** deles estive
 
 | Fase | O que a agenda faz | Como o item se chama |
 |---|---|---|
-| **Em andamento** (nasce assim) | marca **uma volta de cada vez**, curta, para você continuar de onde parou | **Retomar** |
+| **Em andamento** (nasce assim) | marca **uma volta de cada vez**, curta, para você continuar de onde parou | **Continuar** |
 | **Concluído** | a **escada** da repetição espaçada, contada do dia em que você fechou | **Revisão 1, 2, 3…** |
 
 A agenda continua sendo o lembrete de sempre: quando ela chamar, **você decide** se revisa o que já
@@ -1321,10 +1336,10 @@ Conta como "já tem quem chame" **qualquer item pendente** daquele conteúdo —
 da escada ou uma que você marcou à mão. O que não pode acontecer é o assunto sair do radar; havendo
 o que fazer com ele, nada mais é marcado.
 
-**A tela de edição fala a língua da fase.** Abrir uma volta pelo *editar* dá **Editar retomada**, com
-*Data da retomada*, *Conteúdos a retomar*, *Excluir retomada* e um aviso no topo lembrando que aquilo
-é uma volta — o conteúdo ainda está em andamento, e a escada só começa quando ele for fechado. O nome
-sugerido é **Retomar**, não *Revisão 1*, porque a volta não ocupa número na sequência. Abrir uma
+**A tela de edição fala a língua da fase.** Abrir uma volta pelo *editar* dá **Editar card**, com
+*Data do card*, *Conteúdos a continuar*, *Excluir card* e um aviso no topo lembrando que aquele card é
+para continuar o conteúdo — ele ainda está em andamento, e a escada só começa quando for fechado. O nome
+sugerido é **Continuar**, não *Revisão 1*, porque a volta não ocupa número na sequência. Abrir uma
 revisão de conteúdo já concluído continua dizendo **revisão** em todos os rótulos. Apagar uma volta
 avisa que outra é marcada no lugar — conteúdo aberto nunca fica sem agendamento.
 
@@ -1359,7 +1374,7 @@ de reta final).
 | de 31 a 90 dias | 1 | 2 | 3 |
 | mais de 90, ou sem prazo | 1 | 2 | 4 |
 
-Nos **ajustes** (engrenagem no topo), *Retomada de conteúdo em andamento — dias até voltar* tem um campo
+Nos **ajustes** (engrenagem no topo), *Dias até continuar um conteúdo em andamento* tem um campo
 por dificuldade (de 1 a 30 dias). Em branco vale o padrão, que aparece apagado dentro do campo;
 preenchido, vale o seu número, em qualquer prazo.
 
@@ -1424,12 +1439,12 @@ No lugar do antigo card *Para lembrar*, a aba **Hoje** tem o mural **Falta estud
 
 ## A sua própria rotina
 
-Nos ajustes (engrenagem no topo), **Criar os agendamentos automaticamente (revisões e retomadas)** vem
+Nos ajustes (engrenagem no topo), **Criar os agendamentos automaticamente (revisões e cards de continuar)** vem
 marcado. Quem já tem uma rotina — montada por conta própria ou trazida de fora — desmarca, e a agenda
 passa a ser **só o que você marca**: nada é criado, empurrado ou refeito pelo sistema (nem escada,
 nem retomada, nem garantia). Ao desmarcar, os ajustes perguntam o que fazer com o que já está lá:
 
-- **Manter** (padrão) — as revisões e retomadas automáticas pendentes passam a ser suas (`manual`);
+- **Manter** (padrão) — as revisões e os cards de continuar automáticos pendentes passam a ser seus (`manual`);
 - **Apagar as automáticas pendentes** — fica só o que você marcou à mão.
 
 O que já foi feito nunca sai. Religar a chave refaz a agenda automática, e as suas continuam onde
@@ -1471,7 +1486,10 @@ quiser** marcar à mão. Três regras:
    e 22; no dia 20 você marca uma extra → a de 22 vai para **25** (+5), e as de depois andam junto.
    Nada anda para trás — revisar antes da hora não adianta o que vem —, e salvar de novo a mesma
    sessão não empurra outra vez.
-3. **A extra não pula degrau.** A revisão marcada à mão fica no degrau da anterior: revisar cedo não
+3. **Remanejar leva as seguintes junto.** Dia cheio e uma revisão vai para o dia seguinte (pelo *remarcar* ou
+   editando a data)? As revisões do mesmo conteúdo que vinham depois dela andam junto, cada uma mantendo a
+   distância. Puxar uma revisão para mais cedo não mexe nas outras.
+4. **A extra não pula degrau.** A revisão marcada à mão fica no degrau da anterior: revisar cedo não
    prova que o conteúdo fixou.
 
 **Item de vários conteúdos se divide** quando só parte deles teve contato: revisar só Scrum empurra

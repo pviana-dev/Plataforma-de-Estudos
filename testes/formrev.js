@@ -58,10 +58,7 @@ const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
   click(doc.querySelector('[data-acao="cancelar-revisao"]')); await espera(250);
   click(doc.querySelector('[data-aba="registros"]')); await espera(250);
   click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="rA")); await espera(300);
-  ok("no registro a dica de conteúdos explica a escolha",
-     /Escolha um de cada vez/.test($("#modalCorpo").textContent), $("#modalCorpo").textContent.slice(0,200));
-  ok("e diz o que diferencia duas sessões do mesmo conteúdo",
-     /é a descrição/.test($("#modalCorpo").textContent));
+  ok("no registro, sem a frase-guia dos conteúdos", !/Escolha um de cada vez|é a descrição/.test($("#modalCorpo").textContent)); // frase-guia tirada a pedido do Pedro (24/09)
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nformulário de revisão ajustado");
   process.exit(falhas?1:0);
 }catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

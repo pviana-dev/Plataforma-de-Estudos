@@ -1,4 +1,4 @@
-/* Conteúdo EM ANDAMENTO tem voltas ("Retomar"); conteúdo CONCLUÍDO tem revisões.
+/* Conteúdo EM ANDAMENTO tem cards de "Continuar" (até 24/09, "Retomar"); conteúdo CONCLUÍDO tem revisões.
    A tela de edição é a mesma para os dois — e precisa falar a língua certa. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
@@ -38,29 +38,28 @@ const fechar=async()=>{ click($('[data-acao="fechar-modal"]')); await espera(300
   await espera(450);
 
   /* ---- 1. a volta, na agenda, já se chama Retomar ---- */
-  ok("o item do conteúdo em andamento se chama Retomar", /Retomar/.test($("#view").textContent),
+  ok("o item do conteúdo em andamento se chama Continuar", /Continuar/.test($("#view").textContent),
      lim($("#view").textContent).slice(0,200));
 
   /* ---- 2. a tela de edição de uma VOLTA ---- */
   await abrirEdicao("v1");
-  ok("o título é 'Editar retomada'", $("#modalTitulo").textContent==="Editar retomada",
+  ok("o título é 'Editar card'", $("#modalTitulo").textContent==="Editar card",
      $("#modalTitulo").textContent);
   const corpo=lim($("#modalCaixa").textContent);
   ok("não sobrou o termo 'revisão' nos rótulos dos campos",
      !/Data da revisão|Nome da revisão|Conteúdos revisados|Detalhes da revisão/.test(corpo), corpo.slice(0,300));
-  ok("os campos falam de retomada",
-     /Data da retomada/.test(corpo) && /Nome da retomada/.test(corpo) &&
-     /Conteúdos a retomar/.test(corpo) && /Detalhes da retomada/.test(corpo), corpo.slice(0,300));
-  ok("a tela explica que isto é uma volta, não uma revisão",
-     /volta ao conteúdo/.test(corpo) && /em andamento/.test(corpo), corpo.slice(0,220));
-  ok("o nome sugerido é 'Retomar', não 'Revisão 1'",
-     $('#modalCaixa [name="rotulo"]').placeholder==="Retomar",
+  ok("os campos falam do card de continuar",
+     /Data do card/.test(corpo) && /Nome do card/.test(corpo) &&
+     /Conteúdos a continuar/.test(corpo) && /Detalhes do card/.test(corpo), corpo.slice(0,300));
+  ok("a tela explica que isto é para continuar, não uma revisão",
+     /continuar o conteúdo/.test(corpo) && /em andamento/.test(corpo), corpo.slice(0,220));
+  ok("o nome sugerido é 'Continuar', não 'Revisão 1'",
+     $('#modalCaixa [name="rotulo"]').placeholder==="Continuar",
      $('#modalCaixa [name="rotulo"]').placeholder);
-  ok("o botão de apagar diz 'Excluir retomada'",
-     /Excluir retomada/.test($('#modalCaixa [data-acao="excluir-revisao"]').textContent),
+  ok("o botão de apagar diz 'Excluir card'",
+     /Excluir card/.test($('#modalCaixa [data-acao="excluir-revisao"]').textContent),
      $('#modalCaixa [data-acao="excluir-revisao"]').textContent);
-  ok("e o rodapé fala em continuar o conteúdo, não em cumprir a revisão",
-     /que continuar o conteúdo/.test(corpo) && !/cumprir esta revisão/.test(corpo), corpo.slice(-200));
+  ok("sem a frase-guia do rodapé", !/não ficam aqui/.test(corpo) && !/cumprir esta revisão/.test(corpo)); // frase-guia tirada a pedido do Pedro (24/09)
   await fechar();
 
   /* ---- 3. a tela de edição de uma REVISÃO de verdade não mudou ---- */

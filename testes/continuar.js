@@ -87,9 +87,10 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto).join()==="LAI",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
   // continuar também pede a dificuldade de HOJE: ela é obrigatória e sem padrão (decisão do Pedro, 23/09)
-  ok("a dificuldade não vem preenchida: você escolhe a de hoje", $('#modalCaixa [name="dificuldade"]').value==="",
+  // continuar HERDA da sessão de origem (pedido do Pedro, 24/09) — menos a descrição
+  ok("a dificuldade é herdada da sessão de origem", $('#modalCaixa [name="dificuldade"]').value==="3",
      $('#modalCaixa [name="dificuldade"]').value);
-  $('#modalCaixa [name="dificuldade"]').value="3";
+  ok("e o 'sem revisão' também: desmarcado, como na de origem", !$('#modalCaixa [name="semRevisao"]').checked);
   ok("o tempo começa vazio, é sessão nova", !$('#modalCaixa [name="minutos"]').value,
      $('#modalCaixa [name="minutos"]').value);
   ok("e a descrição também, que é o que separa uma sessão da outra",
@@ -150,6 +151,20 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   ok("a tela de edição de uma sessão antiga oferece continuar hoje",
      !!doc.querySelector('#modalCaixa [data-acao="continuar-sessao"]'),
      doc.querySelector("#modalCaixa > .acoes-form").textContent);
+  /* ---- sessão de origem "sem revisão": a nova nasce sem revisão também ---- */
+  w=abrir(base({registros:[sess("r1",{plano:"sem",dificuldade:1})]})); await espera(450);
+  doc=w.document; $=s=>doc.querySelector(s);
+  click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==="r1").querySelector('[data-acao="continuar-sessao"]'));
+  await espera(450);
+  ok("origem sem revisão: a caixa 'sem revisão' já vem marcada", $('#modalCaixa [name="semRevisao"]').checked);
+  ok("e a dificuldade vem a dela (fácil)", $('#modalCaixa [name="dificuldade"]').value==="1", $('#modalCaixa [name="dificuldade"]').value);
+  ok("a descrição não passa", !$('#modalCaixa [name="anotacoes"]').value, $('#modalCaixa [name="anotacoes"]').value);
+  $('#modalCaixa [name="minutos"]').value="30";
+  $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(450);
+  const nova=db(w).registros.find(r=>r.id!=="r1");
+  ok("salva, a sessão nova fica sem revisão, sem nada na agenda", !!nova && nova.plano==="sem" &&
+     !db(w).revisoes.some(r=>r.registroId===nova.id), nova && [nova.plano, db(w).revisoes.length]);
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ncontinuar conteúdo funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

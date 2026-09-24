@@ -62,11 +62,8 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   click(doc.querySelector('.fmt .act.cor'));
   ok("o espaço da seleção fica fora da marca", ta.value==="prazo de ==20 dias== aqui", ta.value);
 
-  /* ---- a dica ensina o escape ---- */
-  const dica=$(".fmt .dica-fmt");
-  ok("a barra explica como escrever o símbolo cru", /\\==/.test(dica.textContent), dica.textContent);
-  ok("e o detalhe completo está no title", /barra invertida/.test(dica.getAttribute("title")||""),
-     dica.getAttribute("title"));
+  /* ---- a frase-guia da barra saiu (pedido do Pedro, 24/09) ---- */
+  ok("a barra não traz mais a frase-guia", !$(".fmt .dica-fmt"));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nescape e marcadores colados funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

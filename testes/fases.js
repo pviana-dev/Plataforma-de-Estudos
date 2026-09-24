@@ -69,8 +69,8 @@ async function gravarSessao(w){
   ok("a volta é curta (2 dias, dificuldade média)", off(w)[0]===2, off(w));
   ok("e o card mostra que o conteúdo está aberto",
      /em andamento/.test(w.document.querySelector("#view").textContent));
-  ok("o item se chama Retomar, não Revisão 1",
-     /Retomar/.test(w.document.querySelector(".grupo-rev .item .titulo").textContent),
+  ok("o item se chama Continuar, não Revisão 1",
+     /Continuar/.test(w.document.querySelector(".grupo-rev .item .titulo").textContent),
      w.document.querySelector(".grupo-rev .item .titulo").textContent);
 
   /* ---- 2. dificuldade encurta a volta ---- */

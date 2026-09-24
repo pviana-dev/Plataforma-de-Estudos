@@ -67,16 +67,18 @@ const salvo=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).revi
   $('#formRevisao [name="data"]').value=mais(30);
   $("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
   console.log("  após adiar a batizada:", titulos());
-  ok("adiada, a batizada vai para o fim da lista e mantém o nome",
-     /^Revisão da véspera/.test(titulos()[2]), titulos());
-  ok("e quem ficou no lugar dela assume o número 2",
-     /^Revisão 2 — /.test(titulos()[1]), titulos()[1]);
+  /* Adiar uma revisão leva junto as que vinham depois (regra de 24/09: remanejar
+     mantém as distâncias) — então ela continua no mesmo lugar da sequência. */
+  ok("adiada, a batizada mantém o lugar e o nome — as seguintes andam junto",
+     /^Revisão da véspera/.test(titulos()[1]), titulos());
+  ok("e quem vinha depois continua depois, com o número dela",
+     /^Revisão 3 — /.test(titulos()[2]), titulos()[2]);
 
   /* ---- apagar o nome devolve o número ---- */
-  click([...doc.querySelectorAll('[data-acao="editar-revisao"]')][2]); await espera(300);
+  click([...doc.querySelectorAll('[data-acao="editar-revisao"]')][1]); await espera(300);
   $('#formRevisao [name="rotulo"]').value="";
   $("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
-  ok("apagar o nome faz ela voltar a se chamar pela ordem", /^Revisão 3 — /.test(titulos()[2]), titulos());
+  ok("apagar o nome faz ela voltar a se chamar pela ordem", /^Revisão 2 — /.test(titulos()[1]), titulos());
   ok("e nada sobra guardado", !salvo().find(r=>r.id==="v2").rotulo, salvo().map(r=>[r.id,r.rotulo]));
 
   /* ---- o nome também aparece na aba Hoje ---- */

@@ -33,8 +33,7 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
   /* ---- sessão de ontem: travada ---- */
   await abrir("rOntem");
   ok("sessão de ontem não pode virar revisão", $("#tipoRevisao").disabled);
-  ok("e a tela explica por quê", /só as de hoje/.test($("#modalCorpo").textContent),
-     $("#modalCorpo").textContent.match(/.{0,60}vira revisão.{0,20}/));
+  ok("sem frase-guia sobre isso", !/só as de hoje/.test($("#modalCorpo").textContent)); // frase-guia tirada a pedido do Pedro (24/09)
   click(doc.querySelector('#overlay [data-acao="fechar-modal"]')); await espera(250);
 
   /* ---- sessão de hoje: pode ---- */

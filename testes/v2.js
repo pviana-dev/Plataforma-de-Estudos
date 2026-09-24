@@ -65,7 +65,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   ok("nem questões", !f.querySelector("[name=questoes]"));
   ok("nem 'já revisei'", !f.querySelector("[name=feita]"));
   ok("nem atividade", !f.querySelector("[name=atividade]"));
-  ok("e explica onde o tempo entra", /entram na <b>sessão de estudo<\/b>/.test(f.innerHTML));
+  ok("sem a frase-guia sobre onde o tempo entra", !/não ficam aqui/.test(f.innerHTML)); // frase-guia tirada a pedido do Pedro (24/09)
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\netapas 4 a 7 ok");
   process.exit(falhas?1:0);
 }catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

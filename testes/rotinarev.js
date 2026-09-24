@@ -10,11 +10,15 @@ function verPorAssunto(doc, w){
 }
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),dia=n=>iso(new Date(Date.now()+n*864e5));
+/* A atrasada é de OUTRO conteúdo (LGPD): remarcá-la leva junto as revisões que
+   vêm depois dela no mesmo conteúdo (regra de 24/09), e aqui a de hoje (LAI)
+   precisa ficar onde está para a segunda parte do teste. */
 const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
- registros:[{id:"rA",data:dia(-5),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:1,tipo:"estudo"}],
+ registros:[{id:"rA",data:dia(-5),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:1,tipo:"estudo"},
+            {id:"rB",data:dia(-5),disciplina:"Legislação",assuntos:["LGPD"],assunto:"LGPD",minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:2,tipo:"estudo"}],
  revisoes:[
   {id:"vHoje",registroId:"rA",data:hoje,ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},
-  {id:"vAtras",registroId:"rA",data:dia(-3),ordem:2,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}],
+  {id:"vAtras",registroId:"rB",data:dia(-3),ordem:2,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}],
  erros:[],cronometro:null};
 
 /* Estas suítes testam a ESCADA de revisões, que só existe em conteúdo fechado.

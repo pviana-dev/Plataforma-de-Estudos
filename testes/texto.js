@@ -34,9 +34,7 @@ const TEXTO = [
        [...doc.querySelectorAll('.compositor [data-acao="fmt"]')].map(b=>b.dataset.fmt).join(",")
          ==="negrito,italico,lista,grifo,atencao,regra,ref",
        [...doc.querySelectorAll('.compositor [data-acao="fmt"]')].map(b=>b.dataset.fmt));
-    ok("avisa que a quebra de linha é mantida", /Enter quebra a linha/.test($(".compositor .fmt").textContent),
-       $(".compositor .fmt .dica-fmt").textContent);
-    ok("e ensina a escrever o marcador cru", /escreve == sem virar cor/.test($(".compositor .fmt").textContent));
+    ok("a barra não traz mais a frase-guia", !/Enter quebra a linha/.test($(".compositor .fmt").textContent)); // frase-guia tirada a pedido do Pedro (24/09)
     // botão de negrito com texto selecionado
     const ta=$("#txtNovo"); ta.value="prazo de 20 dias"; ta.setSelectionRange(9,16);
     click(doc.querySelector('.compositor [data-fmt="negrito"]'));

@@ -97,7 +97,7 @@ async function editarESalvar(w, mexer){
   w=abrir([], "andamento"); await espera(600);
   await editarESalvar(w, doc => { const sel=doc.querySelector('#modalCaixa [name="dificuldade"]'); sel.value="3"; });
   const msg5=w.document.querySelector("#toast").textContent;
-  ok("em andamento, mudar a dificuldade diz a próxima retomada", /próxima retomada/.test(msg5) && !/revis/.test(msg5), msg5);
+  ok("em andamento, mudar a dificuldade diz quando continuar", /continuar /.test(msg5) && !/revis/.test(msg5), msg5);
 
   /* ---- 6. o que foi remarcado à mão nunca é refeito — mas anda junto ----
      A revisão à mão não é apagada nem recriada; se um contato empurra a

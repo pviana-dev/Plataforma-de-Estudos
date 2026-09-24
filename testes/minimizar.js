@@ -67,6 +67,25 @@ const copiaSessao=w=>{ const o={}; for(let i=0;i<w.sessionStorage.length;i++){co
   w=abrir({"plataforma-estudos:minimizados":"{quebrado"}); await espera(300);
   ok("dado estragado no sessionStorage é ignorado", itens(w,"DevOps")===2, itens(w,"DevOps"));
 
+  /* ancoragem: o cabeçalho clicado continua embaixo do mouse. O jsdom não tem
+     layout, então a posição é simulada: antes do clique o cabeçalho está a 300px
+     do topo da janela; redesenhado, ele "cairia" para 520px — a página tem de
+     rolar 220px para ele voltar ao lugar. */
+  {
+    let w2=abrir(); await espera(300);
+    const v2=w2.document.querySelector('[data-acao="visao-agenda"][data-visao="assunto"]');
+    if (v2 && v2.getAttribute("aria-selected")!=="true"){ click(w2,v2); await espera(200); }
+    let chamadas=0, rolado=null;
+    w2.Element.prototype.getBoundingClientRect=function(){
+      const cab=this.matches && this.matches('[data-acao="minimizar-assunto"]');
+      if (!cab) return {top:0,bottom:0,left:0,right:0,width:0,height:0};
+      chamadas++; return {top: chamadas===1 ? 300 : 520, bottom:0,left:0,right:0,width:0,height:0};
+    };
+    w2.scrollBy=(x,y)=>{ rolado=y; };
+    click(w2, card(w2,"DevOps").querySelector('[data-acao="minimizar-assunto"]')); await espera(200);
+    ok("minimizar mantém o cabeçalho clicado embaixo do mouse (a página rola o que ele andou)", rolado===220, rolado);
+  }
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nminimizar card da agenda por assunto funcionando");
   process.exit(falhas?1:0);
 }catch(e){console.error("ERRO:",e.message,"\n",e.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

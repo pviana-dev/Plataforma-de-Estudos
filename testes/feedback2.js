@@ -28,7 +28,7 @@ const anotar=texto=>{ click(doc.querySelector('[data-acao="abrir-composer"]')); 
     ok("e ele avisa que a escolha vem na hora de salvar",
        /na hora de salvar/.test(doc.querySelector('[data-acao="abrir-composer"]').textContent),
        doc.querySelector('[data-acao="abrir-composer"]').textContent);
-    ok("a dica cita disciplina E conteúdo", /disciplina<\/b>[\s\S]*conteúdo<\/b>/.test($("#view").innerHTML));
+    ok("sem a frase-guia no topo da aba", !/não quer esquecer da matéria/.test($("#view").textContent)); // frase-guia tirada a pedido do Pedro (24/09)
     const d=$("#eDisciplina"); d.value="Legislação"; change(d);
   });
 
