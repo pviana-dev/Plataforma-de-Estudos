@@ -454,6 +454,21 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    entram pela sessão, + Novo conteúdo e Excluir, anotação na disciplina inteira, "caiu numa questão", atalhos da
    caixa de texto (`-`, `--`, `---`, `\==`), onde se editam as questões. 7 testes passaram a conferir a ausência.
 
+47. **Próximos 7 dias só informativos e anotações minimizáveis** (24/09, pedido do Pedro). Na aba **Hoje**, a
+   lista *Próximos 7 dias* não tem mais a caixa de marcar (`itemRevisao` com `leitura`); o resto da aba e a Agenda
+   continuam com ela. Na aba **Anotações**, cada bloco se minimiza como os cards da Agenda: o nome vira o botão
+   (`minimizar-anot`), o cabeçalho segue com a contagem, o estado fica no mesmo `sessionStorage` e a ancoragem de
+   rolagem vale igual. Suíte nova `minimizaranot.js`.
+
+48. **Três pedidos de 24/09.** (1) **+ Nova disciplina** abre uma tela do app (`modalNovaDisciplina`: cabeçalho com
+   o "+" no bloco verde, campo maior, erro na própria tela) no lugar do `prompt()`. (2) **Lista numerada** no *+ Novo
+   conteúdo*: `separarLista` tira a marca do começo ("1.", "2)", "1 -", "1.1", "-", "•", "a)") e separa "1. X 2. Y" (ou
+   "1.X 2.Y", ou "X 2. Y 3. Z" com numeração seguida) numa linha só — um por linha e numerado valem juntos, na mesma
+   caixa; número que é parte do nome fica ("Lei 8.112/1990", "3 Poderes"). (3) **Questões das sessões editáveis na aba
+   Questões**: card *Questões das sessões* (`listaQuestoesDasSessoes`, 8 + ver todas) com `modalQuestoesDaSessao`, que
+   grava em `reg.questoes/acertos` — o mesmo dado da sessão, então a aba Sessões já mostra o novo. Suíte nova
+   `questoessessao.js`; `disciplinacrud` e `novoconteudo` ajustados.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

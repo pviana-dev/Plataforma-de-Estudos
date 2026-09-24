@@ -73,10 +73,19 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   ok("só repetido: avisa e mantém a caixa", !$("#overlay").hidden && /já existe/.test($("#erroNovosConteudos").textContent),
      $("#erroNovosConteudos").textContent);
 
+  // lista numerada, como vem do edital — numa linha só, uma por linha e misturado (pedido do Pedro, 24/09)
+  $("#formNovosConteudos textarea").value="1. Pontuação 2. Ortografia\n3) Semântica\n1.1 Lei 8.112/1990\n- Estilística\n4 - Fonologia\n5.Morfologia 6.Sintaxe\nFonética\nEstrutura 2. Formação 3. Flexão";
+  $("#formNovosConteudos").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+  const novosNum=db(w).conteudos.filter(c=>c.disciplina==="Português").map(c=>c.nome);
+  ok("lista numerada vira um conteúdo por item, sem o número",
+     ["Pontuação","Ortografia","Semântica","Lei 8.112/1990","Estilística","Fonologia","Morfologia","Sintaxe","Fonética","Estrutura","Formação","Flexão"].every(n=>novosNum.includes(n)) &&
+     !novosNum.some(n=>/^\d|^-/.test(n)), novosNum);
+  click(w,btn()); await espera(300);
+
   // ✓ concluir disciplina: pula os a estudar, e o estudado ganha revisões
   click(w,$('[data-acao="fechar-modal"]')); await espera(200);
   const cb=$('[data-acao="concluir-disciplina"][data-disc="Português"]');
-  ok("o botão avisa que os a estudar ficam de fora", cb && /2 conteúdo\(s\) a estudar/.test(cb.title), cb && cb.title);
+  ok("o botão avisa que os a estudar ficam de fora", cb && /14 conteúdo\(s\) a estudar/.test(cb.title), cb && cb.title);
   click(w,cb); await espera(400);
   const fichas=Object.fromEntries(db(w).conteudos.filter(c=>c.disciplina==="Português").map(c=>[c.nome,c.fase]));
   ok("Crase é concluída", fichas["Crase"]==="concluido", fichas);

@@ -41,7 +41,11 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   ok("a aba tem o botão de nova disciplina", !!$('[data-acao="nova-disciplina"]'),
      $("#view").textContent.slice(0,80));
   click(w, $('[data-acao="nova-disciplina"]')); await espera(400);
-  ok("ele pergunta o nome", /Nome da nova disciplina/.test(perguntado), perguntado);
+  // a tela do navegador (prompt) virou uma tela do app (pedido do Pedro, 24/09)
+  ok("ele abre a tela 'Nova disciplina', no estilo do app", $("#modalTitulo").textContent==="Nova disciplina" &&
+     !!$("#formNovaDisciplina [name=nome]") && !perguntado, [$("#modalTitulo").textContent, perguntado]);
+  $("#formNovaDisciplina [name=nome]").value="Matemática";
+  $("#formNovaDisciplina").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
   ok("a disciplina é criada", (db(w).disciplinas||[]).includes("Matemática"), db(w).disciplinas);
   ok("e aparece na tela, ainda sem conteúdos",
      discsNaTela(doc).includes("Matemática") && /Nenhum conteúdo cadastrado/.test($("#view").textContent),
@@ -53,8 +57,10 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   w=abrir("legislação"); await espera(500);
   doc=w.document; $=s=>doc.querySelector(s);
   click(w, $('[data-acao="nova-disciplina"]')); await espera(350);
-  ok("nome repetido (mesmo com outra caixa) é recusado",
-     /Já existe uma disciplina/.test(avisado), avisado);
+  $("#formNovaDisciplina [name=nome]").value="legislação";
+  $("#formNovaDisciplina").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+  ok("nome repetido (mesmo com outra caixa) é recusado, na própria tela",
+     /Já existe uma disciplina/.test($("#erroNovaDisciplina").textContent) && !avisado, $("#erroNovaDisciplina").textContent);
   ok("e nada é criado", (db(w).disciplinas||[]).length===2, db(w).disciplinas);
 
   /* ---- 3. renomear propaga para tudo ---- */

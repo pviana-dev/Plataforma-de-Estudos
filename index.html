@@ -634,12 +634,15 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .grupo-rev .cab{gap:9px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .grupo-rev .cab strong{font-size:14.5px;font-weight:600;letter-spacing:-.2px}
 .grupo-rev .item{margin-bottom:7px}
-.grupo-rev .minimizar{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:inherit;
+.grupo-rev .minimizar,.apr .minimizar{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:inherit;
   padding:3px 6px;margin-left:-6px;border-radius:6px;cursor:pointer;font:inherit;text-align:left}
-.grupo-rev .minimizar:hover{background:var(--surface)}
-.grupo-rev .minimizar .seta{flex:none;width:7px;height:7px;margin:0 3px 3px 2px;border-right:2px solid var(--accent-ink);
+.grupo-rev .minimizar:hover,.apr .minimizar:hover{background:var(--surface)}
+.grupo-rev .minimizar .seta,.apr .minimizar .seta{flex:none;width:7px;height:7px;margin:0 3px 3px 2px;border-right:2px solid var(--accent-ink);
   border-bottom:2px solid var(--accent-ink);transform:rotate(45deg);transition:transform .15s}
-.grupo-rev.minimizado .minimizar .seta{transform:rotate(-45deg);margin:0 4px 0 1px}
+.grupo-rev.minimizado .minimizar .seta,.apr.minimizado .minimizar .seta{transform:rotate(-45deg);margin:0 4px 0 1px}
+/* bloco de anotações: o botão ocupa o lugar do nome; minimizado, some a borda de baixo do cabeçalho */
+.apr .minimizar{margin-right:auto;min-width:0}
+.apr.minimizado .apr-cab{border-bottom:none}
 .grupo-rev.minimizado .cab{margin-bottom:0;padding-bottom:0;border-bottom:none}
 
 /* --- o item do card de hoje leva ao original no cronograma --- */
@@ -716,7 +719,7 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .apr-cab{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--chrome);
   border-bottom:1px solid var(--chrome-borda)}
 .apr-cab .badge{background:var(--campo-fundo)}     /* etiqueta neutra não some no verde */
-.apr-origem{display:flex;flex-direction:column;line-height:1.2;margin-right:auto;min-width:0}
+.apr-origem{display:flex;flex-direction:column;line-height:1.2;min-width:0}
 .apr-origem b{font-size:14.5px;font-weight:650;letter-spacing:-.2px;color:var(--text);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .apr-origem span{font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
@@ -830,6 +833,11 @@ select.sel-dia:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--foco)
 details.ajuda{margin-top:10px;font-size:13px;color:var(--text-2)}
 details.ajuda summary{cursor:pointer;color:var(--accent-ink);font-size:12.5px}
 details.ajuda p{margin:8px 0 0}
+/* nova disciplina: um cabeçalho com o "+" no bloco verde da marca */
+.nova-disc-cab{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:var(--radius);
+  background:var(--filtro-fundo);border:1px solid var(--filtro-borda)}
+.nova-disc-cab .marca{font-size:20px;font-weight:600;line-height:1}
+.form-nova-disc input[name="nome"]{font-size:15px;padding:10px 12px}
 /* o tutorial da Ajuda: seções em cartão que abrem e fecham, um índice em cima */
 .aj-layout{display:grid;grid-template-columns:210px 1fr;gap:18px;align-items:start}
 .aj-sumario{position:sticky;top:0;display:flex;flex-direction:column;gap:2px;padding:10px 8px;
@@ -3223,7 +3231,7 @@ function proximosPorDia(lista){
       '<div class="dia-rotulo">' + esc(D.semana(data)) + ' · ' + D.br(data) +
         '<span>' + (faltam === 1 ? "amanhã" : "em " + faltam + " dias") +
         ' · ' + itens.length + (itens.length === 1 ? " item" : " itens") + '</span></div>' +
-      itens.map(x => itemRevisao(x, "")).join("") + '</div>';
+      itens.map(x => itemRevisao(x, "", { leitura: true })).join("") + '</div>';   // só informa: marcar é na Agenda
   }).join("");
 }
 
@@ -3281,6 +3289,7 @@ function itemRevisao(x, quando, opcoes){
   /* Editar de onde se está olhando. Os mesmos botões do card por assunto: o
      card (título e sessões ligadas), a revisão em si e a sessão que a cumpriu —
      senão, mexer num item da lista por dia obrigava a trocar de visão antes. */
+  // leitura: a lista só informa (Próximos 7 dias da aba Hoje) — sem a caixa de marcar
   const acoes = o.editavel
     ? (x.rev.sessaoId ? '<button class="act" data-acao="abrir-sessao" data-id="'+esc(x.rev.sessaoId)+'" ' +
         'title="As horas ficam na sessão — clique para editá-las">ver sessão</button>' : '') +
@@ -3289,8 +3298,9 @@ function itemRevisao(x, quando, opcoes){
   return '<div class="item rev-linha '+x.status+(emAndamento(x.rev) ? " em-andamento" : "")+'"' +
     (o.editavel ? ' id="rev-'+esc(x.rev.id)+'"' : '') + '>' +
     '<div class="rev-topo">' +
+      (o.leitura ? '' :
       '<button class="check" role="checkbox" aria-checked="'+feita+'" data-acao="'+(feita ? "reabrir" : "concluir")+'" data-id="'+x.rev.id+'" ' +
-      'title="'+(feita ? "Desmarcar este item" : "Marcar como feito")+'">✓</button>' +
+      'title="'+(feita ? "Desmarcar este item" : "Marcar como feito")+'">✓</button>') +
       '<div class="corpo'+(o.saltavel ? " saltavel" : "")+'"'+salto+'><div class="titulo">'+esc(x.ctx.rotulo)+'</div>' +
       '<div class="meta">'+esc(x.ctx.sub)+(quando ? ' · '+esc(quando) : '')+' · '+esc(nome.toLowerCase())+
         (o.saltavel ? ' <span class="leva-a">ver no cronograma ↓</span>' : '')+'</div></div>' +
@@ -3974,6 +3984,7 @@ function telaQuestoes(){
      consulta fica no fim. */
   h += graficoQuestoes(itens);
   h += listaAvulsos(selQ);
+  h += listaQuestoesDasSessoes(selQ);
 
   // ----- agrupamento por conteúdo ou por disciplina
   const porConteudo = ui.qVisao === "conteudo";
@@ -4020,8 +4031,8 @@ function barraSVG(x, y, w, h, r, cor){
 /* A TABELA DE LANÇAMENTOS SAIU, mas as BATERIAS AVULSAS ficaram aqui: elas são
    as únicas que se editam e se apagam, e a tabela era o único caminho para
    isso. Sem esta lista, uma bateria digitada errada ficaria errada para sempre.
-   O que saiu de verdade foi o inventário de TODA questão registrada — as que
-   vieram de sessão e de revisão se editam na sessão e na revisão. */
+   As questões que vieram de uma SESSÃO têm o card delas logo abaixo
+   (listaQuestoesDasSessoes), e também se editam daqui. */
 function listaAvulsos(sel){
   const avulsos = (db.lancamentos || [])
     .filter(l => { if (!sel || !sel.length) return true;
@@ -4046,6 +4057,56 @@ function listaAvulsos(sel){
         '<button class="act excluir" data-acao="excluir-lancamento" data-id="'+esc(l.id)+'">✕</button>' +
         '</div>';
     }).join("") + '</div>';
+}
+
+/* AS QUESTÕES DAS SESSÕES, editáveis daqui (pedido do Pedro, 24/09). Não há
+   cópia: o número mora na própria sessão (reg.questoes / reg.acertos), então
+   mudar aqui já é mudar lá — a aba Sessões mostra o valor novo sem sincronizar
+   nada. Questão não mexe no cronograma (planoRelevante não a olha). */
+const QSESSOES_VISIVEIS = 8;
+function listaQuestoesDasSessoes(sel){
+  const sessoes = db.registros
+    .filter(r => r.questoes > 0 && (!sel || !sel.length || sel.indexOf(r.disciplina) >= 0))
+    .sort((a,b) => b.data.localeCompare(a.data) || (b.criadoEm || 0) - (a.criadoEm || 0));
+  if (!sessoes.length) return "";
+  const vis = ui.verTodasQSessoes ? sessoes : sessoes.slice(0, QSESSOES_VISIVEIS);
+  return '<div class="card"><h2>Questões das sessões ' +
+    '<span class="dica">' + sessoes.length + (sessoes.length === 1 ? " sessão" : " sessões") + ' com questões</span></h2>' +
+    vis.map(r => {
+      const taxa = pct(r.acertos || 0, r.questoes);
+      return '<div class="item"><div class="corpo">' +
+        '<div class="titulo">' + r.questoes + (r.questoes === 1 ? " questão" : " questões") +
+        ' · ' + (r.acertos || 0) + ' acerto(s)' + (taxa === null ? '' : ' · ' + taxa + '%') + '</div>' +
+        '<div class="meta">' + D.brFull(r.data) + ' · ' + esc(tipoDaSessao(r).curto) + ' · ' + esc(r.disciplina) +
+        ' · ' + esc(rotuloAssuntos(r)) + '</div></div>' +
+        '<button class="act" data-acao="editar-questoes-sessao" data-id="'+esc(r.id)+'">editar</button></div>';
+    }).join("") +
+    (sessoes.length > QSESSOES_VISIVEIS
+      ? '<button class="act ver-mais" data-acao="toggle-qsessoes">' +
+        (ui.verTodasQSessoes ? "− mostrar menos" : "+ ver todas as " + sessoes.length) + '</button>' : '') +
+    '</div>';
+}
+function modalQuestoesDaSessao(reg){
+  abrirModal("Questões da sessão",
+    '<form id="formQuestoesSessao">' +
+      '<p class="sub" style="margin-top:0">' + D.brFull(reg.data) + ' · ' + esc(reg.disciplina) + ' · <b>' +
+        esc(rotuloAssuntos(reg)) + '</b></p>' +
+      '<div class="campos">' +
+        campo("Questões feitas", '<input type="number" name="questoes" min="0" value="' + (reg.questoes || 0) + '">') +
+        campo("Acertos", '<input type="number" name="acertos" min="0" value="' + (reg.acertos || 0) + '">') +
+      '</div>' +
+      '<div class="linha acoes-form"><button class="btn" type="submit">Salvar</button>' +
+      '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+      '<span class="erro-form" id="erroQuestoesSessao"></span></div></form>',
+    () => $("#formQuestoesSessao").addEventListener("submit", ev => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(ev.target).entries());
+      const q = Math.max(0, Math.round(Number(d.questoes) || 0)), a = Math.max(0, Math.round(Number(d.acertos) || 0));
+      if (a > q){ $("#erroQuestoesSessao").textContent = "Acertos não podem passar do total de questões."; return; }
+      reg.questoes = q; reg.acertos = a;           // é a própria sessão: a aba Sessões já vê o número novo
+      persistir(); fecharModal(); render();
+      toast("Questões atualizadas — a sessão já mostra os números novos.");
+    }));
 }
 
 /* GRÁFICO DAS QUESTÕES, DIA A DIA.
@@ -4988,16 +5049,24 @@ function cardConteudo(g){
   const juntos = !g.dia;
   const quando = juntos ? dias.length + (dias.length === 1 ? " dia" : " dias")
                         : D.brFull(g.dia);
-  return '<article class="apr'+(temVespera ? " tem-vespera" : "")+'">' +
+  /* Minimizar o bloco, como na Agenda por assunto: o nome vira o botão, o bloco
+     fica só no cabeçalho (que continua dizendo quantas anotações guarda) e o
+     estado vale até fechar a aba (sessionStorage, o mesmo da Agenda). */
+  const chave = "anot|" + g.disciplina + "|" + (g.assunto || "") + "|" + (g.dia || "todos");
+  const mini = minimizados.has(chave);
+  return '<article class="apr'+(temVespera ? " tem-vespera" : "")+(mini ? " minimizado" : "")+'">' +
     '<header class="apr-cab">' +
-      '<div class="apr-origem"><b>'+esc(titulo)+'</b><span>'+esc(sub)+'</span></div>' +
+      '<button class="minimizar" type="button" data-acao="minimizar-anot" data-chave="'+esc(chave)+'" ' +
+        'aria-expanded="'+(!mini)+'" title="'+(mini ? "Mostrar as anotações" : "Minimizar este bloco")+'">' +
+        '<span class="seta" aria-hidden="true"></span>' +
+        '<span class="apr-origem"><b>'+esc(titulo)+'</b><span>'+esc(sub)+'</span></span></button>' +
       '<span class="badge">'+n+(n === 1 ? " anotação" : " anotações")+'</span>' +
       '<span class="meta" title="'+(juntos ? "Dias diferentes reunidos neste card" : "Quando foi anotada")+'">' +
         esc(quando)+'</span>' +
     '</header>' +
     // a edição acontece na tela sobreposta (centrada, com o Salvar sempre à vista);
     // aqui a linha só fica marcada como "em edição"
-    itens.map(e => linhaAprendizado(e, juntos, ui.editandoErro === e.id)).join("") +
+    (mini ? '' : itens.map(e => linhaAprendizado(e, juntos, ui.editandoErro === e.id)).join("")) +
     '</article>';
 }
 /** uma anotação dentro do card do conteúdo; com tudo junto, ela mostra a própria data */
@@ -6527,6 +6596,59 @@ function mudarLigacao(disc, nome, valor){
   return n;
 }
 
+/* NOVA DISCIPLINA numa tela do próprio app (era o prompt() do navegador): um
+   campo, o botão principal e o aviso de nome repetido ali mesmo, sem alert. */
+function modalNovaDisciplina(){
+  abrirModal("Nova disciplina",
+    '<form id="formNovaDisciplina" class="form-nova-disc">' +
+      '<div class="nova-disc-cab"><span class="marca" aria-hidden="true">+</span>' +
+        '<p class="sub" style="margin:0">Dê um nome à disciplina. Os conteúdos dela você cria depois, aqui na aba ' +
+        '<b>Disciplinas</b> ou ao registrar uma sessão.</p></div>' +
+      '<div class="campos uma-coluna">' +
+        campo("Nome da disciplina *", '<input name="nome" maxlength="60" autocomplete="off" placeholder="Ex.: Direito Administrativo" required>', true) +
+      '</div>' +
+      '<div class="linha acoes-form"><button class="btn" type="submit">Criar disciplina</button>' +
+      '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+      '<span class="erro-form" id="erroNovaDisciplina"></span></div></form>',
+    () => {
+      const f = $("#formNovaDisciplina"), campoNome = f.querySelector('[name="nome"]');
+      campoNome.focus();
+      campoNome.addEventListener("input", () => { $("#erroNovaDisciplina").textContent = ""; campoNome.classList.remove("campo-errado"); });
+      f.addEventListener("submit", ev => {
+        ev.preventDefault();
+        const nome = campoNome.value.trim().replace(/\s+/g, " ");
+        const erro = msg => { $("#erroNovaDisciplina").textContent = msg; campoNome.classList.add("campo-errado"); campoNome.focus(); };
+        if (!nome) return erro("Escreva o nome da disciplina.");
+        if (disciplinas().some(d => d.toLowerCase() === nome.toLowerCase())) return erro("Já existe uma disciplina com esse nome.");
+        registrarDisciplina(nome); persistir(); fecharModal(); render();
+        toast("Disciplina “" + nome + "” criada.");
+      });
+    });
+}
+
+/* A LISTA COLADA. Edital vem de todo jeito: um por linha, numerado ("1. Crase",
+   "2) Regência", "1.1 Lei 8.112"), com marcador ("-", "•", "a)"), ou numerado
+   numa linha só ("1. Crase 2. Regência"). A marca do começo sai; o número que é
+   parte do nome fica ("Lei 8.112/1990", "3 Poderes" — sem pontuação depois do
+   número, ele não é marca). */
+function separarLista(txt){
+  // "1.", "1)", "1 -", "1.1.", "1.1 ", "a)", "-", "•" — com ou sem espaço antes do nome
+  const marca = /^\s*(?:\(?\d{1,3}(?:\.\d{1,3})*\s*[.)\-–:]\s*(?=\D)|\d{1,3}(?:\.\d{1,3})+\s+|[a-zA-Z]\)\s*|[-–•*·▪]\s+)/;
+  const item = "\\(?\\d{1,3}[.)]\\s*(?=[^\\d\\s.])";   // "1. X", "2)X" — "8.112" não é item
+  const numerado = new RegExp("(?:^|\\s)" + item, "g");
+  /* Linha com vários itens numerados vira vários. Se ela não começa por um
+     número ("Crase 2. Regência 3. Sintaxe"), só divide quando a numeração é
+     seguida (2, 3, 4…) — "Windows 10. Excel" não é lista. */
+  const partir = linha => {
+    const nums = (linha.match(numerado) || []).map(m => parseInt(m.replace(/\D/g, ""), 10));
+    const seguida = nums.every((n, i) => !i || n === nums[i - 1] + 1);
+    const divide = new RegExp("^\\s*" + item).test(linha) ? nums.length > 1
+                                                       : nums[0] === 2 && seguida;   // "X 2. Y 3. Z"
+    return divide ? linha.split(new RegExp("\\s+(?=" + item + ")")) : [linha];
+  };
+  return String(txt || "").split(/\r?\n/).flatMap(partir)
+    .map(n => n.replace(marca, "").trim().replace(/\s+/g, " ")).filter(Boolean);
+}
 /* LANÇAR CONTEÚDOS ANTES DE ESTUDAR. Vários de uma vez, um por linha — dá para
    colar o edital. A ficha nasce sem sessão, então nada entra na agenda: quem
    planeja é a sessão (ver temCadastro). Nome repetido na disciplina é pulado,
@@ -6535,8 +6657,8 @@ function modalNovosConteudos(disc){
   abrirModal("Novo conteúdo",
     '<form id="formNovosConteudos"><div class="campos">' +
       campo("Conteúdos de " + disc,
-            '<textarea name="nomes" class="texto-medio" placeholder="Um por linha. Ex.:\nCrase\nConcordância verbal\nRegência"></textarea>',
-            true, "Um conteúdo por linha — dá para colar a lista do edital.") +
+            '<textarea name="nomes" class="texto-medio" placeholder="Um por linha:\nCrase\nConcordância verbal\n\nou numerados:\n1. Regência 2. Pontuação"></textarea>',
+            true, "Um por linha, numerados (1. Crase 2. Regência…) ou os dois misturados — o número sai do nome.") +
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">Adicionar</button>' +
     '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
@@ -6544,8 +6666,7 @@ function modalNovosConteudos(disc){
     () => $("#formNovosConteudos").addEventListener("submit", ev => {
       ev.preventDefault();
       const vistos = new Set();
-      const nomes = String(new FormData(ev.target).get("nomes") || "").split(/\r?\n/)
-        .map(n => n.trim().replace(/\s+/g, " ")).filter(n => {
+      const nomes = separarLista(new FormData(ev.target).get("nomes")).filter(n => {
           const k = n.toLowerCase();
           if (!n || vistos.has(k)) return false;
           vistos.add(k); return true;
@@ -6774,7 +6895,8 @@ function modalAjuda(){
     ["abas", "As abas, uma a uma",
       '<dl class="aj-abas">' +
         '<div class="aj-item"><dt>' + aba("Hoje") + '</dt><dd>O painel do dia: o <b>cronômetro</b>, o que está marcado para hoje e o que atrasou, os ' +
-          '<b>próximos 7 dias</b>, o que já foi <b>registrado hoje</b> e o mural <b>Falta estudar</b>.</dd></div>' +
+          '<b>próximos 7 dias</b> (só para ver — marcar é na Agenda), o que já foi <b>registrado hoje</b> e o mural ' +
+          '<b>Falta estudar</b>.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Sessões") + '</dt><dd>Tudo o que você estudou. <b>+ Registrar sessão</b> abre o formulário (data, disciplina, ' +
           'conteúdos, tempo, questões, dificuldade e descrição) — escolhido um conteúdo que já foi estudado, a dificuldade ' +
           'vem da última sessão dele. Clique numa linha para editar; <b>▶ continuar</b> abre uma ' +
@@ -6792,14 +6914,16 @@ function modalAjuda(){
           'agenda, até a primeira sessão. <b>Excluir</b> tira o conteúdo do cadastro e da agenda — as sessões continuam ' +
           'registradas, com as horas e as questões.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Anotações") + '</dt><dd>O que você aprendeu, por disciplina ou por conteúdo: texto com cores e formatação, ' +
-          '★ para o que é importante, e a ordem que você quiser (arrastando). Sem conteúdo escolhido, a anotação vale ' +
+          '★ para o que é importante, e a ordem que você quiser (arrastando). Clique no nome de um bloco para ' +
+          '<b>minimizá-lo</b>. Sem conteúdo escolhido, a anotação vale ' +
           'para a <b>disciplina inteira</b>. Veio de uma questão? Marque <b>Sim — caiu numa questão</b> para anotar a ' +
           'origem, o tipo do erro e se já refez. Na caixa de texto: <b>Enter</b> quebra a linha; <b>- </b>, <b>-- </b> e ' +
           '<b>--- </b> no começo da linha fazem a lista e os subníveis; os botões pintam o trecho (para escrever o símbolo ' +
           'sem pintar, ponha uma barra antes: <b>\\==</b>).</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Questões") + '</dt><dd>O desempenho nas questões: acertos, erros e taxa por disciplina ou conteúdo, e o ' +
-          'gráfico dia a dia. <b>+ Lançar questões feitas</b> registra uma bateria feita depois da sessão — essas se ' +
-          'editam aqui; as que vieram de uma sessão se editam na própria sessão.</dd></div>' +
+          'gráfico dia a dia. <b>+ Lançar questões feitas</b> registra uma bateria feita depois da sessão. Tudo se edita ' +
+          'aqui — inclusive as questões de uma sessão, no card <b>Questões das sessões</b>: mudou aqui, a sessão já ' +
+          'mostra o número novo.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Progresso") + '</dt><dd>A visão de longe: meta diária, estudo e questões da semana, o calendário de horas ' +
           'e o tempo por disciplina. Clique num dia ou numa disciplina para filtrar.</dd></div>' +
       '</dl>'],
@@ -7438,6 +7562,10 @@ document.addEventListener("click", ev => {
     case "abrir-ajustes": ev.preventDefault(); modalAjustes(); break;
     case "abrir-ajuda": ev.preventDefault(); modalAjuda(); break;
     case "ajuda-ir": ev.preventDefault(); irParaAjuda(alvo.dataset.alvo); break;   // sumário da ajuda
+    case "minimizar-anot": {                                // bloco de anotações, com a mesma ancoragem da Agenda
+      const seletor = '[data-acao="minimizar-anot"][data-chave="' + CSS.escape(alvo.dataset.chave) + '"]';
+      manterNoLugar(alvo, seletor, () => { alternarMinimizado(alvo.dataset.chave); render(); });
+      break; }
     case "minimizar-assunto": {
       const seletor = '[data-acao="minimizar-assunto"][data-chave="' + CSS.escape(alvo.dataset.chave) + '"]';
       manterNoLugar(alvo, seletor, () => { alternarMinimizado(alvo.dataset.chave); render(); });
@@ -7603,15 +7731,7 @@ document.addEventListener("click", ev => {
       const c = fichaPorChave(alvo.dataset.chave); if (!c) break;
       c.mural = false; delete c.prioridade;
       persistir(); render(); toast("“" + c.nome + "” saiu do mural — continua cadastrado."); break; }
-    case "nova-disciplina": {
-      const nome = (prompt("Nome da nova disciplina:") || "").trim();
-      if (!nome) break;
-      if (disciplinas().some(d => d.toLowerCase() === nome.toLowerCase())){
-        alert("Já existe uma disciplina com esse nome."); break;
-      }
-      registrarDisciplina(nome); persistir(); render();
-      toast("Disciplina “" + nome + "” criada — registre uma sessão para criar os conteúdos dela.");
-      break; }
+    case "nova-disciplina": modalNovaDisciplina(); break;
     case "renomear-disciplina": {
       const antigo = alvo.dataset.disc;
       const a = alcanceDaDisciplina(antigo);
@@ -7757,6 +7877,8 @@ document.addEventListener("click", ev => {
     }
     case "novo-lancamento": ui.editandoLancamento = "novo"; ui.aba = "questoes"; render(); break;
     case "editar-lancamento": ui.editandoLancamento = id; render(); break;
+    case "editar-questoes-sessao": { const r = acharRegistro(id); if (r) modalQuestoesDaSessao(r); break; }
+    case "toggle-qsessoes": ui.verTodasQSessoes = !ui.verTodasQSessoes; render(); break;
     case "cancelar-lancamento": ui.editandoLancamento = null; render(); break;
     case "excluir-lancamento":
       if (confirm("Excluir este lançamento de questões?")){
