@@ -97,7 +97,9 @@ async function ajustes(w, fn){
      doc.getElementById("modalTitulo").textContent);
   ok("com as três saídas", [...doc.querySelectorAll('[name="rumo"]')].map(r=>r.value).join(",")
      ==="continuo,outra,encerrei", [...doc.querySelectorAll('[name="rumo"]')].map(r=>r.value));
-  ok("enquanto não responder, nada novo é agendado", db(w).revisoes.length===0, db(w).revisoes.length);
+  /* Decisão do Pedro (23/09): a pergunta não segura nada — enquanto ela não é
+     respondida, as revisões seguem normalmente; parar é escolher "encerrei". */
+  ok("enquanto não responder, o agendamento segue normalmente", db(w).revisoes.length>0, db(w).revisoes.length);
 
   // responder "continuo" volta a agendar
   doc.querySelector('[data-acao="salvar-pos-prova"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
@@ -119,8 +121,9 @@ async function ajustes(w, fn){
   await espera(400);
   ok("encerrando, a escolha fica guardada", db(w).posProva==="encerrei", db(w).posProva);
   ok("a revisão que já existia continua lá", !!db(w).revisoes.find(r=>r.id==="x1"), db(w).revisoes.map(r=>r.id));
+  const antesDeSalvar=db(w).revisoes.length;
   await salvarSessao(w);
-  ok("e nenhuma nova é criada", db(w).revisoes.length===1, db(w).revisoes.length);
+  ok("e nenhuma nova é criada", db(w).revisoes.length===antesDeSalvar, [antesDeSalvar, db(w).revisoes.length]);
 
   /* ---- 8. dá para religar pelos ajustes ---- */
   await ajustes(w, d2=>{ const cx=d2.querySelector('[name="religar"]'); cx.checked=true; });

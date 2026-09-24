@@ -43,12 +43,14 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
   $("#tipoRevisao").checked=true; change($("#tipoRevisao")); await espera(320);
   ok("o seletor de revisão aparece", !!$("#revisaoAlvo"));
   $("#revisaoAlvo").value="vLAI"; change($("#revisaoAlvo")); await espera(320);
+  // a escada agora é completada na carga: o que conta é não tocar nas das OUTRAS sessões
+  const dasOutras=lerDb().revisoes.filter(r=>r.registroId!=="rHoje").map(r=>r.id+"@"+r.data).sort().join();
   $("#modalCorpo #formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(400);
 
   const d=lerDb(), conv=d.registros.find(r=>r.id==="rHoje");
   ok("avisou que as revisões agendadas seriam apagadas",
-     perguntas.some(p=>/apaga as 2 revisão/.test(p)), perguntas);
+     perguntas.some(p=>/apaga as \d+ revisão/.test(p)), perguntas);
   ok("a sessão virou revisão", conv.tipo==="revisao", conv.tipo);
   ok("o conteúdo passou a ser o da revisão", conv.assuntos.join()==="LAI", conv.assuntos);
   ok("o tempo dela continua", conv.minutos===50, conv.minutos);
@@ -57,7 +59,9 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
   ok("a revisão escolhida ficou marcada",
      d.revisoes.find(r=>r.id==="vLAI").feita===true && d.revisoes.find(r=>r.id==="vLAI").sessaoId==="rHoje",
      d.revisoes.find(r=>r.id==="vLAI"));
-  ok("e as revisões de outras sessões não foram tocadas", d.revisoes.length===1, d.revisoes.length);
+  ok("e as revisões de outras sessões não foram tocadas",
+     d.revisoes.filter(r=>r.registroId!=="rHoje").map(r=>r.id+"@"+r.data).sort().join()===dasOutras,
+     d.revisoes.map(r=>r.id+"@"+r.data));
 
   /* ---- voltar para estudo ---- */
   await abrir("rHoje");

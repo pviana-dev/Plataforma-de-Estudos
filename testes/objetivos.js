@@ -104,7 +104,8 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   let revs=automaticas(w);
   ok("sem ligação nenhuma, os cards nascem normalmente", revs.length>=4, revs.length);
   ok("nenhum cai num dia de prova", !revs.some(r=>r.data===dia(10)||r.data===dia(20)), revs.map(r=>r.data));
-  ok("nenhum passa da véspera do último", revs.every(r=>r.data<dia(20)), revs.map(r=>r.data));
+  // a prova não corta a escada (decisão do Pedro, 23/09): as revisões seguem depois dela
+  ok("e a escada segue depois do último dia", revs.some(r=>r.data>dia(20)), revs.map(r=>r.data));
   ok("e o espaço entre os dias é usado", revs.some(r=>r.data>dia(10)), revs.map(r=>r.data));
 
   /* ---- 5. ligação opcional: o conteúdo ligado é cobrado só até a véspera do seu dia ---- */
@@ -117,7 +118,8 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   ok("ligar a disciplina grava pelo nome", db(w).vestibular.disciplinas["Legislação"]==="d1", db(w).vestibular);
   revs=automaticas(w);
   const lai=revs.filter(r=>sessaoDe(w,r).disciplina==="Legislação"), crase=revs.filter(r=>sessaoDe(w,r).disciplina==="Português");
-  ok("Legislação só até a véspera do 1º dia", lai.length && lai.every(r=>r.data<dia(10)), lai.map(r=>r.data));
+  // a ligação não corta mais a escada: ela só silencia o conteúdo durante os dias de prova
+  ok("ligar não corta a escada de Legislação", lai.length && lai.some(r=>r.data>dia(10)), lai.map(r=>r.data));
   ok("Português, sem ligação, continua até o último dia", crase.some(r=>r.data>dia(10)), crase.map(r=>r.data));
   // exceção por conteúdo: LAI sai do dia da disciplina
   const selCont=[...w.document.querySelectorAll("select[data-vinc-cont]")].find(s=>s.dataset.vincCont==="LAI");
@@ -239,10 +241,10 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
      db(w).revisoes.some(r=>r.manual && r.data===dia(12)), ($(w,"#erroRevisao")||{}).textContent);
   ok("e o encerrado continua sem criar nada sozinho", db(w).revisoes.filter(r=>!r.manual).length===0,
      db(w).revisoes);
-  // com a prova à frente, depois dela continua recusado
+  // com a prova à frente, marcar depois dela também vale: as revisões seguem normalmente
   w=abrir(Object.assign({}, base4, {dataProva:dia(20)})); await espera(300);
   await novaRev(dia(25));
-  ok("com a prova à frente, depois dela continua recusado", /antes da prova/.test(($(w,"#erroRevisao")||{}).textContent||""),
+  ok("com a prova à frente, revisão à mão depois dela é aceita", db(w).revisoes.some(r=>r.manual && r.data===dia(25)),
      ($(w,"#erroRevisao")||{}).textContent);
 
   /* ---- 11. renomear a disciplina leva a ligação junto ---- */

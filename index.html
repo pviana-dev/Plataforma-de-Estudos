@@ -111,6 +111,10 @@ header.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;ga
 html[data-tema="escuro"] .marca{color:#1c2123;box-shadow:none}
 .brand h1{font-size:25px;font-weight:650;letter-spacing:-.5px;line-height:1.1;white-space:nowrap}
 .brand h1 span{font-weight:400;color:var(--muted);letter-spacing:-.2px}
+/* que dia é hoje: embaixo do nome, em todas as abas — é a referência de "hoje",
+   "atrasado" e "amanhã" que a agenda inteira usa */
+.hoje-topo{font-size:13px;color:var(--text-2);margin-top:3px;white-space:nowrap}
+.hoje-topo b{font-weight:600;color:var(--text)}
 .chip-data{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:9px;
   border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;transition:.15s}
 /* onde os dados estão sendo gravados */
@@ -747,7 +751,9 @@ mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px
 .filtros-agenda .linha + .linha{margin-top:8px}
 .filtros-agenda .hl-tema{min-width:72px}
 .filtros-agenda select{border:1px solid var(--campo-borda);background:var(--campo-fundo);border-radius:8px;
-  padding:6px 10px;flex:1;min-width:0;max-width:420px}
+  padding:9px 12px;font-size:14px;flex:1;min-width:0;max-width:520px}
+/* Mostrar: só as próximas / todas — escolha secundária, botões menores que os de Situação e Organizar */
+.filtros-agenda .aba-mini{padding:5px 12px;font-size:12.5px}
 .filtros-agenda select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--foco);outline:none}
 /* dias de prova do vestibular (ajustes) e a ligação opcional na aba Disciplinas */
 .dia-prova{gap:6px;margin-bottom:6px;flex-wrap:nowrap}
@@ -781,7 +787,8 @@ details.ajuda p{margin:8px 0 0}
           <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h5A1.5 1.5 0 0 0 20 15V5.5Z"/>
         </svg>
       </span>
-      <h1>Plataforma <span>de Estudos</span></h1>
+      <div><h1>Plataforma <span>de Estudos</span></h1>
+        <div class="hoje-topo" id="hojeTopo"></div></div>
     </div>
     <div id="regressiva"></div>
     <div class="dir">
@@ -829,33 +836,16 @@ const CONFIG = {
   REVISOES_POR_DIFICULDADE: { 1: 2, 2: 3, 3: 5 },
   TAXA_CRITICA: 60,                // % de acerto abaixo disso pede pelo menos 4 revisões
   TAXA_ATENCAO: 75,                // abaixo disso garante ao menos 3
-  ESPACAMENTO_MIN_DIAS: 1,         // distância mínima entre duas revisões do mesmo assunto
-
-  /* Quantas revisões CABEM na janela que resta, sem atropelar o ritmo de estudo.
-     Os intervalos da repetição espaçada crescem (≈2, 5, 10, 20, 40, 80 dias), então
-     cada revisão a mais exige uma janela bem maior. Com ~26 dias até a prova o teto
-     é 3; com 40+ dias abre a 4ª; com 60+, a 5ª.                                    */
-  DIAS_MINIMOS: { 1: 1, 2: 4, 3: 10, 4: 30, 5: 60, 6: 120 },
-
-  // Fração do tempo restante em que cada revisão cai (intervalos crescentes).
-  DISTRIBUICAO: {
-    1: [0.60],
-    2: [0.25, 0.80],
-    3: [0.12, 0.42, 0.85],
-    4: [0.08, 0.25, 0.50, 0.88],
-    5: [0.05, 0.16, 0.34, 0.60, 0.90],
-    6: [0.04, 0.11, 0.22, 0.40, 0.65, 0.95]
-  },
-  ANTECIPACAO_PRIORITARIA: 0.8,         // assunto difícil: antecipa todas as revisões em 20%
-
-  /* A ESCADA da repetição espaçada: dias após o estudo em que cada revisão cai,
-     em intervalos crescentes. Ela é usada sempre que a janela disponível a
-     comporta — inclusive com prova marcada. Só quando a janela é curta demais
-     para a escada é que o plano é comprimido (DISTRIBUICAO, acima).
-     Com um ano pela frente ela dá 9 revisões; é esse o "quantas forem
-     necessárias" dentro do horizonte escolhido. */
+  /* A ESCADA da repetição espaçada: dias após o fechamento do conteúdo em que
+     cada revisão cai, em intervalos crescentes. O que se respeita de verdade é
+     a DISTÂNCIA de um degrau ao seguinte: revisão atrasada ou marcada a mais
+     empurra as próximas, cada uma mantendo a sua distância. A prova não corta
+     a escada — as revisões seguem depois dela, e parar é escolha sua. */
   INTERVALOS_LIVRES: [1, 3, 7, 16, 35, 70, 140, 240, 365],
-  HORIZONTE_LIVRE: 180,                 // dias à frente quando não há prova nem teto escolhido
+  /* A dificuldade estica ou encurta a escada inteira: o que está fácil pode
+     esperar mais; o difícil volta mais cedo. */
+  FATOR_DIFICULDADE: { 1: 1.5, 2: 1, 3: 0.7 },
+  HORIZONTE_LIVRE: 180,                 // dias à frente quando não há teto escolhido (com ou sem prova)
   HORIZONTE_MAX_DIAS: 365,              // teto de planejamento: no máximo um ano à frente
   MAX_REVISOES: 9,                      // nenhum assunto passa disso (o tamanho da escada)
   /* Quanto a dificuldade deixa o assunto ir fundo na escada: um assunto
@@ -871,6 +861,11 @@ const CONFIG = {
   AVISO_ABERTO_DIAS: 14,                // depois disso, o card sugere fechar o conteúdo
   ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na visão por assunto antes do "+"
   AGENDA_VISIVEL: 12,                   // itens abertos na visão por dia antes do "+"
+  /* Por padrão a agenda mostra só o que vem logo: as 2 próximas revisões e a
+     próxima retomada de cada conteúdo — cumprida uma, a seguinte aparece. A
+     escada inteira continua lá; "Todas as agendadas" mostra tudo. */
+  REVISOES_VISIVEIS: 2,
+  RETOMADAS_VISIVEIS: 1,
   MAX_ANOTACAO: 2000,                   // caracteres por caixa de anotação (~2 KB por anotação)
 
   /* Cores da anotação. São MARCADORES no texto (4 bytes por trecho), nunca HTML
@@ -960,8 +955,9 @@ const temAssunto = (r, k) => assuntosDe(r).some(a => chaveAssunto(r.disciplina, 
 /* A chave ORDENA os conteúdos antes de juntar. Sem isso, [LAI, Licitações] e
    [Licitações, LAI] — os mesmos dois conteúdos, adicionados em ordem diferente —
    eram tratados como coisas distintas, e cada sessão abria a própria fila. */
-const chaveSessao = r => chaveAssunto(r.disciplina,
-  assuntosDe(r).map(a => (a||"").trim()).sort((x,y) => x.localeCompare(y, "pt-BR")).join(" | "));
+const chaveConteudos = (disc, lista) => chaveAssunto(disc,
+  (lista || []).map(a => (a||"").trim()).sort((x,y) => x.localeCompare(y, "pt-BR")).join(" | "));
+const chaveSessao = r => chaveConteudos(r.disciplina, assuntosDe(r));
 /* tipo: "estudo" (padrão), "revisao" ou "misto" (estudo/revisão — revisei e
    também vi conteúdo novo). Revisão e misto cumprem uma revisão agendada — são
    elas que guardam o tempo e as questões, e não geram plano nenhum. */
@@ -1095,7 +1091,7 @@ function migrarIntegracoes(base){
 
 /* DESFAZER OS GRUPOS DE REVISÃO. A integração foi criada para um problema que
    não existe mais: duas sessões do mesmo conteúdo abriam duas filas. Hoje quem
-   resolve isso é a própria agenda — escadaEmAberto, voltaEmAberto e
+   resolve isso é a própria agenda — a escada por conteúdo, voltaEmAberto e
    resolverLembrete —, sem ninguém precisar marcar caixa nenhuma.
 
    Desfazer, e não só parar de oferecer: card do grupo volta para a sessão mais
@@ -1211,6 +1207,19 @@ function migrarFases(d){
   d.fasesMigradas = true;
   return abertos.size;
 }
+/* O PLANO "MANUAL" SAIU. Ele vinha da versão antiga: a sessão ficava sem
+   agendamento automático nenhum, e o formulário atual não tinha mais como sair
+   dele — um conteúdo concluído numa dessas sessões ficava sem revisão alguma.
+   Hoje a revisão marcada à mão convive com a escada (e anda junto com ela),
+   então o plano manual não tem mais o que proteger. As revisões manuais que já
+   existem ficam intactas. */
+function migrarPlanoManual(d){
+  if (d.planosManuaisMigrados) return 0;
+  let n = 0;
+  (d.registros || []).forEach(r => { if (r.plano === "manual"){ r.plano = "individual"; n++; } });
+  d.planosManuaisMigrados = true;
+  return n;
+}
 function carregar(){
   const base = estadoInicial();
   if (!temStorage) return { db: base, migrados: 0 };
@@ -1234,6 +1243,7 @@ function carregar(){
       carregado.dificuldadesMigradas = true;
       const objetivoDeduzido = migrarObjetivo(carregado);
       const abertos = migrarFases(carregado);
+      migrarPlanoManual(carregado);
       const fichas = migrarConteudos(carregado);
       const soltos = migrarIntegracoes(carregado).concat(migrarGrupos(carregado));
       return { db: carregado, migrados: 0, desintegrados: soltos, abertos, fichas, objetivoDeduzido };
@@ -1296,7 +1306,13 @@ function salvarRegistro(reg){
      existe só porque você corrigiu a descrição. */
   const semPlano = !db.revisoes.some(r => r.registroId === reg.id && !r.feita && !r.manual);
   const mudouPlano = planoRelevante(antes) !== planoRelevante(reg);
+  /* A dificuldade de um conteúdo é a da sessão MAIS RECENTE dele — estudo ou
+     revisão. Se esta sessão muda essa dificuldade (nova, ou editada), a escada
+     é refeita com os passos novos: revisar e achar difícil encurta o que vem. */
+  const difAntes = new Map(conteudosDoAlvo(reg).filter(c => c.fase === "concluido")
+                             .map(c => [c, dificuldadeDaFicha(c)]));
   if (i >= 0) db.registros[i] = reg; else db.registros.push(reg);
+  difAntes.forEach((dif, c) => { if (dificuldadeDaFicha(c) !== dif) reespacarEscada(c); });
   if (mudouPlano || semPlano) gerarRevisoes(reg);
   persistir();
   return mudouPlano || semPlano;
@@ -1397,20 +1413,18 @@ const nomeDoDia = d => (d && d.nome || "").trim() || "a prova";
 const semProva = () => !ultimaProva();
 /** a prova ainda está à frente? (depois dela o cronograma muda de regra) */
 const provaFutura = () => !!ultimaProva() && ultimaProva() > D.hoje();
-/** O agendamento está de pé? Ele para em dois casos: quando você disse que
-    encerrou, e enquanto a prova já passou e a pergunta ainda não foi respondida
-    — seria estranho continuar agendando para uma prova que acabou. */
-const agendamentoAtivo = () => db.posProva !== "encerrei" && !precisaPerguntarPosProva();
-/* ATÉ QUANDO O SISTEMA AGENDA. Três fontes, nesta ordem:
-   1. o teto que você escolheu ("revisar até"), que vale inclusive depois da prova;
-   2. a véspera do último dia de prova, enquanto ele estiver à frente;
-   3. o horizonte livre, quando não há nem uma coisa nem outra.
+/** O agendamento está de pé? Só para quando você diz que encerrou. Passada a
+    prova, a pergunta "e depois?" aparece, mas não segura nada enquanto não é
+    respondida: as revisões seguem normalmente (decisão do Pedro, 23/09). */
+const agendamentoAtivo = () => db.posProva !== "encerrei";
+/* ATÉ QUANDO O SISTEMA AGENDA: o teto que você escolheu ("revisar até") ou,
+   sem ele, o horizonte livre, que anda junto com hoje. A PROVA NÃO É TETO: as
+   revisões seguem depois dela — só o dia da prova é pulado (foraDaProva).
    Nada passa de um ano à frente — planejar além disso é ficção. */
 function ultimoDiaRevisao(){
   const hoje = D.hoje();
   const maximo = D.soma(hoje, CONFIG.HORIZONTE_MAX_DIAS);
-  let fim = db.revisarAte || (provaFutura() ? D.soma(ultimaProva(), -1)
-                                            : D.soma(hoje, CONFIG.HORIZONTE_LIVRE));
+  let fim = db.revisarAte || D.soma(hoje, CONFIG.HORIZONTE_LIVRE);
   if (fim > maximo) fim = maximo;
   return fim;
 }
@@ -1423,7 +1437,6 @@ function diasParaProva(){
 /** como dizer o prazo nos textos da tela */
 const rotuloPrazo = () => !agendamentoAtivo() ? "— agendamento encerrado"
                         : db.revisarAte ? "até " + D.brFull(db.revisarAte)
-                        : provaFutura()  ? "até " + D.brFull(ultimoDiaRevisao())
                         : "no seu ritmo";
 
 /* CONTEÚDO LIGADO A UM DIA DE PROVA (vestibular com mais de um dia). É uma
@@ -1476,26 +1489,17 @@ function itemEmSilencio(rev){
   const fichas = fichasDaRevisao(rev);
   return fichas.length > 0 && fichas.every(f => conteudoEmSilencio(f));
 }
-/* ATÉ QUANDO UMA SESSÃO AGENDA: a véspera do dia de prova mais tardio entre
-   os seus conteúdos. Basta um conteúdo sem ligação para valer o limite geral —
-   o mesmo critério do silêncio, para as duas regras não se contradizerem. */
+/* ATÉ QUANDO UMA SESSÃO AGENDA. Antes era a véspera do dia de prova do
+   conteúdo; agora a prova não corta mais o plano, então vale o limite geral
+   para todos. A ligação com o dia de prova continua servindo ao SILÊNCIO:
+   enquanto os dias de prova correm, o que já foi cobrado não aparece. */
 function limiteDe(alvo){
-  const geral = ultimoDiaRevisao();
-  if (!ligacoesAtivas() || !provaFutura()) return geral;
-  const fichas = conteudosDoAlvo(alvo);
-  if (!fichas.length) return geral;
-  let fim = "";
-  for (const f of fichas){
-    const dia = diaDoConteudo(f);
-    if (!dia) return geral;
-    const vespera = D.soma(dia.data, -1);
-    if (vespera > fim) fim = vespera;
-  }
-  return fim < geral ? fim : geral;
+  return ultimoDiaRevisao();
 }
-/** a sessão já passou pela prova dela e espera o último dia? Nada é
-    replanejado nela até lá — nem criado, nem apagado. */
-const sessaoEmSilencio = reg => ligacoesAtivas() && provaFutura() && limiteDe(reg) < D.hoje();
+/** todos os conteúdos da sessão estão em silêncio hoje (vestibular, entre o dia
+    deles e o último)? Nada é refeito nela até lá — nem criado, nem apagado. */
+const sessaoEmSilencio = reg => ligacoesAtivas() && provaFutura() &&
+  conteudosDoAlvo(reg).length > 0 && conteudosDoAlvo(reg).every(f => conteudoEmSilencio(f));
 
 /** Estatísticas consolidadas de um assunto (registros + revisões feitas + aprendizados). */
 function estatAssunto(disciplina, assunto){
@@ -1535,75 +1539,26 @@ function estatAssunto(disciplina, assunto){
   };
 }
 
-/** Estatística de uma sessão = a do seu assunto mais frágil (pior taxa de acerto). */
-function estatRegistro(reg){
-  const lista = assuntosDe(reg).map(a => estatAssunto(reg.disciplina, a));
-  if (!lista.length) return { taxa: null, errosBobos: 0, questoes: 0, acertos: 0 };
-  return {
-    taxa: lista.reduce((m,e) => e.taxa === null ? m : (m === null ? e.taxa : Math.min(m, e.taxa)), null),
-    errosBobos: Math.max.apply(null, lista.map(e => e.errosBobos)),
-    questoes: lista.reduce((t,e) => t + e.questoes, 0),
-    acertos: lista.reduce((t,e) => t + e.acertos, 0)
-  };
+/* OS DEGRAUS DA ESCADA, em dias contados do fechamento (o degrau 0 é o próprio
+   dia em que você fechou). A dificuldade decide duas coisas: o tamanho da
+   escada (um assunto tranquilo não precisa de 9 revisões) e o passo (o fácil
+   espera mais, o difícil volta mais cedo — Sistema Leitner).
+   Médio: 1, 3, 7, 16, 35, 70, 140 · Fácil: 2, 5, 11, 24, 53, 105 ·
+   Difícil: 1, 2, 5, 11, 25, 49, 98, 168, 256.                              */
+function degrausDa(dificuldade){
+  const fator = CONFIG.FATOR_DIFICULDADE[dificuldade] ?? 1;
+  const n = Math.min(CONFIG.MAX_REVISOES,
+                     (CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? 3) + CONFIG.FOLGA_POR_DIFICULDADE);
+  const lista = [0];
+  CONFIG.INTERVALOS_LIVRES.slice(0, n).forEach(d =>
+    lista.push(Math.max(lista[lista.length - 1] + 1, Math.round(d * fator))));
+  return lista;
 }
-
-/** Quantas revisões cabem na janela que resta (repetição espaçada com intervalos crescentes). */
-function capacidadeDeRevisoes(diasDisponiveis){
-  let max = 0;
-  Object.keys(CONFIG.DIAS_MINIMOS).forEach(k => {
-    if (diasDisponiveis >= CONFIG.DIAS_MINIMOS[k]) max = Math.max(max, Number(k));
-  });
-  return max;                       // 0 = não cabe nenhuma (prova amanhã ou hoje)
-}
-/* Quantas revisões o assunto pede: dificuldade + desempenho, limitado pelo que cabe.
-   As anotações da aba Anotações NÃO entram nesta conta — elas são
-   conhecimento à parte e não mexem no cronograma. */
-/** degraus da escada que cabem na janela (é quantas revisões ela comporta) */
-function degrausQueCabem(diasDisponiveis){
-  return CONFIG.INTERVALOS_LIVRES.filter(d => d <= diasDisponiveis).length;
-}
-function numeroDeRevisoes(dificuldade, diasDisponiveis){
-  let n = CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? CONFIG.REVISOES_POR_DIFICULDADE[2];
-  /* Janela longa: a escada manda, porque revisar em intervalos crescentes é o
-     que fixa. A dificuldade decide até onde subir — um assunto tranquilo não
-     precisa das 9 revisões só porque há um ano pela frente. */
-  const tetoDificuldade = Math.min(CONFIG.MAX_REVISOES,
-                                   (CONFIG.REVISOES_POR_DIFICULDADE[dificuldade] ?? 3) + CONFIG.FOLGA_POR_DIFICULDADE);
-  n = Math.max(n, Math.min(tetoDificuldade, degrausQueCabem(diasDisponiveis)));
-  const teto = Math.max(capacidadeDeRevisoes(diasDisponiveis), degrausQueCabem(diasDisponiveis));
-  return Math.max(0, Math.min(n, teto, CONFIG.MAX_REVISOES));
-}
-
-/** Offsets (em dias) a partir do início, respeitando o nº de dias disponíveis. */
-/* ONDE CADA REVISÃO CAI. Duas réguas, e a janela decide qual vale:
-   - cabendo a escada (intervalos crescentes reais), ela é usada — é a forma
-     certa da repetição espaçada, e é o que permite planos de meses ou de um ano;
-   - não cabendo, o plano é COMPRIMIDO em frações da janela (DISTRIBUICAO), que
-     é o caso de quem tem a prova perto.
-   Antes essa escolha era "tem prova ou não"; agora é "cabe ou não cabe", que é
-   o que de fato importa: com prova daqui a 8 meses, comprimir seria errado.   */
-function calcularOffsets(diasDisponiveis, n, prioritario){
-  if (diasDisponiveis < 1) return [];
-  const fator = prioritario ? CONFIG.ANTECIPACAO_PRIORITARIA : 1;
-  const escada = [];
-  CONFIG.INTERVALOS_LIVRES.slice(0, n).forEach(d => {
-    let dia = Math.max(1, Math.round(d * fator));
-    if (escada.length && dia <= escada[escada.length-1]) dia = escada[escada.length-1] + CONFIG.ESPACAMENTO_MIN_DIAS;
-    if (dia <= diasDisponiveis) escada.push(dia);
-  });
-  if (escada.length >= n) return escada.slice(0, n);
-
-  while (n > 1 && diasDisponiveis < CONFIG.DIAS_MINIMOS[n]) n--;      // não cabe: reduz revisões
-  const dist = CONFIG.DISTRIBUICAO[n];
-  if (!dist) return escada;
-  const saida = [];
-  dist.forEach(f => {
-    let dia = Math.round(diasDisponiveis * Math.min(1, f * fator));
-    dia = Math.max(1, Math.min(diasDisponiveis, dia));
-    if (saida.length && dia <= saida[saida.length-1]) dia = saida[saida.length-1] + CONFIG.ESPACAMENTO_MIN_DIAS;
-    if (dia <= diasDisponiveis) saida.push(dia);
-  });
-  return saida.length >= escada.length ? saida : escada;
+/** o degrau mais perto de uma distância (em dias) do fechamento; no empate, o de cima */
+function degrauMaisPerto(degraus, dias){
+  let k = 0;
+  degraus.forEach((d, i) => { if (Math.abs(d - dias) <= Math.abs(degraus[k] - dias)) k = i; });
+  return k;
 }
 
 /* ---------- vínculo entre a revisão (agenda) e a sessão (o que aconteceu) ----------
@@ -1647,7 +1602,7 @@ function remarcarRevisao(rev, data){
 
 /* A INTEGRAÇÃO FOI APOSENTADA. Ela existia para um problema que a agenda passou
    a resolver sozinha: duas sessões do mesmo conteúdo abriam duas filas. Hoje
-   escadaEmAberto, voltaEmAberto e resolverLembrete cuidam disso sem ninguém
+   a escada por conteúdo, voltaEmAberto e resolverLembrete cuidam disso sem ninguém
    marcar caixa nenhuma. O que sobrou dela é a migração migrarGrupos(), que
    desfaz grupos de backups antigos. */
 
@@ -1682,11 +1637,6 @@ function conteudosDoAlvo(alvo){
    horas e as questões; o que acabou é a cobrança. */
 const temCadastro = alvo => conteudosDoAlvo(alvo).length > 0;
 
-/** o dia em que o conteúdo mais recente da sessão foi fechado */
-function fechadoEm(alvo){
-  const dias = conteudosDoAlvo(alvo).map(c => c.concluidoEm).filter(Boolean).sort();
-  return dias.length ? dias[dias.length - 1] : (alvo && alvo.concluidoEm) || "";
-}
 const conteudoAberto = alvo => faseDe(alvo) === "andamento";
 /** quantos dias até a próxima volta, num conteúdo ainda aberto */
 /* Quem decide o ritmo é a DIFICULDADE, só ela. A taxa de acerto continua
@@ -1715,15 +1665,6 @@ function termosDoItem(rev){
         cumpre:"que cumprir esta revisão",
         exemploNota:"Ex.: refazer as 10 questões que errei da aula 3" };
 }
-/** outra sessão do mesmo conteúdo já tem escada pendente? (não se abre uma segunda) */
-function escadaEmAberto(reg){
-  const chave = chaveSessao(reg);
-  return db.revisoes.some(r => {
-    if (r.feita || r.manual || ehRetomada(r) || !r.registroId || r.registroId === reg.id) return false;
-    const dono = acharRegistro(r.registroId);
-    return !!dono && chaveSessao(dono) === chave;
-  });
-}
 /** a volta em aberto de OUTRA sessão do mesmo conteúdo (é ela que anda, em vez de duplicar) */
 function voltaEmAberto(reg){
   const chave = chaveSessao(reg);
@@ -1747,13 +1688,20 @@ function gerarRevisoes(reg, opcoes){
   }
   if (ehRevisaoSessao(reg)) return;                            // sessão de revisão não agenda nada
   if (!temCadastro(reg)) return;                               // conteúdo excluído do cadastro
-  if (planoDe(reg) === "manual") return;                       // só revisões criadas à mão
   if (!agendamentoAtivo()) return;                             // você disse que encerrou os estudos
-  if (sessaoEmSilencio(reg)) return;                           // a prova dela passou: o plano espera
+  if (sessaoEmSilencio(reg)) return;                           // a prova dela passou: espera o último dia
+  /* Conteúdo FECHADO: a escada é do conteúdo, não da sessão — continuarEscada
+     não apaga nada, só completa o que falta. Estudar de novo um conteúdo
+     concluído não abre uma segunda fila: é contato, e contato empurra a escada
+     que já existe (reancorarEscada). */
+  conteudosDoAlvo(reg).filter(c => c.fase === "concluido").forEach(continuarEscada);
+  if (!conteudoAberto(reg)) return;
+
   const base = (opcoes && opcoes.base) || reg.data;
   // revisões feitas e as criadas/editadas à mão nunca são reescritas pelo replanejamento
   const mantidas = db.revisoes.filter(r => r.registroId === reg.id && (r.feita || r.manual));
-  db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id || r.feita || r.manual);
+  // o que se refaz aqui são as VOLTAS; a escada dos conteúdos fechados fica
+  db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id || r.feita || r.manual || !ehRetomada(r));
   const feitas = mantidas.filter(r => r.feita);
 
   const hoje = D.hoje();
@@ -1764,52 +1712,245 @@ function gerarRevisoes(reg, opcoes){
   /* CONTEÚDO AINDA ABERTO: uma volta de cada vez. Não adianta marcar cinco
      retornos de um assunto que você nem terminou de ver — o que serve é saber
      quando voltar da próxima vez. Feita a volta, a seguinte nasce dali.     */
-  if (conteudoAberto(reg)){
-    if (mantidas.some(r => !r.feita)) return;                   // já existe uma volta marcada à mão
-    const quando = foraDaProva(D.soma(partida, diasDaVolta(dificuldadeDe(reg))));
-    if (quando > limiteDe(reg)) return;
-    if (mantidas.some(r => r.data === quando)) return;
-    /* CONTINUAÇÃO. Conteúdo grande leva várias sessões, e cada sessão é dona do
-       próprio plano — sem isto, duas sessões do mesmo conteúdo marcariam duas
-       voltas idênticas no mesmo dia. Havendo uma volta em aberto do mesmo
-       conteúdo, ela ANDA para a frente e passa a pertencer à sessão nova, que
-       é a que tem o contexto mais recente.                                   */
-    const irma = voltaEmAberto(reg);
-    if (irma){ irma.registroId = reg.id; irma.data = quando; return; }
-    /* E o resto segue a invariante: só nasce volta para o conteúdo que ainda
-       não tem quem o chame de volta (ver conteudosSemVolta). */
-    const faltando = conteudosSemVolta(reg);
-    if (faltando.length) marcarVolta(reg, faltando, partida);
-    return;
+  if (mantidas.some(r => !r.feita)) return;                     // já existe uma volta marcada à mão
+  const quando = foraDaProva(D.soma(partida, diasDaVolta(dificuldadeDe(reg))));
+  if (quando > limiteDe(reg)) return;
+  if (mantidas.some(r => r.data === quando)) return;
+  /* CONTINUAÇÃO. Conteúdo grande leva várias sessões, e cada sessão é dona do
+     próprio plano — sem isto, duas sessões do mesmo conteúdo marcariam duas
+     voltas idênticas no mesmo dia. Havendo uma volta em aberto do mesmo
+     conteúdo, ela ANDA para a frente e passa a pertencer à sessão nova, que
+     é a que tem o contexto mais recente.                                   */
+  const irma = voltaEmAberto(reg);
+  if (irma){ irma.registroId = reg.id; irma.data = quando; return; }
+  /* E o resto segue a invariante: só nasce volta para o conteúdo que ainda
+     não tem quem o chame de volta (ver conteudosSemVolta). */
+  const faltando = conteudosSemVolta(reg);
+  if (faltando.length) marcarVolta(reg, faltando, partida);
+}
+
+/* ==========================================================================
+   A ESCADA É DO CONTEÚDO. Cada conteúdo concluído tem uma fila só de revisões:
+   as que o sistema marca e quantas você quiser marcar à mão. Três regras:
+
+   1. CONTINUAR (continuarEscada): a fila vai até o fim da escada. Havendo
+      revisões pendentes — automáticas ou suas —, as próximas nascem DEPOIS da
+      última, no degrau seguinte; não havendo, nascem do último contato.
+   2. EMPURRAR (reancorarEscada): um contato com o conteúdo — revisão feita,
+      com atraso ou não, revisão marcada à mão, sessão fora da agenda — vira o
+      novo ponto de partida. Cada revisão seguinte mantém a DISTÂNCIA que tinha
+      da anterior (o `passo`). Ex.: 15, 17 e 22 marcadas; revisão extra no dia
+      20 → a de 22 vai para 25 (+5), e as de depois andam junto. Nada anda
+      para trás: revisar antes da hora não adianta o que vem.
+   3. A revisão extra não pula degrau: ela fica no degrau da anterior, porque
+      revisar cedo não prova que o conteúdo fixou.
+   ========================================================================== */
+const porData = (a, b) => a.data.localeCompare(b.data);
+/** o item da agenda fala deste conteúdo? (chave = chaveAssunto da ficha) */
+function falaDe(rev, chave){
+  const ctx = contextoRevisao(rev);
+  return !!ctx && (ctx.assuntos || []).some(a => chaveAssunto(ctx.disciplina, a) === chave);
+}
+const chaveDaFicha = f => chaveAssunto(f.disciplina, f.nome);
+/** as sessões do conteúdo, da mais recente para a mais antiga */
+function sessoesDaFicha(ficha){
+  return sessoesDoConteudo(ficha.disciplina, [ficha.nome]).slice()
+    .sort((a,b) => String(b.data).localeCompare(String(a.data)) || (b.criadoEm||0) - (a.criadoEm||0));
+}
+/** a dificuldade de AGORA: a da sessão mais recente do conteúdo, revisão ou estudo */
+function dificuldadeDaFicha(ficha){
+  const s = sessoesDaFicha(ficha)[0];
+  return s ? dificuldadeDe(s) : 2;
+}
+/* A sessão que responde pela escada: a de estudo mais recente que agenda. É
+   dela que o item tira a disciplina e o contexto do "continuar". Conteúdo que
+   só aparece em sessão "sem revisão" (o estudo diário) não ganha escada. */
+function donoDaEscada(ficha){
+  return sessoesDaFicha(ficha).find(r => !ehRevisaoSessao(r) && planoDe(r) !== "sem") || null;
+}
+/** os itens de revisão (não voltas) do conteúdo, em ordem de data */
+function itensDaFicha(ficha){
+  const k = chaveDaFicha(ficha);
+  return db.revisoes.filter(r => !ehRetomada(r) && falaDe(r, k)).sort(porData);
+}
+/** o degrau de um item: o guardado nele ou, no item antigo, o mais perto da data */
+function degrauDoItem(rev, ficha, degraus){
+  if (Number.isInteger(rev.degrau)) return Math.min(rev.degrau, degraus.length - 1);
+  return degrauMaisPerto(degraus, Math.max(0, D.dif(ficha.concluidoEm || rev.data, rev.data)));
+}
+
+/** completa a escada do conteúdo até o último degrau que cabe no horizonte */
+function continuarEscada(ficha){
+  if (!ficha || ficha.fase !== "concluido" || !agendamentoAtivo()) return 0;
+  const dono = donoDaEscada(ficha);
+  if (!dono) return 0;
+  const inicio = ficha.concluidoEm || D.hoje();
+  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  const itens = itensDaFicha(ficha);
+  const pendentes = itens.filter(r => !r.feita);
+  const feitas = itens.filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
+    .sort((a,b) => (a.feitaEm || a.data).localeCompare(b.feitaEm || b.data));
+  const hoje = D.hoje();
+  let dia, k, piso;
+  if (pendentes.length){
+    const ultima = pendentes[pendentes.length - 1];
+    dia = ultima.data; k = degrauDoItem(ultima, ficha, degraus);
+    piso = D.soma(hoje, 1);                     // a pendente atrasada ainda é a de hoje
+  } else if (feitas.length){
+    const ultima = feitas[feitas.length - 1];
+    dia = ultima.feitaEm || ultima.data; k = degrauDoItem(ultima, ficha, degraus);
+    piso = hoje;
+  } else {
+    dia = inicio; k = 0; piso = hoje;
   }
-  /* Conteúdo fechado já tem escada? Então é ela que vale. Sem isto, estudar de
-     novo um conteúdo concluído abria uma segunda fila por cima da primeira —
-     oito itens para o mesmo assunto, dois no mesmo dia. */
-  if (escadaEmAberto(reg)) return;
-  // conteúdo fechado: a escada conta do dia em que você fechou
-  const fechou = fechadoEm(reg);
-  if (fechou && fechou > partida) partida = fechou;
-
-  const limite = limiteDe(reg);                                 // a véspera da prova DESTA sessão
-  const dias = D.dif(partida, limite);                          // janela que ainda resta
-  const est = estatRegistro(reg);
-  const dificuldade = dificuldadeDe(reg);
-  const alvo = numeroDeRevisoes(dificuldade, dias);
-  const faltam = Math.max(0, alvo - mantidas.length);
-  if (!faltam) return;
-
-  const prioritario = dificuldade >= 3;              // difícil começa antes; a taxa não entra
-
-  const ocupadas = new Set(mantidas.map(r => r.data));           // nada de duas no mesmo dia
-  calcularOffsets(dias, faltam, prioritario).forEach((off, i) => {
-    const data = foraDaProva(D.soma(partida, off));              // dia de prova: vai para o seguinte
-    if (data > limite) return;                                  // trava: nunca além do horizonte
-    if (ocupadas.has(data)) return;
-    ocupadas.add(data);
-    db.revisoes.push({ id: uid(), registroId: reg.id, data, ordem: mantidas.length + i + 1,
+  const limite = ultimoDiaRevisao();
+  let criadas = 0;
+  for (let j = k + 1; j < degraus.length; j++){
+    const passo = degraus[j] - degraus[j - 1];
+    let quando = D.soma(dia, passo);
+    if (quando < piso) quando = piso;           // o que era para ontem vira hoje, não uma pilha
+    quando = foraDaProva(quando);
+    if (quando > limite) break;                 // o resto nasce quando o horizonte andar
+    db.revisoes.push({ id: uid(), registroId: dono.id, assuntos: [ficha.nome], data: quando,
+                       ordem: j, degrau: j, passo,
                        feita: false, feitaEm: null, minutos: null, questoes: null, acertos: null,
                        dificuldade: null, atividade: "", nota: "", manual: false });
+    dia = quando; piso = D.soma(quando, 1); criadas++;
+  }
+  return criadas;
+}
+
+/* A distância de cada item pendente até o anterior, gravada no item. Guardar
+   (em vez de medir toda vez) é o que deixa o empurrão idempotente: salvar de
+   novo a mesma sessão não empurra a escada uma segunda vez. */
+function fixarPassos(ficha, novoId){
+  const inicio = ficha.concluidoEm || "";
+  const seq = itensDaFicha(ficha).filter(r => !r.feita || (r.feitaEm || r.data) >= inicio);
+  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  let ant = inicio;
+  seq.filter(r => r.id !== novoId).forEach(r => {
+    if (!r.feita && !Number.isInteger(r.passo)) r.passo = Math.max(1, D.dif(ant || r.data, r.data));
+    // o degrau também fica gravado: depois de empurrada, a data já não diz qual era
+    if (!r.feita && !Number.isInteger(r.degrau)) r.degrau = degrauDoItem(r, ficha, degraus);
+    ant = r.data;
   });
+  const novo = novoId && seq.find(r => r.id === novoId);
+  if (!novo || novo.feita) return;
+  const antes = seq.filter(r => r.id !== novoId && r.data < novo.data);
+  const prev = antes[antes.length - 1];
+  if (!Number.isInteger(novo.passo)) novo.passo = Math.max(1, D.dif(prev ? prev.data : (inicio || novo.data), novo.data));
+  // a revisão extra fica no degrau da anterior: revisar cedo não sobe a escada
+  if (!Number.isInteger(novo.degrau)) novo.degrau = prev ? degrauDoItem(prev, ficha, degraus) : 0;
+}
+
+/* O EMPURRÃO. `data` é o dia do contato; `opcoes.exceto` é a revisão marcada à
+   mão que causou o contato (ela fica onde você pôs); `opcoes.mesmoDia` empurra
+   também o que estava marcado no próprio dia (revisão extra: o dia é dela).
+   Item que fala também de um conteúdo que NÃO teve contato se divide: a parte
+   tocada anda, o resto fica onde estava. */
+function reancorarEscada(fichas, data, opcoes){
+  const o = opcoes || {};
+  const alvo = (fichas || []).filter(f => f && f.fase === "concluido" && data >= (f.concluidoEm || ""));
+  if (!alvo.length || !data) return 0;
+  if (data > D.hoje() && !o.exceto) return 0;         // sessão no futuro não é contato ainda
+  const chaves = new Set(alvo.map(chaveDaFicha));
+  alvo.forEach(f => fixarPassos(f, o.exceto));
+
+  const depois = r => !r.feita && !ehRetomada(r) && r.id !== o.exceto &&
+                      (o.mesmoDia ? r.data >= data : r.data > data);
+  db.revisoes.filter(depois).forEach(r => {
+    const ctx = contextoRevisao(r); if (!ctx) return;
+    const tocados = ctx.assuntos.filter(a => chaves.has(chaveAssunto(ctx.disciplina, a)));
+    if (!tocados.length || tocados.length === ctx.assuntos.length) return;
+    const resto = ctx.assuntos.filter(a => !tocados.includes(a));
+    r.assuntos = resto;                                          // fica onde estava
+    db.revisoes.push(Object.assign({}, r, { id: uid(), assuntos: tocados }));   // e esta anda
+  });
+
+  let movidos = 0;
+  alvo.forEach(f => {
+    let ant = data;
+    itensDaFicha(f).filter(depois).forEach(r => {
+      const passo = Number.isInteger(r.passo) ? r.passo : 1;
+      const nova = foraDaProva(D.soma(ant, passo));
+      if (nova > r.data){ r.data = nova; movidos++; }
+      ant = r.data;
+    });
+  });
+  return movidos;
+}
+
+/* MUDOU A DIFICULDADE: as pendentes automáticas são refeitas com os passos da
+   dificuldade nova, contando do último contato; as marcadas à mão ficam onde
+   estão. A escada também muda de tamanho — o que sobra sai, o que falta nasce.
+   Atrasada não se mexe: ela ainda é a de hoje. */
+function reespacarEscada(ficha){
+  if (!ficha || ficha.fase !== "concluido" || !agendamentoAtivo()) return 0;
+  const inicio = ficha.concluidoEm || "";
+  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  const itens = itensDaFicha(ficha);
+  const feitas = itens.filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
+    .sort((a,b) => (a.feitaEm || a.data).localeCompare(b.feitaEm || b.data));
+  const ultimaFeita = feitas[feitas.length - 1];
+  let ant = ultimaFeita ? (ultimaFeita.feitaEm || ultimaFeita.data) : (inicio || D.hoje());
+  let k = ultimaFeita ? degrauDoItem(ultimaFeita, ficha, degraus) : 0;
+  const hoje = D.hoje(), sobra = new Set();
+  let mudou = 0;
+  itens.filter(r => !r.feita).forEach(r => {
+    if (r.manual || r.data < hoje){
+      ant = r.data; k = Number.isInteger(r.degrau) ? r.degrau : degrauDoItem(r, ficha, degraus);
+      return;
+    }
+    k = Number.isInteger(r.degrau) ? r.degrau : k + 1;
+    if (k >= degraus.length){ sobra.add(r.id); return; }
+    let nova = foraDaProva(D.soma(ant, degraus[k] - degraus[k - 1]));
+    if (nova < hoje) nova = hoje;
+    if (nova !== r.data) mudou++;
+    r.data = nova; r.degrau = k; r.passo = degraus[k] - degraus[k - 1];
+    ant = nova;
+  });
+  if (sobra.size){ db.revisoes = db.revisoes.filter(r => !sobra.has(r.id)); mudou += sobra.size; }
+  return mudou + continuarEscada(ficha);
+}
+
+/* Itens da escada que nasceram no mesmo dia, do mesmo degrau e da mesma
+   sessão viram um só: fechar Scrum e XP juntos (estudados juntos) dá um card
+   "Scrum · XP", não dois. Se depois só um deles for revisado, o empurrão
+   separa de novo. */
+function juntarIrmas(){
+  const vistos = new Map();
+  db.revisoes = db.revisoes.filter(r => {
+    if (r.feita || r.manual || ehRetomada(r) || !r.registroId ||
+        !Array.isArray(r.assuntos) || !Number.isInteger(r.degrau)) return true;
+    const k = r.registroId + "|" + r.data + "|" + r.degrau;
+    const irma = vistos.get(k);
+    if (!irma){ vistos.set(k, r); return true; }
+    r.assuntos.forEach(a => { if (!irma.assuntos.includes(a)) irma.assuntos.push(a); });
+    const ordem = assuntosDe(acharRegistro(r.registroId) || {});
+    irma.assuntos.sort((x, y) => ordem.indexOf(x) - ordem.indexOf(y));
+    return false;
+  });
+}
+
+/* GARANTIA DE REVISÃO. Conteúdo concluído não fica sem escada: se tem revisões
+   pendentes, as próximas nascem depois delas; se não tem nenhuma, a escada
+   nasce do último contato. É o par de garantirRetomadas, que cuida dos
+   conteúdos abertos. */
+function garantirEscadas(){
+  if (!agendamentoAtivo()) return 0;
+  let n = 0;
+  conteudosCad().forEach(c => { n += continuarEscada(c); });
+  if (n) juntarIrmas();
+  return n;
+}
+/** nenhum conteúdo fica fora do radar: aberto tem volta, fechado tem escada */
+function garantirAgenda(){ return garantirRetomadas() + garantirEscadas(); }
+/** houve contato com estes conteúdos neste dia: a escada deles anda */
+function contatoComConteudos(fichas, data, opcoes){
+  const n = reancorarEscada(fichas, data, opcoes);
+  (fichas || []).forEach(continuarEscada);
+  juntarIrmas();
+  return n;
 }
 
 
@@ -1888,7 +2029,7 @@ function descricaoAtividade(rev){
 function chaveCard(rev){
   const ctx = contextoRevisao(rev);
   if (!ctx) return "";
-  return chaveAssunto(ctx.disciplina, ctx.assuntos.join(" | "));
+  return chaveConteudos(ctx.disciplina, ctx.assuntos);
 }
 /** Como a revisão se chama: o nome que você deu, ou o automático "Revisão N".
     O número vem da POSIÇÃO por data entre as irmãs do card — inclusive as que
@@ -1920,6 +2061,24 @@ const statusRevisao = rev => {
    passou, e o último dia ainda não) fica guardado mas fora de TODAS as telas e
    contagens — é por aqui que a agenda, o card de hoje, o calendário e os
    pinos das abas passam. */
+/* SÓ AS PRÓXIMAS. De cada card (conteúdo), as REVISOES_VISIVEIS primeiras
+   revisões pendentes e as RETOMADAS_VISIVEIS primeiras retomadas, em ordem de
+   data — o atraso entra na conta, porque ele é o próximo a fazer. O que já foi
+   feito não é cortado. A lista precisa vir em ordem de data. */
+function soAsProximas(lista){
+  const vistos = new Map();
+  return lista.filter(x => {
+    if (x.rev.feita) return true;
+    const volta = ehRetomada(x.rev);
+    const k = chaveCard(x.rev) + (volta ? "|volta" : "|revisao");
+    const n = vistos.get(k) || 0;
+    if (n >= (volta ? CONFIG.RETOMADAS_VISIVEIS : CONFIG.REVISOES_VISIVEIS)) return false;
+    vistos.set(k, n + 1);
+    return true;
+  });
+}
+/** a agenda como ela aparece: só as próximas, a não ser que se peça todas */
+const agendaVisivel = lista => ui.agendaCompleta ? lista : soAsProximas(lista);
 function revisoesDetalhadas(){
   return db.revisoes.filter(rev => !itemEmSilencio(rev)).map(rev => {
     const ctx = contextoRevisao(rev);
@@ -2059,7 +2218,7 @@ const ui = {
   editandoRevisao: null, editandoLancamento: null, prefRevisao: null, cronoDestino: "", rascunho: null,
   ligarRevisao: "",                 // veio da agenda: a sessão aberta vai cumprir esta revisão
   verTodasProximas: false, verTodosAssuntos: false, mesCal: "",
-  visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false,
+  visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false, agendaCompleta: false,
   faseAgenda: "abertos",            // sub-aba da Agenda: o que falta fazer ou o que já passou
   aAssunto: "",                     // filtro de assunto da Agenda, na visão por assunto (chaveCard)
   focoRevisao: "",                  // salto do card de hoje para o lugar dele na lista (não é estado de tela)
@@ -2113,7 +2272,7 @@ const CAMPOS_TELA = ["aba",
   "eDisciplina","eAssunto","eSoImportantes","eJuntarTudo",      // filtros das Anotações
   "qVisao","qPeriodo","qDiscs","pDisciplina","diaSel","mesCal",        // Questões e Painel
   "verTodasProximas","verTodosAssuntos",                        // listas abertas/fechadas
-  "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aAssunto",   // como a Agenda está sendo vista
+  "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aAssunto","agendaCompleta",   // como a Agenda está sendo vista
   "cDisciplina",                                                // filtro da aba Disciplinas
   "compondo","rascunhoAnot"];                                   // e o que está sendo escrito
 function abaSalva(){
@@ -2186,6 +2345,8 @@ function render(){
                 : dias > 0 ? fogo+'<b>'+dias+'</b><span>'+(dias===1?"dia":"dias")+' para '+esc(nomeProx)+'</span>'+fogo
                 : dias === 0 ? fogo+'<b>hoje</b><span>é '+esc(nomeProx)+'</span>'+fogo
                 : '<b>'+(-dias)+'</b><span>'+(dias===-1?"dia":"dias")+' desde '+esc(nomeProx)+'</span>';
+  const semanaHoje = new Date(D.hoje() + "T12:00").toLocaleDateString("pt-BR", { weekday: "long" });
+  $("#hojeTopo").innerHTML = 'Hoje é <b>' + esc(semanaHoje) + ', ' + D.brFull(D.hoje()) + '</b>';
   const chip = $("#chipData");
   chip.innerHTML = objetivo() === "livre" ? 'Sem objetivo'
                  : !dia ? esc(nomeObjetivo()) + ' · data a definir'
@@ -2480,7 +2641,7 @@ function telaHoje(){
   const det = revisoesDetalhadas();
   const atrasadas = det.filter(x => x.status === "atrasada");
   const hoje      = det.filter(x => x.status === "hoje");
-  const proximas  = det.filter(x => x.status === "futura" && D.dif(D.hoje(), x.rev.data) <= 7);
+  const proximas  = agendaVisivel(det).filter(x => x.status === "futura" && D.dif(D.hoje(), x.rev.data) <= 7);
   const min = minutosDoDia(D.hoje());
   const meta = db.metaDiariaMin || 1;
   const perc = Math.min(100, Math.round((min/meta)*100));
@@ -2660,10 +2821,77 @@ function iniciarCrono(ev){
   toast("Cronômetro iniciado às " + horaDe(db.cronometro.inicio) + ".");
 }
 
+/* O CRONÔMETRO PASSOU DA MEIA-NOITE: você escolhe para onde vão as horas.
+   - "tudo no dia em que começou" — o padrão de antes (ver abaixo);
+   - "dividir" — até a meia-noite fica na sessão que iniciou o cronômetro, e o
+     resto vai para uma sessão NOVA do dia seguinte, criada sozinha, igual à
+     original (disciplina, conteúdos, tipo, dificuldade), com as horas dela.
+   O momento em que você parou fica guardado (`parado`): fechar a pergunta sem
+   responder não perde nada, e parar de novo pergunta de novo, com a mesma hora. */
 function encerrarCrono(){
   const c = db.cronometro; if (!c) return;
-  const fim = Date.now();
-  const minutos = Math.max(1, Math.round((fim - c.inicio)/60000));
+  const fim = c.parado || Date.now();
+  if (D.iso(new Date(fim)) !== D.iso(new Date(c.inicio))){
+    c.parado = fim; persistir(true);
+    const chip = document.getElementById("cronoChip"); if (chip) chip.innerHTML = "";   // redesenha como "parado"
+    const fatias = fatiasPorDia(c.inicio, fim);
+    const opcao = (dividir, rotulo, detalhe) =>
+      '<button class="btn' + (dividir ? '' : ' ghost') + '" type="button" data-acao="crono-virada" ' +
+      'data-dividir="' + (dividir ? 1 : 0) + '" style="display:block;width:100%;text-align:left;margin-top:8px">' +
+      '<b>' + rotulo + '</b><br><span style="font-size:12.5px;font-weight:400">' + detalhe + '</span></button>';
+    abrirModal("O cronômetro passou da meia-noite",
+      '<p class="sub">Começou ' + esc(D.semana(fatias[0].data)) + ', ' + D.br(fatias[0].data) + ' às ' +
+        esc(horaDe(c.inicio)) + ' e parou ' + esc(D.semana(D.iso(new Date(fim)))) + ', ' + D.br(D.iso(new Date(fim))) +
+        ' às ' + esc(horaDe(fim)) + ' — <b>' + hhmm(fatias.reduce((t,x) => t + x.minutos, 0)) + '</b>. Para onde vão as horas?</p>' +
+      opcao(false, "Tudo na sessão de " + D.br(fatias[0].data),
+            "o dia em que você começou a estudar") +
+      opcao(true, "Dividir por dia",
+            fatias.map(x => hhmm(x.minutos) + " em " + D.br(x.data)).join(" · ") +
+            " — a sessão do dia seguinte é criada igual à que iniciou o cronômetro"));
+    return;
+  }
+  finalizarCrono(false);
+}
+/** os pedaços de uma medição, um por dia do calendário (cada um com pelo menos 1 min) */
+function fatiasPorDia(inicio, fim){
+  const fatias = [];
+  let ini = inicio;
+  while (true){
+    const dia = D.iso(new Date(ini));
+    const meiaNoite = new Date(D.soma(dia, 1) + "T00:00").getTime();
+    const ate = Math.min(fim, meiaNoite);
+    fatias.push({ data: dia, inicio: horaDe(ini), fim: ate === meiaNoite ? "24:00" : horaDe(ate),
+                  minutos: Math.max(1, Math.round((ate - ini)/60000)) });
+    if (ate >= fim) break;
+    ini = ate;
+  }
+  return fatias;
+}
+/* A sessão do dia seguinte, igual à que iniciou o cronômetro: mesmo conteúdo,
+   tipo, dificuldade e plano; só o tempo (e o dia) são dela. Questões não são
+   copiadas — ficaram com a original. Ela é salva pelo caminho de sempre:
+   agenda, lembrete vencido e escada reagem como a uma sessão registrada. */
+function criarContinuacoes(orig, fatias){
+  fatias.forEach(fx => {
+    const nova = { id: uid(), data: fx.data, disciplina: orig.disciplina,
+                   assuntos: assuntosDe(orig).slice(), assunto: assuntosDe(orig)[0] || "",
+                   minutos: fx.minutos, questoes: 0, acertos: 0, dificuldade: dificuldadeDe(orig),
+                   tipo: orig.tipo || "estudo", plano: planoDe(orig),
+                   anotacoes: "Continuação da sessão de " + D.br(orig.data) + " — o cronômetro passou da meia-noite.",
+                   inicio: fx.inicio, fim: fx.fim,
+                   blocos: [{ data: fx.data, inicio: fx.inicio, fim: fx.fim, minutos: fx.minutos }],
+                   criadoEm: Date.now() };
+    salvarRegistro(nova);
+    resolverLembrete(nova);
+    contatoComConteudos(conteudosDoAlvo(nova), nova.data);
+  });
+  garantirAgenda();
+}
+function finalizarCrono(dividir){
+  const c = db.cronometro; if (!c) return;
+  const fim = c.parado || Date.now();
+  const fatias = dividir ? fatiasPorDia(c.inicio, fim) : null;
+  const minutos = dividir ? fatias[0].minutos : Math.max(1, Math.round((fim - c.inicio)/60000));
   /* O TEMPO PERTENCE AO DIA EM QUE A SESSÃO COMEÇOU. Estudar das 23h30 à 0h30 é
      uma hora da noite de quarta — não uma hora da quinta, que é o que dava antes,
      quando o bloco nascia com a data do relógio na hora de PARAR. Quem varou a
@@ -2671,8 +2899,10 @@ function encerrarCrono(){
      `viradas` guarda quantos dias o cronômetro atravessou, só para a etiqueta
      não mentir dizendo "23:30–00:30" como se fosse o mesmo dia. */
   const diaInicio = D.iso(new Date(c.inicio)), diaFim = D.iso(new Date(fim));
-  const bloco = { data: diaInicio, inicio: horaDe(c.inicio), fim: horaDe(fim), minutos };
-  if (diaFim !== diaInicio) bloco.viradas = D.dif(diaInicio, diaFim);
+  const bloco = dividir ? { data: diaInicio, inicio: fatias[0].inicio, fim: fatias[0].fim, minutos }
+                        : { data: diaInicio, inicio: horaDe(c.inicio), fim: horaDe(fim), minutos };
+  if (!dividir && diaFim !== diaInicio) bloco.viradas = D.dif(diaInicio, diaFim);
+  const resto = dividir ? fatias.slice(1) : [];
   const alvo = c.destinoTipo ? alvoCrono(c.destinoTipo, c.destinoId) : null;
   db.cronometro = null;
 
@@ -2683,8 +2913,10 @@ function encerrarCrono(){
     reg.blocos = (reg.blocos || []).concat([bloco]);
     if (!reg.inicio) reg.inicio = bloco.inicio;
     reg.fim = bloco.fim;
+    if (resto.length) criarContinuacoes(reg, resto);
     persistir(true); render();
-    toast(hhmm(minutos) + " somados a “" + alvo.rotulo + "” — agora " + hhmm(reg.minutos) + ".");
+    toast(hhmm(minutos) + " somados a “" + alvo.rotulo + "” — agora " + hhmm(reg.minutos) + "." +
+          (resto.length ? " O resto foi para uma sessão nova de " + resto.map(x => D.br(x.data)).join(", ") + "." : ""));
     return;
   }
   // --- nova sessão: abre o registro pré-preenchido
@@ -2693,7 +2925,9 @@ function encerrarCrono(){
     minutos, questoes: "", acertos: "", dificuldade: 2,
     inicio: bloco.inicio, fim: bloco.fim,
     anotacoes: "Sessão cronometrada: " + bloco.inicio + " → " + bloco.fim +
-               (bloco.viradas ? " do dia seguinte" : "") + " (" + hhmm(minutos) + ")."
+               (bloco.viradas ? " do dia seguinte" : "") + " (" + hhmm(minutos) + ").",
+    // dividido: ao salvar esta, nasce a do dia seguinte, igual a ela
+    divisao: resto.length ? resto : null
   };
   persistir(true);
   ui.aba = "registros"; ui.editandoRegistro = null; ui.foco = null; ui.formAberto = true;
@@ -2863,9 +3097,7 @@ function formRegistroHtml(){
       '). Complete as questões e o domínio para salvar.<span class="spacer"></span>' +
       '<button class="btn mini ghost" type="button" data-acao="descartar-prefill">Descartar</button></div>';
   }
-  h += (eRevisao ? '' : planoAtual === "manual"
-        ? '<p class="sub" style="color:var(--accent-ink)">O plano desta sessão é <b>feito à mão</b>: nada é agendado automaticamente para ela. Crie as revisões na aba Agenda, pelo botão <b>+ Adicionar revisão</b>.</p>'
-        : planoAtual === "sem"
+  h += (eRevisao ? '' : planoAtual === "sem"
         ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão está <b>sem cronograma de revisão</b> — serve para o conteúdo que você estuda todo dia. Desmarque a caixa para voltar a agendar revisões.</p>'
         : '') +
     '<form id="formRegistro" novalidate>' +
@@ -3153,7 +3385,7 @@ function htmlPainelRevisao(v, ed){
 /* ---------- fase dos conteúdos e a opção de não agendar nada ----------
    Aqui havia também a caixa "Integrar com outro conteúdo". Ela saiu: existia
    para o caso de duas sessões do mesmo conteúdo abrirem duas filas, e isso a
-   agenda passou a resolver sozinha (escadaEmAberto / voltaEmAberto).        */
+   agenda passou a resolver sozinha (escada por conteúdo / voltaEmAberto).        */
 function campoIntegracao(v){
   /* A fase não é mais desta sessão: ela é do CONTEÚDO, e vale para todas as
      sessões que falam dele. Aqui a tela só mostra como está cada um, com o
@@ -3673,6 +3905,8 @@ function telaRevisoes(){
        conteúdo inteiro; o mês é a visão de longe.
      Assunto — só na visão por assunto: reduz a agenda a um conteúdo. */
   const fase = ui.faseAgenda === "concluidos" ? "concluidos" : "abertos";
+  const naFaseTudo = fatiaAgenda(det, fase);
+  const naFase = fase === "abertos" ? agendaVisivel(naFaseTudo) : naFaseTudo;
   const nPorFazer = det.filter(x => !jaPassou(x)).length;
   const visao = ["dia","assunto","mes"].indexOf(ui.visaoAgenda) >= 0 ? ui.visaoAgenda : "dia";
   // as opções saem da agenda inteira, não da sub-aba: trocar de "Situação" não apaga a escolha
@@ -3702,9 +3936,17 @@ function telaRevisoes(){
                           esc(o.rotulo + " · " + o.disciplina) + '</option>').join("") +
         '</select></div>'
       : '') +
+    (fase === "abertos"
+      /* O rótulo diz "Revisões" porque é nelas que a escolha pesa: a retomada é
+         sempre uma por conteúdo — a próxima —, então só a escada se expande. */
+      ? '<div class="linha" title="Vale para as revisões — a retomada é sempre uma só, a próxima">' +
+        '<span class="hl-tema">Revisões:</span>' +
+        [[false,"Só as 2 próximas"],[true,"Todas as agendadas"]].map(([k,rot]) =>
+          '<button class="aba aba-mini" data-acao="agenda-completa" data-valor="'+k+'" aria-selected="'+(!!ui.agendaCompleta===k)+'">' +
+          rot + '</button>').join("") +
+        '</div>'
+      : '') +
     '</div>';
-  const naFase = fatiaAgenda(det, fase);
-
   h += cardAtrasadas(naFase);
   if (visao === "dia")  return h + agendaPorDia(naFase, fase) + ajudaCronograma();
   if (visao === "mes")  return h + agendaDoMes(naFase) + ajudaCronograma();
@@ -3932,11 +4174,10 @@ function ajudaCronograma(){
     '<details class="ajuda"><summary>Como o cronograma é montado?</summary><p>' +
     'Conteúdo <b>em andamento</b> recebe <b>uma volta de cada vez</b> — a agenda chama para continuar de ' +
     'onde você parou, sem intervalo crescente. Conteúdo <b>concluído</b> entra na repetição espaçada: ' +
-    (D.dif(D.hoje(), ultimoDiaRevisao()) >= CONFIG.INTERVALOS_LIVRES[3]
-      ? 'D+' + CONFIG.INTERVALOS_LIVRES.slice(0,5).join(', D+') + '… contados do dia em que você fechou. '
-      : 'como a janela até ' + D.brFull(ultimoDiaRevisao()) + ' é curta, o plano é comprimido para caber nela. ') +
-    'Quanto maior a <b>dificuldade</b> do assunto (e quanto pior a taxa de acerto), mais revisões ele recebe e mais cedo elas começam — Sistema Leitner. ' +
-    'O teto vem do tempo que ainda resta: com ' + capacidadeDeRevisoes(D.dif(D.hoje(), ultimoDiaRevisao())) + ' cabendo hoje, é esse o máximo por assunto.' +
+    'D+' + degrausDa(2).slice(1, 6).join(', D+') + '… contados do dia em que você fechou (dificuldade média). ' +
+    'Assunto <b>fácil</b> espera mais entre uma revisão e outra; <b>difícil</b> volta mais cedo e mais vezes. ' +
+    'Se uma revisão atrasa, ou se você marca uma a mais, as seguintes <b>andam junto</b>, cada uma mantendo a ' +
+    'distância que tinha da anterior. A prova não corta nada: as revisões seguem depois dela.' +
     '</p></details></div>';
 }
 
@@ -4022,22 +4263,18 @@ function enviarRevisao(ev){
   if (!disciplina){ aviso.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
   if (!listaAssuntos.length){ aviso.textContent = "Adicione ao menos um assunto."; return; }
 
-  /* As travas só valem enquanto a prova está à frente. Passado o último dia
-     começa outro ciclo — a continuação dos estudos —, e revisar o que foi
-     estudado precisa ser possível em qualquer data, inclusive com o
-     agendamento automático encerrado. */
+  /* A única trava é o próprio dia de prova. Depois da prova vale marcar
+     normalmente: as revisões seguem, e parar é escolha sua. */
   if (d.data >= D.hoje() && diaDeProva(d.data)){
     aviso.textContent = "Esse dia é de prova (" + D.brFull(d.data) + ") — escolha outro para " + tf.esta + "."; return;
-  }
-  if (provaFutura() && d.data > ultimaProva()){
-    aviso.textContent = "A " + tf.item + " precisa ser antes da prova ("+D.brFull(ultimaProva())+")."; return;
   }
 
   const rev = f.dataset.id ? acharRevisao(f.dataset.id) : { id: uid(), ordem: 0 };
   // casa com uma sessão de estudo que tenha exatamente estes assuntos; senão, fica avulsa
-  const chave = chaveAssunto(disciplina, listaAssuntos.join(" | "));
+  const chave = chaveConteudos(disciplina, listaAssuntos);
   const reg = db.registros.find(r => chaveSessao(r) === chave);
 
+  const dataAntes = f.dataset.id ? rev.data : null;
   rev.registroId = reg ? reg.id : null;
   if (reg){ delete rev.disciplina; delete rev.assuntos; }
   else { rev.disciplina = disciplina; rev.assuntos = listaAssuntos; }
@@ -4057,6 +4294,10 @@ function enviarRevisao(ev){
     }
     db.revisoes.push(rev);
   }
+  /* Revisão marcada (ou remarcada) de conteúdo concluído é contato: as
+     seguintes andam a partir dela, cada uma mantendo a sua distância. */
+  if (!ehRetomada(rev) && !rev.feita && rev.data !== dataAntes)
+    contatoComConteudos(fichasDaRevisao(rev), rev.data, { exceto: rev.id, mesmoDia: true });
   persistir();
   ui.editandoRevisao = null; ui.prefRevisao = null;
   render();
@@ -5142,6 +5383,7 @@ function enviarRegistro(ev){
   ev.preventDefault();
   const f = ev.target, dado = Object.fromEntries(new FormData(f).entries());
   const anteriorId = ui.editandoRegistro || "";
+  const divisao = !anteriorId && ui.prefill && ui.prefill.divisao ? ui.prefill.divisao : null;
   const erro = $("#erroForm");
   const num = v => v === "" || v === undefined ? 0 : Math.max(0, Number(v) || 0);
   const questoes = num(dado.questoes), acertos = num(dado.acertos);
@@ -5224,11 +5466,18 @@ function enviarRegistro(ev){
   if (revAlvo) ligarSessaoRevisao(salvo, revAlvo);
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
   else resolverLembrete(salvo);          // estudou o conteúdo? o lembrete vencido se dá por cumprido
+  /* Sessão de conteúdo CONCLUÍDO é contato — cumprindo item da agenda (em dia,
+     atrasado ou adiantado) ou fora dela: a escada anda a partir deste dia.
+     Só quando a sessão é nova ou mudou de dia ou de conteúdo: corrigir a
+     descrição não é estudar de novo. */
+  if (!anterior || anterior.data !== salvo.data || chaveSessao(anterior) !== chaveSessao(salvo))
+    contatoComConteudos(conteudosDoAlvo(salvo), salvo.data);
   /* Trocar um conteúdo por outro na sessão deixou de significar "renomeei":
      os nomes vêm do cadastro, e renomear de verdade se faz na aba
      Disciplinas, que já propaga para tudo. A pergunta antiga
      ("LAI virou Licitações?") agora só confundiria.                        */
-  garantirRetomadas();           // nenhum conteúdo aberto pode ficar sem próxima volta
+  if (divisao) criarContinuacoes(salvo, divisao);   // o cronômetro passou da meia-noite e você dividiu
+  garantirAgenda();              // aberto sem volta ou fechado sem escada: não fica
   persistir();
   ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; ui.ligarRevisao = "";
   const n = db.revisoes.filter(r => r.registroId === reg.id && !r.feita).length;
@@ -5325,7 +5574,7 @@ function registrarRevisao(rev){
 /** a sessão daquele conteúdo naquele dia (a que deve receber o tempo) */
 function sessaoDoDia(ctx, data, exceto){
   if (!ctx) return null;
-  const chave = chaveAssunto(ctx.disciplina, (ctx.assuntos || []).join(" | "));
+  const chave = chaveConteudos(ctx.disciplina, ctx.assuntos);
   return db.registros.filter(r => r.data === data && chaveSessao(r) === chave &&
                                   (!r.revisaoId || r.revisaoId === exceto))
     .sort((a,b) => (b.minutos || 0) - (a.minutos || 0))[0] || null;
@@ -5347,8 +5596,8 @@ function modalPosProva(){
   abrirModal("E depois da prova?",
     '<p class="sub">' + oQue + ' ' +
       (dias === 0 ? "é hoje" : "foi há " + dias + (dias === 1 ? " dia" : " dias")) + '. ' +
-      'Enquanto eu não souber se você continua, <b>nenhuma revisão nova é agendada</b> — ' +
-      'as que já existem continuam aí.</p>' +
+      'As revisões <b>continuam sendo agendadas normalmente</b>; se quiser parar, escolha ' +
+      '<b>encerrei</b>.</p>' +
     '<div class="campos">' +
       '<div class="campo largo"><span>Você continua estudando?</span><div class="opcoes">' +
         '<label class="opcao"><input type="radio" name="rumo" value="continuo" checked>' +
@@ -5475,16 +5724,23 @@ function marcarConteudos(fichas, fase){
     c.fase = fase;
     c.concluidoEm = fase === "concluido" ? D.hoje() : null;
   });
-  const nomes = new Set(tocadas.map(c => c.disciplina + "|" + c.nome.toLowerCase()));
-  const pega = reg => assuntosDe(reg).some(a => nomes.has(reg.disciplina + "|" + a.toLowerCase()));
-  const afetados = db.registros.filter(pega);
-  const ids = new Set(afetados.map(r => r.id));
+  const chaves = new Set(tocadas.map(chaveDaFicha));
 
-  /* O plano muda de régua: as automáticas pendentes desses conteúdos saem e
-     nascem de novo. Feitas e manuais continuam intocadas, como sempre. */
-  db.revisoes = db.revisoes.filter(r => r.feita || r.manual || !ids.has(r.registroId));
-  afetados.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
-  garantirRetomadas();
+  /* O plano muda de régua: o que é automático e pendente destes conteúdos sai
+     (as voltas, ao fechar; a escada, ao reabrir). Item que fala também de
+     outro conteúdo não some — só perde estes. Feitas e manuais continuam
+     intocadas: ao fechar, a escada nasce DEPOIS das revisões que você já
+     tinha marcado (continuarEscada). */
+  db.revisoes = db.revisoes.filter(r => {
+    if (r.feita || r.manual) return true;
+    const ctx = contextoRevisao(r); if (!ctx) return true;
+    const resto = ctx.assuntos.filter(a => !chaves.has(chaveAssunto(ctx.disciplina, a)));
+    if (resto.length === ctx.assuntos.length) return true;
+    if (!resto.length) return false;
+    r.assuntos = resto;
+    return true;
+  });
+  garantirAgenda();
   return tocadas.length;
 }
 /* Renomear um conteúdo é renomear a FICHA e tudo o que apontava para ela: as
@@ -5562,13 +5818,15 @@ function pedirNomeDoConteudo(disc, antigo){
    daqui a três semanas, que ainda tem função.                               */
 function resolverLembrete(reg){
   if (!reg || ehRevisaoSessao(reg) || planoDe(reg) === "sem") return null;
-  const chave = chaveSessao(reg);
+  /* O item é cumprido quando a sessão cobre TODOS os conteúdos dele — conta o
+     conteúdo, não a sessão dona. Vale também para a revisão marcada à mão:
+     ela faz parte da mesma fila e anda junto com a escada. */
   const candidatos = db.revisoes.filter(r => {
-    if (r.feita || r.manual || r.sessaoId) return false;
+    if (r.feita || r.sessaoId) return false;
     if (r.data > reg.data) return false;                     // ainda não venceu
-    const dono = acharRegistro(r.registroId);
-    if (!dono) return false;
-    return chaveSessao(dono) === chave;
+    const ctx = contextoRevisao(r);
+    if (!ctx || ctx.disciplina !== reg.disciplina || !(ctx.assuntos || []).length) return false;
+    return ctx.assuntos.every(a => temAssunto(reg, chaveAssunto(ctx.disciplina, a)));
   }).sort((a,b) => a.data.localeCompare(b.data));
   if (!candidatos.length) return null;
   const alvo = candidatos[0];            // uma sessão fecha um lembrete: o mais antigo
@@ -5714,17 +5972,16 @@ function donoDaRevisao(rev){
    estejam além do teto, que é o que evita o conflito entre o teto e o que você
    marcou de propósito. O que sai são as automáticas que não cabem mais.      */
 function replanejarTudo(){
-  /* O limite é o da sessão dona: com conteúdos ligados a dias de prova, cada
-     uma pode ter o seu. A sessão em silêncio não é tocada — o que ela tem na
-     agenda fica guardado até o último dia de prova. */
+  /* A sessão em silêncio não é tocada — o que ela tem na agenda fica guardado
+     até o último dia de prova. */
   db.revisoes = db.revisoes.filter(r => {
     if (r.feita || r.manual) return true;
     const dono = r.registroId ? acharRegistro(r.registroId) : null;
     if (dono && sessaoEmSilencio(dono)) return true;
-    return r.data <= (dono ? limiteDe(dono) : ultimoDiaRevisao()) && !diaDeProva(r.data);
+    return r.data <= ultimoDiaRevisao() && !diaDeProva(r.data);
   });
   db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
-  garantirRetomadas();
+  garantirAgenda();
 }
 
 /* ABA DISCIPLINAS. O cadastro num lugar só: ver o que existe, renomear (em todo
@@ -5885,7 +6142,7 @@ function mudarLigacao(disc, nome, valor){
   }
   let n = 0;
   regs.forEach(r => { if (limiteDe(r) !== antes.get(r.id)){ gerarRevisoes(r, { base: D.hoje() }); n++; } });
-  garantirRetomadas();
+  garantirAgenda();
   return n;
 }
 
@@ -6062,12 +6319,11 @@ function modalAjuda(){
       (agendamentoAtivo() ? "" : campoOpcoes("Agendamento", [{ nome:"religar", marcado:false,
         texto:"Voltar a agendar revisões (está desligado desde a prova)" }])) +
     '</div><p class="sub" style="margin-top:10px">' +
-      '<b>Horizonte atual:</b> ' + D.brFull(ultimoDiaRevisao()) + ' · ' +
-      'cabem até <b>' + degrausQueCabem(D.dif(D.hoje(), ultimoDiaRevisao())) + '</b> revisões por assunto.<br>' +
-      '<b>Janela larga</b> (a partir de ~4 meses): repetição espaçada clássica, em D+' +
-      CONFIG.INTERVALOS_LIVRES.slice(0,5).join(', D+') + '… a partir de cada estudo.<br>' +
-      '<b>Janela curta</b> (prova perto): o cronograma é comprimido para caber até a véspera — ' +
-      'quanto menos tempo, mais cedo e mais juntas as revisões.</p>' +
+      '<b>Horizonte atual:</b> ' + D.brFull(ultimoDiaRevisao()) + ' — o horizonte anda junto com o dia de hoje.<br>' +
+      '<b>Repetição espaçada</b> a partir do dia em que o conteúdo é concluído: D+' +
+      degrausDa(2).slice(1, 6).join(', D+') + '… (médio). Fácil: D+' + degrausDa(1).slice(1, 5).join(', D+') +
+      '… · Difícil: D+' + degrausDa(3).slice(1, 6).join(', D+') + '…<br>' +
+      'A prova não corta a escada: as revisões seguem depois dela.</p>' +
     '<div class="linha" style="margin-top:12px"><button class="btn" type="submit">Salvar ajustes</button>' +
     '<span class="erro-form" id="erroAjustes"></span>' +
     '<button class="btn ghost" type="button" data-acao="abrir-conteudos">Ir para a aba Disciplinas</button>' +
@@ -6075,12 +6331,11 @@ function modalAjuda(){
     '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
     '<h3 style="font-size:14px;margin-bottom:6px">Metodologias aplicadas</h3>' +
     '<ul style="font-size:13px;color:var(--text-2);padding-left:18px;line-height:1.7;margin:0">' +
-      '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes' +
-        (!provaFutura() ? ' (D+' + CONFIG.INTERVALOS_LIVRES.slice(0,4).join(', D+') + '…), sem prazo.'
-                    : ', comprimidas para caber até a véspera.') + '</li>' +
+      '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes (D+' +
+        degrausDa(2).slice(1, 5).join(', D+') + '…); atraso ou revisão extra empurram as seguintes.</li>' +
       '<li><b>Curva do esquecimento (Ebbinghaus)</b> — a primeira revisão vem cedo, quando o esquecimento é mais rápido.</li>' +
       '<li><b>Recordação ativa</b> — toda revisão pede questões feitas e acertos; reler não conta.</li>' +
-      '<li><b>Sistema Leitner</b> — dificuldade alta ou taxa abaixo de '+CONFIG.TAXA_CRITICA+'% = revisar antes e mais vezes.</li>' +
+      '<li><b>Sistema Leitner</b> — dificuldade alta = revisar antes e mais vezes; fácil = mais espaço entre as revisões.</li>' +
       '<li><b>Prática intercalada</b> — a aba Progresso sugere alternar disciplinas em vez de blocos longos.</li>' +
     '</ul>' +
     '<p class="sub" style="margin-top:14px">Onde os dados são gravados: veja os dois chips no cabeçalho ' +
@@ -6115,14 +6370,15 @@ function atualizarCrono(){
   const c = db.cronometro;
   const chip = document.getElementById("cronoChip");
   if (!c){ if (chip && chip.innerHTML) chip.innerHTML = ""; return; }
-  const t = fmtCrono(Math.floor((Date.now() - c.inicio)/1000));
+  // parado depois da meia-noite, esperando a escolha: o tempo não anda mais
+  const t = fmtCrono(Math.floor(((c.parado || Date.now()) - c.inicio)/1000));
   if (chip){
     if (!chip.firstChild){
       const alvo = c.destinoTipo ? alvoCrono(c.destinoTipo, c.destinoId) : null;
       const nome = alvo ? alvo.rotulo : (c.disciplina || "nova sessão");
       chip.innerHTML = '<span class="crono-chip" title="Cronômetro de estudo em andamento">⏱ <b id="cronoChipTempo">'+t+'</b> ' +
         '<span class="nome" title="'+esc(nome)+'">'+esc(nome)+'</span>' +
-        '<button class="encerrar" data-acao="crono-encerrar">encerrar</button></span>';
+        '<button class="encerrar" data-acao="crono-encerrar">' + (c.parado ? "escolher o dia" : "encerrar") + '</button></span>';
     }
     const b = document.getElementById("cronoChipTempo"); if (b) b.textContent = t;
   }
@@ -6554,9 +6810,11 @@ function aplicarDados(d){
   db.registros   = normalizarRegistros(db.registros);
   db.revisoes    = normalizarRevisoes(db.revisoes);
   db.lancamentos = Array.isArray(db.lancamentos) ? db.lancamentos : [];
+  migrarPlanoManual(db);
   // backups antigos: o plano por disciplina e, depois dele, os grupos de revisão
   const soltos = migrarIntegracoes(db).concat(migrarGrupos(db));
   soltos.forEach(id => { const r = acharRegistro(id); if (r) gerarRevisoes(r, { base: D.hoje() }); });
+  garantirAgenda();
   return soltos.length;
 }
 function importar(arquivo){
@@ -6686,6 +6944,7 @@ document.addEventListener("click", ev => {
     case "toggle-proximas": ui.verTodasProximas = !ui.verTodasProximas; render(); break;
     case "toggle-assuntos": ui.verTodosAssuntos = !ui.verTodosAssuntos; render(); break;
     case "toggle-agenda":   ui.verTodaAgenda = !ui.verTodaAgenda; render(); break;
+    case "agenda-completa": ui.agendaCompleta = alvo.dataset.valor === "true"; render(); break;
     case "visao-agenda":    ui.visaoAgenda = alvo.dataset.visao; render(); break;
     case "dia-agenda":      ui.diaAgenda = ui.diaAgenda === alvo.dataset.dia ? "" : alvo.dataset.dia; render(); break;
     case "mes-agenda": {
@@ -6893,12 +7152,13 @@ document.addEventListener("click", ev => {
         const sv = rv ? sessaoDaRevisao(rv) : null;
         if (sv) delete sv.revisaoId;             // a sessão sobrevive, só perde o vínculo
         db.revisoes = db.revisoes.filter(r => r.id !== id);
-        garantirRetomadas();                     // conteúdo aberto não fica sem próxima volta
+        garantirAgenda();                        // conteúdo aberto não fica sem próxima volta
         ui.editandoRevisao = null; persistir(); render();
         toast(ehRetomada(rv) ? "Retomada excluída." : "Revisão excluída.");
       }
       break; }
     case "crono-encerrar": encerrarCrono(); break;
+    case "crono-virada": fecharModal(); finalizarCrono(alvo.dataset.dividir === "1"); break;
     case "crono-cancelar":
       if (confirm("Descartar este cronômetro? O tempo não será registrado.")){
         db.cronometro = null; persistir(true); render(); toast("Cronômetro descartado.");
@@ -7165,7 +7425,7 @@ function verificarVirada(){
   diaCorrente = agora;
   if (seguiaHoje) ui.diaSel = agora;
   if (ui.mesCal === mesAnterior) ui.mesCal = agora.slice(0,7);
-  if (garantirRetomadas()) persistir();         // o dia virou: ninguém fica sem agendamento
+  if (garantirAgenda()) persistir();            // o dia virou: ninguém fica sem agendamento
   render();
   toast("Virou o dia: a tela agora mostra " + D.brFull(agora) + ".");
   if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
@@ -7191,9 +7451,12 @@ if (precisaPerguntarPosProva()) modalPosProva();
    tela ainda — daí o render() aqui dentro. Sem ele, quem abrisse o app numa base
    que precisava de volta via a agenda vazia até clicar em alguma aba. */
 const repostas = garantirRetomadas();          // base antiga pode vir sem nenhum agendamento
-if (repostas){
+const escadas = garantirEscadas();             // e conteúdo concluído sem revisão nenhuma
+if (repostas || escadas){
   persistir(); render();
-  toast(repostas + " conteúdo(s) em andamento estavam sem agendamento — a próxima volta foi marcada.");
+  toast([repostas ? repostas + " conteúdo(s) em andamento estavam sem agendamento — a próxima volta foi marcada" : "",
+         escadas  ? "conteúdos concluídos ganharam as próximas revisões da escada" : ""]
+        .filter(Boolean).join(" · ") + ".");
 }
 if (inicio.abertos){
   persistir();

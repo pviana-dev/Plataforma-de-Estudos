@@ -10,7 +10,9 @@ const sess=(id,disc,ass)=>({id,data:dia(-5),disciplina:disc,assuntos:[ass],assun
   dificuldade:2,anotacoes:"",tipo:"estudo",criadoEm:Number(id.slice(1))});
 const item=(id,reg,data,feita)=>({id,registroId:reg,data,ordem:1,feita:!!feita,feitaEm:feita?data:null,minutos:null,
   questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"",manual:false});
-const seed={versao:1,tema:"claro",objetivo:"livre",dataProva:"",metaDiariaMin:120,disciplinas:["TI","Português"],lancamentos:[],
+/* revisarAte curto: a escada é completada na carga, e o teste é sobre o card,
+   não sobre quantas revisões cabem — com o teto, ficam só as duas de cada. */
+const seed={versao:1,tema:"claro",objetivo:"livre",dataProva:"",revisarAte:dia(12),metaDiariaMin:120,disciplinas:["TI","Português"],lancamentos:[],
   conteudosMigrados:true,fasesMigradas:true,dificuldadesMigradas:true,
   conteudos:[{id:"c1",disciplina:"TI",nome:"DevOps",fase:"concluido",concluidoEm:dia(-5)},
              {id:"c2",disciplina:"Português",nome:"Crase",fase:"concluido",concluidoEm:dia(-5)}],

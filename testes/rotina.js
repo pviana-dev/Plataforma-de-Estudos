@@ -11,7 +11,8 @@ function verPorAssunto(doc, w){
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),ontem=iso(new Date(Date.now()-864e5));
 const mais=n=>iso(new Date(Date.now()+n*864e5));
-const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação","Português"],grupos:[],
+/* revisarAte curto: a escada é completada na carga (garantia de revisão), e esta suíte é sobre a tela, não sobre quantas revisões cabem. */
+const seed={versao:1,tema:"claro",dataProva:"2026-10-11",revisarAte:mais(4),metaDiariaMin:120,disciplinas:["Legislação","Português"],grupos:[],
  registros:[
   {id:"rA",data:hoje,disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",minutos:60,questoes:10,acertos:4,dificuldade:4,anotacoes:"",criadoEm:1},
   {id:"rB",data:hoje,disciplina:"Português",assuntos:["Crase"],assunto:"Crase",minutos:30,questoes:5,acertos:5,dificuldade:2,anotacoes:"",criadoEm:2}],

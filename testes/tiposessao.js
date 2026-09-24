@@ -2,7 +2,8 @@ const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const hoje=iso(new Date()),dia=n=>iso(new Date(Date.now()+n*864e5));
-const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
+/* revisarAte curto: a escada é completada na carga (garantia de revisão), e esta suíte é sobre a tela, não sobre quantas revisões cabem. */
+const seed={versao:1,tema:"claro",dataProva:"2026-10-11",revisarAte:dia(6),metaDiariaMin:120,disciplinas:["Legislação"],grupos:[],lancamentos:[],
  registros:[{id:"rA",data:dia(-5),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:1}],
  revisoes:[
   {id:"vHoje",registroId:"rA",data:hoje,ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},

@@ -1,9 +1,11 @@
+/* Esta suíte conta itens da lista: abre em "Todas as agendadas" (o padrão mostra só as 2 próximas revisões e a próxima retomada de cada conteúdo). */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
 const dia=n=>iso(new Date(Date.now()+n*864e5));
 const rev=(id,reg,d)=>({id,registroId:reg,data:d,ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""});
-const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disciplinas:["Legislação","Português"],grupos:[],
+/* revisarAte curto: a escada é completada na carga (garantia de revisão), e esta suíte é sobre a tela, não sobre quantas revisões cabem. */
+const seed={versao:1,tema:"claro",dataProva:"2026-10-11",revisarAte:dia(5),metaDiariaMin:120,disciplinas:["Legislação","Português"],grupos:[],
  registros:[
   {id:"rA",data:dia(0),disciplina:"Legislação",assuntos:["LAI"],assunto:"LAI",minutos:60,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:1},
   {id:"rB",data:dia(0),disciplina:"Português",assuntos:["Crase"],assunto:"Crase",minutos:30,questoes:0,acertos:0,dificuldade:3,anotacoes:"",criadoEm:2}],
@@ -15,7 +17,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
 seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
+ beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({agendaCompleta:true,gravadoEm:new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+"-"+String(new Date().getDate()).padStart(2,"0")}));}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 setTimeout(()=>{
   // a lista abre com uma amostra de 3; o agrupamento por dia se testa com tudo à mostra

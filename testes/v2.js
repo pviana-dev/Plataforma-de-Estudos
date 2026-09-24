@@ -1,3 +1,4 @@
+/* Esta suíte conta itens da lista: abre em "Todas as agendadas" (o padrão mostra só as 2 próximas revisões e a próxima retomada de cada conteúdo). */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
@@ -14,7 +15,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
 seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;}});
+ beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({agendaCompleta:true,gravadoEm:new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+"-"+String(new Date().getDate()).padStart(2,"0")}));w.confirm=()=>true;}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));

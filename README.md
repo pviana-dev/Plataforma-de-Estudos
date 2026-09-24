@@ -8,11 +8,14 @@ Abra o arquivo no navegador e use. Todos os dados ficam no **`localStorage`** do
 
 ## Como usar
 
+O cabeçalho diz **que dia é hoje** (*Hoje é quarta-feira, 23/09/2026*), embaixo do nome da
+plataforma, em todas as abas: é a referência de "hoje", "atrasado" e "amanhã" que a agenda usa.
+
 | Aba | Para quê |
 |---|---|
 | **Hoje** | **Cronômetro de estudo** logo no topo, em card próprio com moldura verde — é a ação mais usada do dia; revisões de hoje, atrasadas e dos próximos 7 dias (estas **agrupadas por dia**, mostrando **3 por vez** com **+ ver todas as N**); **Registrado hoje**, um resumo só de leitura das sessões do dia; meta diária e sequência de dias nos números do topo. |
 | **Sessões** | Formulário da sessão de estudo (data, disciplina, **um ou vários assuntos**, tempo, questões, acertos, **dificuldade do assunto**, e **um único campo de descrição** para a sessão) e a lista **Todas as sessões**: resumo do que está filtrado (sessões, conteúdos estudados, pendentes na agenda e conteúdos concluídos — **nenhuma soma de horas**, ver abaixo), separadores por dia com o total do dia, e por sessão o tempo (com o nº de medições do cronômetro, quando há mais de uma), e a dificuldade; *sem revisão* aparece como etiqueta ao lado do conteúdo. **Questões não aparecem aqui** — elas têm aba própria, porque nem toda sessão tem questões (num assunto novo é normal só estudar). Os campos de questões continuam no formulário, opcionais. Registrar e editar acontecem numa **tela sobreposta** (ver abaixo) — a lista nunca é empurrada para baixo. **Clique em qualquer lugar da linha** para abrir a sessão: a tela de edição traz, além dos campos, um bloco **Esta sessão** com os intervalos do cronômetro, quando foi registrada e a situação das revisões. |
-| **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
+| **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. **Revisões:** por padrão, **só as 2 próximas** — de cada conteúdo, as **2 próximas revisões** e a **próxima retomada** (cumprida uma, a seguinte aparece); **Todas as agendadas** mostra a escada inteira, e a escolha fica lembrada. Vale também para os próximos 7 dias da aba **Hoje**. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
 | **Disciplinas** | O **cadastro** de disciplinas e conteúdos, agrupado por disciplina. Cada conteúdo mostra **em quantas sessões ele aparece** e a fase (*em andamento* ou *concluído em DD/MM*), com **✎ renomear** — que muda o nome **em todo o sistema** — e **✓ concluir / ↩ reabrir**. No cabeçalho de cada disciplina, **✓ concluir disciplina** fecha de uma vez todos os conteúdos abertos dela (e **↩ reabrir disciplina**, quando já está tudo fechado). Fechar um conteúdo fecha **todas as sessões que falam dele** e começa a escada de revisões daquele dia. Aqui não se cria disciplina nem conteúdo: eles nascem no formulário da aba **Sessões**. |
 | **Anotações** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
 | **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; os conteúdos ainda sem questões são listados à parte. Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
@@ -147,7 +150,8 @@ hora de registrar ("pouca" × "média"?) e produziam planos quase idênticos. O 
 | **Médio** | a cada 2 dias | a partir de 3 |
 | **Difícil** | no dia seguinte | a partir de 5 |
 
-O nível também decide se o plano **começa antes**: difícil antecipa todas as revisões em 20%.
+O nível também decide o **passo** da escada: fácil multiplica os intervalos por 1,5, difícil por 0,7
+(`FATOR_DIFICULDADE`).
 
 **A taxa de acerto ficou de fora do cronograma.** Ela continua medindo desempenho nas telas, mas
 não mexe mais na cadência nem no tamanho do plano: a taxa
@@ -161,30 +165,18 @@ tudo a cada abertura.
 
 ### Dificuldade e quantas revisões cada assunto recebe
 
-O campo **Dificuldade do assunto** (Sem / Pouca / Média / Bastante / Muita) substituiu o antigo
-"domínio 1–5" e é o que comanda o plano de revisões:
+A dificuldade (Fácil / Médio / Difícil) decide **o tamanho e o passo da escada** — e só ela; a taxa
+de acerto e as anotações não entram. Os degraus, em dias depois do fechamento do conteúdo:
 
-1. A dificuldade define quantas revisões o assunto **pede** (1 a 5).
-2. O desempenho ajusta: taxa abaixo de 60% pede ao menos 4 e abaixo de 75% ao menos 3.
-   Taxa ≥ 90% em assunto fácil corta para no máximo 2. **As anotações da aba Anotações
-   não entram nessa conta** — elas são conhecimento à parte e nunca mexem no cronograma.
-3. O **tempo que resta até a prova** é o teto — e é ele que impede o cronograma de atrapalhar o
-   ritmo de estudo. Como os intervalos da repetição espaçada crescem (≈2, 5, 10, 20, 40, 80 dias),
-   cada revisão a mais exige uma janela bem maior:
+| Dificuldade | Degraus |
+|---|---|
+| Fácil | D+2, 5, 11, 24, 53, 105 |
+| Médio | D+1, 3, 7, 16, 35, 70, 140 |
+| Difícil | D+1, 2, 5, 11, 25, 49, 98, 168, 256 |
 
-   | Dias até a véspera | Máximo de revisões |
-   |---|---|
-   | 1–3 | 1 |
-   | 4–9 | 2 |
-   | 10–29 | 3 |
-   | 30–59 | 4 |
-   | 60–119 | 5 |
-   | 120+ | 6 |
-
-Com os ~26 dias que faltam, o teto é **3 revisões por assunto** — exatamente a faixa 1–3 pedida para
-a reta final. Se a data da prova for adiada nos ajustes, o plano se expande sozinho; se for
-antecipada, ele encolhe para caber. Backups antigos com "domínio" são convertidos automaticamente
-(domínio 1 = muita dificuldade, domínio 5 = sem dificuldade).
+Vale a dificuldade da **sessão mais recente** do conteúdo, de estudo ou de revisão. Revisar e marcar
+*difícil* refaz as revisões automáticas pendentes com os passos novos (`reespacarEscada`); as marcadas
+à mão ficam onde estão.
 
 ### Sem revisão
 
@@ -202,7 +194,7 @@ marcar caixa nenhuma:
 
 | Mecanismo | O que faz |
 |---|---|
-| `escadaEmAberto` | conteúdo fechado **não ganha uma segunda escada** quando é estudado de novo — a que existe é a que vale |
+| escada por conteúdo | conteúdo fechado tem **uma fila só**; estudá-lo de novo empurra a que existe, não abre outra (ver *A escada é do conteúdo*) |
 | `voltaEmAberto` | a volta pendente do mesmo conteúdo **anda para a frente** e passa para a sessão nova, em vez de duplicar |
 | `resolverLembrete` | registrar a sessão **dá o lembrete vencido por cumprido** e faz nascer o próximo daquele dia |
 
@@ -781,12 +773,20 @@ Em todos os casos o tempo entra **também no estudo de hoje**: cada medição vi
 diária, no mapa de calor e na sequência — mesmo que a revisão de destino seja de outra data (o tempo
 do bloco é descontado do "tempo próprio" da sessão para nada ser contado duas vezes).
 
-**O tempo pertence ao dia em que a sessão começou.** Se o cronômetro atravessa a meia-noite — você
-inicia às **23h30** de quarta e encerra às **0h30** de quinta —, a hora inteira é lançada na
-**quarta**. Quem varou a madrugada estudando não começou um dia novo de estudo à meia-noite, e
-partir a medição em duas faria a meta e a sequência mentirem nos dois dias. O bloco guarda os
-horários de verdade (`23:30 → 00:30`) com uma marca de **(+1)** dizendo que o fim caiu no dia
-seguinte; para uma sessão nova, o formulário já abre com a data de **quarta**.
+**Passou da meia-noite? Você escolhe.** Se o cronômetro atravessa a meia-noite — você inicia às
+**23h30** de quarta e encerra às **0h30** de quinta —, ao encerrar aparece a pergunta *para onde vão
+as horas*:
+
+- **Tudo na sessão de quarta** — o dia em que você começou. O bloco guarda os horários de verdade
+  (`23:30 → 00:30`) com uma marca de **(+1)** dizendo que o fim caiu no dia seguinte; para uma sessão
+  nova, o formulário já abre com a data de **quarta**.
+- **Dividir por dia** — até a meia-noite fica na sessão que iniciou o cronômetro (`23:30 → 24:00`), e
+  o resto vai para uma **sessão nova de quinta, criada sozinha, igual à original** (disciplina,
+  conteúdos, tipo, dificuldade; as questões ficam com a original), com `00:00 → 00:30`. Se o destino
+  era *Nova sessão*, o formulário abre com a parte de quarta e a de quinta nasce quando você salva.
+
+Fechar a pergunta sem responder não perde nada: a hora em que você parou fica guardada, o chip do
+cronômetro para de contar e mostra **escolher o dia**.
 
 **O seletor de destino só lista o que é de hoje** — sessões registradas hoje, a revisão de hoje e as
 atrasadas ainda pendentes. Nada de outros dias entra na lista. Da mesma forma, concluir uma revisão
@@ -817,10 +817,10 @@ nesse caso um aviso laranja aparece no topo; use Chrome/Firefox ou sirva a pasta
 
 ## Metodologias aplicadas
 
-1. **Repetição espaçada** — o número de revisões sai da **dificuldade** do assunto (só dela) e de **quantos degraus da escada cabem no horizonte**, sempre em intervalos crescentes.
+1. **Repetição espaçada** — intervalos crescentes contados do fechamento do conteúdo; o tamanho e o passo da escada saem da **dificuldade** (só dela). Atraso ou revisão extra empurram as seguintes.
 2. **Curva do esquecimento (Ebbinghaus)** — a primeira revisão vem cedo, quando o esquecimento é mais rápido.
 3. **Recordação ativa** — toda revisão pede questões feitas e acertos; reler não conta como revisão.
-4. **Sistema Leitner** — dificuldade alta ou taxa de acerto abaixo de 60% = mais revisões, começando antes.
+4. **Sistema Leitner** — dificuldade alta = mais revisões, mais próximas; fácil = mais espaço entre elas.
 5. **Prática intercalada** — o painel sugere alternar disciplinas em vez de blocos longos.
 
 O botão **?** no topo abre essa explicação e os ajustes (objetivo, datas de prova e meta diária).
@@ -832,14 +832,12 @@ Estão no objeto `CONFIG`, no topo do `<script>` do `index.html`:
 ```js
 META_DIARIA_MIN: 180               // meta de estudo por dia
 RETORNO_POR_DIA: 3                 // depois da prova: primeiras revisões por dia, no máximo
-REVISOES_POR_DIFICULDADE: {1:2, 2:3, 3:5}   // fácil, médio, difícil   // 1 = sem dificuldade … 5 = muita
-DIAS_MINIMOS: {1:1, 2:4, 3:10, 4:30, 5:60, 6:120}     // janela necessária para N revisões
-TAXA_CRITICA: 60                   // % de acerto abaixo disso pede ao menos 4
-TAXA_ATENCAO: 75                   // abaixo disso garante ao menos 3
-DISTRIBUICAO: {1..6}               // fração do tempo restante, com intervalos crescentes
-ANTECIPACAO_PRIORITARIA: 0.8       // assunto fraco antecipa tudo em 20%
-INTERVALOS_LIVRES: [1,3,7,16,35,70,140,240,365]   // a escada: dias após o estudo
-HORIZONTE_LIVRE: 180               // sem prova nem teto: até onde o plano se estica
+REVISOES_POR_DIFICULDADE: {1:2, 2:3, 3:5}   // fácil, médio, difícil (+ a folga = tamanho da escada)
+TAXA_CRITICA: 60                   // só nas telas: cor da taxa de acerto
+TAXA_ATENCAO: 75                   // idem
+INTERVALOS_LIVRES: [1,3,7,16,35,70,140,240,365]   // a escada: dias após o fechamento
+FATOR_DIFICULDADE: {1:1.5, 2:1, 3:0.7}            // fácil estica a escada, difícil encurta
+HORIZONTE_LIVRE: 180               // sem teto escolhido: até onde o plano se estica
 HORIZONTE_MAX_DIAS: 365            // teto de planejamento: no máximo um ano
 MAX_REVISOES: 9                    // nenhum assunto passa disso
 FOLGA_POR_DIFICULDADE: 4           // quão fundo na escada a dificuldade deixa ir
@@ -1026,7 +1024,7 @@ pendentes; as feitas e as marcadas à mão ficam como estão.
 |---|---|---|---|
 | Datas | nenhuma | uma prova (ou "data a definir") | quantos dias a prova tiver, cada um com nome e data (ou "data a definir") |
 | Topo da tela | "Estudo contínuo · sem data de prova" | "N dias para a prova" | "N dias para *nome do dia*" — o próximo; passado um, conta para o seguinte |
-| Cronograma | intervalos clássicos, horizonte móvel de 180 dias | comprimido até a véspera quando a janela é curta | igual ao concurso, até a véspera do **último** dia; os dias de prova ficam bloqueados e os intervalos entre eles são usados normalmente |
+| Cronograma | escada normal, horizonte móvel de 180 dias | a mesma escada; a prova **não corta** nada, só o dia dela fica bloqueado | igual; os dias de prova ficam bloqueados |
 
 Na **primeira abertura** (sem nenhum dado) o app pergunta *Para que você estuda?*. O modo já nasce
 "Sem objetivo", então fechar a caixa também é uma resposta. Dados antigos, sem o campo, são lidos pela
@@ -1040,20 +1038,20 @@ agenda segue sem prazo até a data entrar.
 ### Vestibular com vários dias: ligar um conteúdo ao dia dele (opcional)
 
 Com **dois dias de prova ou mais**, a aba **Disciplinas** mostra um seletor ao lado de cada disciplina
-e embaixo de cada conteúdo. **Não é obrigatório**: sem ligação, tudo vale até a véspera do último dia e
-os cards nascem normalmente.
+e embaixo de cada conteúdo. **Não é obrigatório**: sem ligação, os cards nascem normalmente.
 
 - **Disciplina ligada a um dia**: todos os conteúdos dela seguem esse dia, inclusive os criados depois.
 - **Conteúdo**: *como a disciplina* (padrão), um dia específico ou *nenhum dia* (vale até o último).
-- O conteúdo ligado recebe revisões e retomadas até a **véspera do dia dele**. Depois, fica **em
-  silêncio** até o último dia de prova: os itens dele (inclusive atrasados) somem da agenda e das
-  contagens, mas ficam guardados — replanejar não os apaga.
+- A ligação **não corta** a escada (desde 23/09 a prova não é teto). O que ela faz: do dia de prova
+  do conteúdo até o último dia, ele fica **em silêncio** — os itens dele (inclusive atrasados) somem
+  da agenda e das contagens, mas ficam guardados, e replanejar não os apaga.
 - Um item que fala de vários conteúdos só silencia quando **todos** estão em silêncio.
 - Tirar um dia de prova nos ajustes desfaz as ligações a ele.
 
 ### Quando o último dia de prova passa
 
-Aparece uma vez a pergunta **E depois da prova?** — até ela ser respondida, nada novo é agendado.
+Aparece uma vez a pergunta **E depois da prova?** — enquanto ela não é respondida, o agendamento
+segue normalmente; parar é escolher **Encerrei**.
 
 - **Continuo**: o objetivo vira *Sem objetivo* (as datas ficam guardadas). Os itens que o silêncio
   escondeu voltam com **data nova** (a antiga fica registrada, como numa remarcação), e as primeiras
@@ -1063,9 +1061,8 @@ Aparece uma vez a pergunta **E depois da prova?** — até ela ser respondida, n
   novos dias.
 - **Encerrei**: nada é apagado; o sistema só para de agendar (religa-se nos ajustes).
 
-A **revisão à mão** (*+ Adicionar revisão*) só é travada enquanto a prova está à frente: não pode cair
-num dia de prova nem depois do último. Passada a prova, começa outro ciclo — a continuação dos
-estudos — e ela vale em qualquer data, mesmo com o agendamento encerrado.
+A **revisão à mão** (*+ Adicionar revisão*) só não pode cair num **dia de prova** que ainda está por
+vir. Depois da prova ela vale normalmente, mesmo com o agendamento encerrado.
 
 ## Disciplinas e conteúdos são um cadastro
 
@@ -1326,9 +1323,11 @@ num replanejamento. A plataforma agora **varre os conteúdos abertos e repõe a 
 a cadência de sempre contada de hoje. A varredura roda no arranque, na virada do dia, ao salvar uma
 sessão, ao excluir uma revisão e em cada replanejamento; quando repõe alguma coisa no arranque, avisa.
 
-Duas exceções, de propósito: sessão marcada **"sem revisão"** e plano **manual** — nos dois casos
-você disse que cuida disso, e a varredura não insiste. Conteúdo **concluído** também fica de fora: lá
-quem manda é a escada.
+Uma exceção, de propósito: sessão marcada **"sem revisão"** — você disse que cuida disso, e a
+varredura não insiste. (O antigo plano **manual**, herança da versão anterior, prendia a sessão sem
+agendamento nenhum e não tinha como ser desfeito; ele é convertido em automático na carga —
+`db.planosManuaisMigrados` — e as revisões marcadas à mão ficam intactas.) Conteúdo **concluído**
+tem a garantia dele: a escada (ver *A escada é do conteúdo*).
 
 **Continuação.** Conteúdo grande leva várias sessões, e cada sessão é dona do próprio plano — sem
 cuidado, duas sessões do mesmo conteúdo marcariam duas voltas idênticas no mesmo dia. Havendo uma
@@ -1341,8 +1340,8 @@ volta em aberto do mesmo conteúdo, ela **anda para a frente** e passa a pertenc
 **Fechar o conteúdo** se faz em três lugares: no **card da agenda** (**✓ terminei este conteúdo**, com
 aviso de quantas sessões serão afetadas), no **formulário da sessão** (que mostra a fase de cada
 conteúdo e tem o atalho para fechar) e na aba **Disciplinas**, por conteúdo ou por
-disciplina inteira. Ao fechar, a escada nasce inteira
-**a partir daquele dia**; as voltas já feitas não somem, elas foram sessões de estudo com tempo e
+disciplina inteira. Ao fechar, a escada nasce **a partir daquele dia** — ou, se você já tinha revisões
+marcadas para ele, **depois da última delas**; as voltas já feitas não somem, elas foram sessões de estudo com tempo e
 questões registrados. Dá para **reabrir** também, e aí a fila volta a ser uma volta só.
 
 ### A agenda se resolve sozinha
@@ -1362,8 +1361,12 @@ mesmo jeito que uma revisão: aquele dia era para ter sido usado. Os dois aparec
 **Atrasados**, com o botão de remarcar.
 
 **Estudar de novo um conteúdo já fechado não abre outra escada.** A que existe é a que vale — a
-sessão apenas cumpre a revisão vencida, se houver. Antes, cada sessão montava a própria fila: oito
-itens para o mesmo assunto, dois no mesmo dia.
+sessão cumpre a revisão vencida, se houver, e **empurra as seguintes** a partir daquele dia. Antes,
+cada sessão montava a própria fila: oito itens para o mesmo assunto, dois no mesmo dia.
+
+**O lembrete é cumprido por conteúdo.** Vale a sessão que cobre todos os conteúdos do item — inclusive
+revisão marcada à mão —, e a ordem em que os conteúdos foram escolhidos não importa (`LAI, LGPD` é o
+mesmo que `LGPD, LAI`).
 
 **Marcar uma volta como feita** abre a sessão já no tipo **Estudo** (e não *Revisão*), porque é o que
 normalmente está acontecendo — você continuou o conteúdo. Trocar para *Estudo/Revisão* ou *Revisão*
@@ -1379,28 +1382,38 @@ uma vez só (`db.fasesMigradas`).
 
 ## Até quando o sistema agenda
 
-Tudo o que é automático para num dia só: o **horizonte**. Ele sai de três fontes, nesta ordem:
+Tudo o que é automático para num dia só: o **horizonte**.
 
-1. **Revisar até** — o teto que você escolhe em *Ajustes*, **até um ano à frente**. Vale inclusive
-   depois da prova.
-2. **A véspera da prova**, enquanto ela estiver à frente.
-3. **180 dias**, quando não há nem uma coisa nem outra.
+1. **Revisar até** — o teto que você escolhe em *Ajustes*, **até um ano à frente**.
+2. **180 dias** a partir de hoje, quando não há teto. O horizonte anda com o dia: o que não coube
+   hoje nasce quando ele chegar.
 
-### Escada ou compressão
+**A prova não é teto** (decisão do Pedro, 23/09). As revisões seguem depois dela normalmente; só o
+**dia** da prova é pulado. Parar é uma escolha: *Encerrei* na pergunta do pós-prova. A antiga
+"compressão" do plano para caber até a véspera saiu junto.
 
-O cronograma tem duas réguas, e **quem escolhe é a janela, não a existência de prova**:
+## A escada é do conteúdo
 
-- **Cabe a escada** → intervalos crescentes reais: **D+1, D+3, D+7, D+16, D+35, D+70, D+140, D+240,
-  D+365**. É a repetição espaçada como ela é, e é o que permite planos de meses ou de um ano.
-- **Não cabe** → o plano é **comprimido** em frações da janela (prova perto): quanto menos tempo,
-  mais cedo e mais juntas.
+Cada conteúdo **concluído** tem uma fila só de revisões: as que o sistema marca e **quantas você
+quiser** marcar à mão. Três regras:
 
-Antes essa escolha era *"tem prova ou não tem"*, o que ficava errado nos dois extremos: com prova
-daqui a oito meses o plano era comprimido sem necessidade, e sem prova ele parava em 6 revisões.
+1. **Continuar.** A fila vai até o fim da escada da dificuldade dele. Havendo revisões pendentes —
+   automáticas ou suas —, as próximas nascem **depois da última**, no degrau seguinte (a revisão à
+   mão ocupa o degrau mais perto da data dela). Não havendo nenhuma, a escada nasce do último contato.
+   É a **garantia de revisão**: conteúdo concluído nunca fica sem revisão (`garantirEscadas`, que roda
+   junto com a garantia das voltas).
+2. **Empurrar.** Todo **contato** com o conteúdo vira o novo ponto de partida: revisão feita (em dia,
+   atrasada ou adiantada), revisão marcada à mão, sessão fora da agenda. Cada revisão seguinte mantém
+   a **distância que tinha da anterior** (`passo`, gravado no item). Exemplo: revisões nos dias 15, 17
+   e 22; no dia 20 você marca uma extra → a de 22 vai para **25** (+5), e as de depois andam junto.
+   Nada anda para trás — revisar antes da hora não adianta o que vem —, e salvar de novo a mesma
+   sessão não empurra outra vez.
+3. **A extra não pula degrau.** A revisão marcada à mão fica no degrau da anterior: revisar cedo não
+   prova que o conteúdo fixou.
 
-**Quantas revisões:** a dificuldade dá o piso (1 a 5) e o teto de quão fundo ir na escada
-(`dificuldade + 4`, limitado a **9**). Com um ano pela frente, um assunto difícil chega a 9 revisões;
-um tranquilo fica em 5. Taxa de acerto baixa continua puxando para cima, como antes.
+**Item de vários conteúdos se divide** quando só parte deles teve contato: revisar só Scrum empurra
+Scrum, e XP fica onde estava. Itens que nascem juntos (mesma sessão, mesmo dia, mesmo degrau) viram
+um card só.
 
 ### A prova passou — e agora?
 
@@ -1415,8 +1428,8 @@ abre depois da data (ou na virada do dia, se estiver com a tela aberta):
 | **Não, encerrei por aqui** | o agendamento é desligado — **nada é apagado** |
 
 A resposta fica guardada (`db.posProva`), então a pergunta não vira interrogatório diário. Enquanto
-ela não for respondida, **nenhuma revisão nova é agendada** — é o que o texto do aviso promete. Quem
-encerrou pode **religar** a qualquer momento em *Ajustes*.
+ela não for respondida, o agendamento **segue normalmente** — só *Encerrei* para. Quem encerrou pode
+**religar** a qualquer momento em *Ajustes*.
 
 ### O teto e as revisões que você criou
 

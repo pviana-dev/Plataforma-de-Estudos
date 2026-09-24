@@ -1,3 +1,4 @@
+/* Esta suíte conta itens da lista: abre em "Todas as agendadas" (o padrão mostra só as 2 próximas revisões e a próxima retomada de cada conteúdo). */
 /* A aba Agenda tem três visões da mesma informação: por dia (padrão), por
    assunto e mês. O que muda é a apresentação — os itens são os mesmos. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
@@ -8,7 +9,8 @@ const sess=(id,ass)=>({id,data:dia(-10),disciplina:"Legislação",assuntos:[ass]
   acertos:0,dificuldade:3,anotacoes:"",tipo:"estudo",criadoEm:Number(id.slice(1))});
 const rev=(id,regId,data,extra)=>Object.assign({id,registroId:regId,data,ordem:1,feita:false,manual:false,
   minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},extra||{});
-const seed={versao:1,tema:"claro",dataProva:"",revisarAte:"",posProva:"",metaDiariaMin:120,
+/* revisarAte curto: a escada é completada na carga (garantia de revisão), e esta suíte é sobre a tela, não sobre quantas revisões cabem. */
+const seed={versao:1,tema:"claro",dataProva:"",revisarAte:dia(6),posProva:"",metaDiariaMin:120,
  fasesMigradas:true,dificuldadesMigradas:true,conteudosMigrados:true,disciplinas:["Legislação"],grupos:[],lancamentos:[],
  conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"concluido",concluidoEm:dia(-10),criadoEm:1},
             {id:"c2",nome:"Licitações",disciplina:"Legislação",fase:"andamento",concluidoEm:null,criadoEm:2}],
@@ -22,7 +24,7 @@ let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
-   w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",gravadoEm:hoje}));
+   w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",agendaCompleta:true,gravadoEm:hoje}));
    w.confirm=()=>true; }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));

@@ -9,7 +9,8 @@ const sess=(id,disc,ass)=>({id,data:dia(-8),disciplina:disc,assuntos:[ass],assun
 const rev=(id,regId,data,extra)=>Object.assign({id,registroId:regId,data,ordem:1,feita:false,manual:false,
   minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},extra||{});
 function base(revisoes){
-  return {versao:1,tema:"claro",dataProva:dia(60),metaDiariaMin:120,
+  /* revisarAte curto: a escada é completada na carga; a suíte é sobre as sub-abas. */
+  return {versao:1,tema:"claro",dataProva:dia(60),revisarAte:dia(3),metaDiariaMin:120,
    disciplinas:["Legislação","Português","Matemática"],grupos:[],lancamentos:[],
    conteudos:[{disciplina:"Legislação",nome:"LAI",fase:"concluido",concluidoEm:dia(-8)},
               {disciplina:"Português",nome:"Crase",fase:"andamento"},

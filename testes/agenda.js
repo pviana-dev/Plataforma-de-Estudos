@@ -67,8 +67,12 @@ async function gravar(w,id){
   ok("a revisão vencida é cumprida", d3.revisoes.find(r=>r.id==="v1").feita===true,
      d3.revisoes.map(r=>[r.id,r.data,r.feita]));
   ok("a revisão futura continua de pé", d3.revisoes.find(r=>r.id==="v2").feita===false);
-  ok("e NÃO nasce uma segunda escada para o mesmo conteúdo",
-     d3.revisoes.filter(r=>!r.feita).length<=2, d3.revisoes.filter(r=>!r.feita).map(r=>r.registroId+"@"+r.data));
+  /* A escada é do conteúdo: as próximas nascem DEPOIS da que já existia, uma
+     por degrau — nada de uma segunda fila por cima da primeira. */
+  const pend3=d3.revisoes.filter(r=>!r.feita).sort((a,b)=>a.data.localeCompare(b.data));
+  ok("e NÃO nasce uma segunda escada para o mesmo conteúdo: ela continua depois da que existia",
+     pend3[0].id==="v2" && new Set(pend3.map(r=>r.data)).size===pend3.length && pend3.every(r=>!r.retomada),
+     pend3.map(r=>r.id+"@"+r.data));
 
   /* ---- 4. atraso vale para os dois, como pedido ---- */
   w=abrir(base({registros:[sess("r1",{data:dia(-5)})],

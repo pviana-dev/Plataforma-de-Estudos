@@ -58,8 +58,11 @@ const pend=w=>db(w).revisoes.filter(r=>!r.feita);
   /* ---- 4. quem pediu para não ser lembrado continua sem lembrete ---- */
   w=abrir(base({registros:[sess("r1",{plano:"sem"})]})); await espera(500);
   ok("sessão marcada “sem revisão” continua sem agendamento", pend(w).length===0, db(w).revisoes);
+  /* O plano "manual" era da versão antiga e prendia a sessão sem agendamento
+     nenhum. Ele sai na carga: a sessão volta ao automático e ganha a volta. */
   w=abrir(base({registros:[sess("r1",{plano:"manual"})]})); await espera(500);
-  ok("plano manual também é respeitado", pend(w).length===0, db(w).revisoes);
+  ok("plano manual (versão antiga) vira automático e ganha a volta",
+     pend(w).length===1 && pend(w)[0].retomada===true && db(w).registros[0].plano==="individual", db(w).revisoes);
 
   /* ---- 5. conteúdo concluído não ganha volta ---- */
   w=abrir(base({conteudos:[{id:"c1",nome:"LAI",disciplina:"Legislação",fase:"concluido",
@@ -68,8 +71,9 @@ const pend=w=>db(w).revisoes.filter(r=>!r.feita);
     revisoes:[{id:"v9",registroId:"r1",data:dia(4),ordem:1,feita:false,manual:false,minutos:null,
       questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]}));
   await espera(500);
-  ok("conteúdo fechado mantém a escada, sem volta nova",
-     pend(w).length===1 && !pend(w)[0].retomada, pend(w).map(r=>[r.data,!!r.retomada]));
+  const p5=pend(w).slice().sort((a,b)=>a.data.localeCompare(b.data));
+  ok("conteúdo fechado mantém a escada, sem volta nova — e ela continua depois da que existia",
+     p5.length>1 && p5[0].id==="v9" && p5.every(r=>!r.retomada), p5.map(r=>[r.data,!!r.retomada]));
 
   /* ---- 6. o teto de revisões manda ---- */
   w=abrir(base({revisarAte:dia(1), registros:[sess("r1",{dificuldade:1,questoes:10,acertos:10})]}));

@@ -40,7 +40,8 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   dp.querySelector("#modalCorpo #formRegistro").dispatchEvent(new wp.Event("submit",{bubbles:true,cancelable:true}));
   await espera(300);
   const revsPassada=JSON.parse(wp.localStorage.getItem("plataforma-estudos:v1")).revisoes;
-  ok("com a prova no passado, nenhuma revisão nova é agendada", revsPassada.length===0, revsPassada.length);
+  // a prova passada não para nada sozinha: parar é escolher "encerrei" (decisão do Pedro, 23/09)
+  ok("com a prova no passado, o agendamento segue", revsPassada.length>0, revsPassada.length);
 
   /* ---- 2. sem data de prova ---- */
   const livre=abrir(base(""));
@@ -95,8 +96,9 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   ok("marcar uma prova volta a contagem regressiva", /para a prova/.test($("#regressiva").textContent),
      $("#regressiva").textContent);
   const db4=JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
-  ok("e o cronograma foi refeito dentro do prazo",
-     db4.revisoes.filter(r=>!r.manual).every(r=>r.data<dia(40)),
+  // a prova não é mais teto: o que se pede é só que nada caia no dia dela
+  ok("e o cronograma foi refeito sem nada no dia da prova",
+     !db4.revisoes.some(r=>!r.manual && r.data===dia(40)),
      db4.revisoes.map(r=>r.data));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nmodo sem data de prova funcionando");
   process.exit(falhas?1:0);

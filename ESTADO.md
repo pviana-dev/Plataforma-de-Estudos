@@ -1,4 +1,4 @@
-# Estado do projeto — 22/09/2026
+# Estado do projeto — 23/09/2026
 
 Retomada rápida: o que está pronto, o que está em teste e o que ficou combinado.
 O **README.md** explica *como a plataforma funciona*; este arquivo diz *onde paramos*.
@@ -8,13 +8,13 @@ O **README.md** explica *como a plataforma funciona*; este arquivo diz *onde par
 | Ramo | O que é |
 |---|---|
 | **`main`** | a versão em uso no dia a dia. Recebeu o ramo `fases-do-conteudo` por fast-forward em 23/09 (até `0cb2287`). |
-| **`fases-do-conteudo`** | tudo o que veio depois, **ainda não mergeado**. É o que está em teste. |
+| **`fases-do-conteudo`** | já mergeado na `main`; não recebe mais trabalho. |
+| **`escada-por-conteudo`** | itens 32 e 33; **mergeado na `main`** (fast-forward) em 23/09. |
 | tag **`v1-antes-das-fases`** | marca o estado anterior a esse trabalho todo. |
 
 ```
 git checkout main                 # voltar ao que funciona hoje
-git checkout fases-do-conteudo    # testar o novo
-git diff main fases-do-conteudo   # ver a diferença
+git checkout f7b87bb               # a main antes da escada por conteúdo
 ```
 
 **Antes de testar, exporte os dados** (botão *Exportar* no cabeçalho). Se quiser voltar atrás:
@@ -293,15 +293,73 @@ git diff main fases-do-conteudo   # ver a diferença
    a lado. Não usa verde/vermelho/âmbar porque essas cores já significam Fácil, Difícil e revisão; e não tem
    a borda do `b-misto` ("em andamento").
 
+32. **A escada é do conteúdo** (23/09, ramo `escada-por-conteudo`). Pedido do Pedro: revisões de conteúdo
+   concluído em intervalos crescentes, recalculadas quando há revisão extra ou atraso, e a dificuldade
+   mudando os intervalos. Antes de implementar, medimos o export real (`estudos-2026-09-23.json`): 26 de 27
+   sessões com um conteúdo só; **nenhuma escada automática pendente**, porque 8 sessões estavam presas no
+   antigo plano *manual*; e **Lógica Proposicional concluída sem revisão nenhuma**. Decisões do Pedro:
+   - **Garantia de revisão**: havendo revisões, as próximas nascem depois delas; não havendo, a escada nasce.
+   - **As revisões manuais andam junto**, quantas forem; a extra não pula degrau (fica no da anterior).
+   - **A prova não corta a escada**: seguem depois dela; só o dia da prova é pulado; parar é *Encerrei*.
+     A pergunta do pós-prova não segura mais o agendamento. A revisão à mão depois da prova é aceita.
+   - **`LAI, LGPD` = `LGPD, LAI`**: `chaveConteudos` único (três pontos ainda juntavam sem ordenar:
+     `chaveCard`, a revisão à mão e `sessaoDoDia`).
+   - O resto como eu recomendei: contato empurra (revisão em dia/atrasada/adiantada, revisão à mão, sessão fora
+     da agenda); a revisão à mão já existente ocupa o degrau mais perto; fácil ×1,5 e difícil ×0,7 nos passos;
+     sem compressão antes da prova; a ligação do vestibular não corta mais, **mas o silêncio continua**.
+
+   Como ficou: `continuarEscada`, `reancorarEscada` (com `passo` e `degrau` gravados no item — é o que deixa
+   salvar de novo sem empurrar de novo), `reespacarEscada` (mudou a dificuldade da sessão mais recente do
+   conteúdo), `juntarIrmas`, `garantirEscadas`/`garantirAgenda`. `resolverLembrete` passou a casar **por
+   conteúdo** e a cumprir também a revisão à mão. Plano *manual* convertido na carga
+   (`db.planosManuaisMigrados`). Saíram `DISTRIBUICAO`, `DIAS_MINIMOS`, `ANTECIPACAO_PRIORITARIA`,
+   `ESPACAMENTO_MIN_DIAS`, `calcularOffsets`, `numeroDeRevisoes`, `escadaEmAberto`. Suíte nova `testes/escada.js`;
+   13 suítes antigas ajustadas à regra nova (cada mudança comentada no próprio teste).
+   **Simulado no export real**: nenhuma data antiga muda; Lógica Proposicional (fácil) ganha 24/09, 27/09,
+   03/10, 16/10…; Análise Combinatória continua depois da revisão à mão de hoje; nada cai em 11/10.
+
+33. **Hoje no topo, madrugada dividida e agenda curta** (23/09, mesmo ramo). Pedidos do Pedro:
+   - **Que dia é hoje**: embaixo do nome da plataforma, em todas as abas (`#hojeTopo`, desenhado no `render`).
+   - **Cronômetro que passa da meia-noite**: ao encerrar, pergunta *tudo na sessão do dia em que começou*
+     (o comportamento do item 9) ou *dividir por dia* — a parte até a meia-noite fica na sessão de origem e
+     o resto vai para uma sessão nova do dia seguinte, criada sozinha, igual à original (`fatiasPorDia`,
+     `criarContinuacoes`, `finalizarCrono`). Com destino *Nova sessão*, a do dia seguinte nasce ao salvar o
+     formulário (`ui.prefill.divisao`). O instante em que parou fica em `db.cronometro.parado`: fechar a
+     pergunta não perde nada, e o chip para de contar e mostra *escolher o dia*. Suíte `meianoite.js` ampliada.
+   - **Agenda curta por padrão**: de cada card, as **2 próximas revisões** e a **próxima retomada**
+     (`soAsProximas`, `REVISOES_VISIVEIS`, `RETOMADAS_VISIVEIS`); o atraso conta como próximo. Na barra de
+     filtros da Agenda, **Revisões: Só as 2 próximas / Todas as agendadas** (o rótulo diz "Revisões" porque a retomada é sempre uma) (`ui.agendaCompleta`, lembrado na
+     tela), em botões menores que os de Situação/Organizar e sem frase explicativa (tirada a pedido do
+     Pedro); o seletor de Assunto ficou um pouco maior. Vale também para os próximos 7 dias da aba Hoje. O card
+     *Agenda de hoje* não é cortado (hoje é hoje), nem os números do topo (contam a agenda inteira). Suíte
+     nova `agendacurta.js`; `nomerev`, `proximos`, `v2` e `visoes` abrem em *Todas* porque contam itens.
+
+## O que falta (sinalizado em 23/09)
+
+- ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir
+  com dados antigos, a carga converte o plano manual e cria as revisões que faltam: exportar antes.
+- **Dois pedidos de 23/09 com referência ambígua, esperando o Pedro dizer a quais se referem:**
+  "implemente o caminho 2 que você recomendou" — o único *caminho 2* da conversa (recalcular por conteúdo e
+  dividir o item quando só parte dele tem contato) **já está feito** no item 32; e "corrija o ponto levantado
+  em 1" — não ficou claro qual ponto.
+- **LAI ainda está "em andamento"** nos dados do Pedro, embora ele tenha dito que terminou de estudar. Enquanto
+  não for concluída (✓ no card da agenda, no formulário da sessão ou na aba Disciplinas), ela não entra na
+  escada; concluída, as revisões manuais de 28/09 e 06/10 ficam e a escada continua depois delas.
+- **Silêncio do vestibular**: mantido (item 32). Se a regra "a prova não corta nada" valer também para ele,
+  é tirar `itemEmSilencio`/`sessaoEmSilencio` e o seletor de dia por conteúdo na aba Disciplinas.
+- **Cronômetro parado esperando a escolha**: se a pessoa nunca responder, ele fica assim (o chip avisa). Não há
+  prazo para escolher sozinho — de propósito, para não decidir por ela.
+
 ## Pendências
 
 - ~~**Merge do ramo na `main`**~~ — **FEITO** em 23/09, depois do teste do Pedro.
 - ~~**Reestruturação da aba Agenda**~~ — **FEITO**, ver item 23. O botão *Adicionar revisão* ficou
   logo abaixo dos indicadores.
-- ~~**Unificação por CONTEÚDO (item (b))**~~ — **FEITO**, ver item 16. O que segue abaixo é o
-  registro de como o problema foi entendido; a parte 1 (ordem) e a parte 2 (sobreposição parcial)
-  estão resolvidas. O plano continua pendurado na sessão (`rev.registroId`), mas a invariante que
-  importava está garantida sem reescrever o núcleo.
+- ~~**Unificação por CONTEÚDO (item (b))**~~ — **FEITO**, ver itens 16 e 32. O que segue abaixo é o
+  registro de como o problema foi entendido. O item continua com `rev.registroId` (a sessão dona dá a
+  disciplina e o contexto), mas a escada, o empurrão e o lembrete passaram a ser **por conteúdo**
+  (`rev.assuntos` diz de quais). A reforma completa (53 pontos) não foi necessária: medido no export,
+  26 de 27 sessões têm um conteúdo só.
 
   <details><summary>diagnóstico original</summary>
   Tudo gira em `chaveSessao` (`index.html:848`), usada em 13 lugares: duas sessões só dividem
@@ -338,14 +396,16 @@ git diff main fases-do-conteudo   # ver a diferença
 ## Testes
 
 ```
-cd testes && ./rodar.sh          # todas (91 suítes)
+cd testes && ./rodar.sh          # todas (93 suítes)
 cd testes && ./rodar.sh fases    # só as que casam com "fases"
 ```
 
-Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **91 suítes verdes** na `main`.
+Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **93 suítes verdes** na `main`.
 
 **Duas armadilhas já conhecidas do banco de testes:**
 - data: usar sempre a data **local** (`iso()` local), nunca `toISOString()`, que vira o dia em UTC e
   quebra tudo depois das 21h em UTC−3;
 - seeds que já usam as escalas novas precisam declarar `fasesMigradas`, `conteudosMigrados` e
-  `dificuldadesMigradas`, senão as migrações de carga os convertem de novo.
+  `dificuldadesMigradas`, senão as migrações de carga os convertem de novo;
+- conteúdo **concluído** no seed ganha a escada inteira já na carga (garantia de revisão). Suíte que testa
+  tela e conta itens precisa de um `revisarAte` curto para ficar só com o que o seed trouxe.

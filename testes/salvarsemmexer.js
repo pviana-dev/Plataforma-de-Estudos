@@ -87,17 +87,20 @@ async function editarESalvar(w, mexer){
 
   /* ---- 5. sessão SEM plano automático volta a ter um ---- */
   w=abrir([]); await espera(600);
-  ok("a sessão começa sem cronograma", db(w).revisoes.length===0, db(w).revisoes);
+  // conteúdo concluído sem revisão nenhuma ganha a escada já na carga (garantia de revisão)
+  ok("conteúdo concluído sem revisão ganha a escada sozinho", db(w).revisoes.length>0, db(w).revisoes);
   await editarESalvar(w, null);
   ok("salvar devolve o cronograma a quem não tinha", db(w).revisoes.length>0,
      db(w).revisoes.map(r=>r.data));
 
-  /* ---- 6. o que foi remarcado à mão nunca é refeito ---- */
+  /* ---- 6. o que foi remarcado à mão nunca é refeito — mas anda junto ----
+     A revisão à mão não é apagada nem recriada; se um contato empurra a
+     escada, ela anda junto, mantendo a distância (decisão do Pedro, 23/09). */
   w=abrir([rev("v1",dia(1)), rev("v2",dia(30),{manual:true})]); await espera(600);
   await editarESalvar(w, doc => { doc.querySelector('#modalCaixa [name="data"]').value=dia(-2); });
   const manual=db(w).revisoes.find(r=>r.id==="v2");
-  ok("a revisão remarcada à mão sobrevive ao replanejamento",
-     !!manual && manual.data===dia(30), manual);
+  ok("a revisão remarcada à mão sobrevive ao replanejamento, sem voltar para trás",
+     !!manual && manual.manual===true && manual.data>=dia(30), manual);
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nsalvar sem mexer não refaz o cronograma");
   process.exit(falhas?1:0);
