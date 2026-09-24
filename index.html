@@ -2981,15 +2981,16 @@ function telaHoje(){
   h += '</div>';
   return h;
 }
-/* FALTA ESTUDAR — o mural de lembrete (pedido do Pedro, 23/09). É uma lista
-   que VOCÊ monta, escolhendo entre os conteúdos do cadastro (os mesmos das
-   sessões) — nada se digita aqui. Só entra conteúdo sem sessão nenhuma, e
-   registrada a primeira sessão dele, ele sai daqui sozinho (ver aEstudar). A
-   ficha guarda `mural` (está no mural) e `prioridade` (a ordem): arrastar pela
-   alça ⠿ (ou ↑ ↓ no teclado) regrava a prioridade; o ✕ tira do mural sem
-   apagar o conteúdo. */
+/* FALTA ESTUDAR — o mural da aba Hoje. É AUTOMÁTICO (pedido do Pedro, 24/09;
+   antes era uma lista montada à mão, com botão de adicionar e ✕): todo
+   conteúdo do cadastro que ainda não tem sessão está aqui, e a primeira sessão
+   dele o tira daqui sozinho (ver aEstudar). Não há como pôr nem tirar à mão —
+   o mural é o espelho do cadastro. O que se escolhe é a ORDEM: arrastar pela
+   alça ⠿ (ou ↑ ↓ no teclado) grava `prioridade` na ficha; conteúdo novo, sem
+   prioridade, entra no fim, na ordem em que foi cadastrado. O campo `mural`
+   das fichas antigas ficou sem uso. */
 function filaAEstudar(){
-  return conteudosCad().filter(c => c.mural && aEstudar(c)).slice().sort((a,b) =>
+  return conteudosCad().filter(aEstudar).slice().sort((a,b) =>
     ((a.prioridade ?? Infinity) - (b.prioridade ?? Infinity)) || ((a.criadoEm || 0) - (b.criadoEm || 0)) ||
     a.disciplina.localeCompare(b.disciplina, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
 }
@@ -3000,8 +3001,6 @@ function cardFaltaEstudar(){
   return '<div class="card"><h2>Falta estudar' +
       (fila.length ? '<span class="dica">' + fila.length + (fila.length === 1 ? " conteúdo" : " conteúdos") +
                      ' · arraste para priorizar</span>' : '') + '</h2>' +
-    '<button class="btn-add" data-acao="novo-afazer"><span class="mais">+</span> Adicionar conteúdos a estudar' +
-      '<span class="pista">escolha entre os cadastrados</span></button>' +
     (fila.length
       ? '<div class="mural-lista">' + vis.map(c =>
           '<div class="mural-item" data-afazer="' + esc(chaveDaFicha(c)) + '">' +
@@ -3011,49 +3010,13 @@ function cardFaltaEstudar(){
             '<span class="spacer"></span>' +
             '<button class="act atalho" data-acao="estudar-afazer" data-chave="' + esc(chaveDaFicha(c)) + '" ' +
               'title="Abrir uma sessão deste conteúdo">▶ estudar</button>' +
-            '<button class="act excluir" data-acao="tirar-afazer" data-chave="' + esc(chaveDaFicha(c)) + '" ' +
-              'title="Tirar do mural (o conteúdo continua cadastrado)" aria-label="Tirar ' + esc(c.nome) + ' do mural">✕</button>' +
           '</div>').join("") + '</div>' +
         (fila.length > CONFIG.MURAL_VISIVEIS
           ? '<button class="act ver-mais" data-acao="toggle-mural">' +
             (ui.verTodoMural ? "− mostrar menos" : "+ ver todos os " + fila.length) + '</button>' : '')
-      : '<div class="vazio"><strong>Nada na fila</strong>Escolha, entre os conteúdos cadastrados, o que falta ' +
-        'estudar — cada um sai sozinho daqui na primeira sessão.</div>') +
+      : '<div class="vazio"><strong>Nada falta estudar</strong>Todo conteúdo cadastrado já tem sessão. Os que você ' +
+        'cadastrar na aba <b>Disciplinas</b> aparecem aqui sozinhos — e saem na primeira sessão.</div>') +
     '</div>';
-}
-/* ESCOLHER O QUE ENTRA NO MURAL. Os conteúdos do cadastro que ainda não têm
-   sessão e não estão no mural, agrupados por disciplina, em caixas de marcar.
-   Conteúdo novo se cria onde sempre se criou: aba Disciplinas ou a sessão. */
-function modalMural(){
-  const livres = conteudosCad().filter(c => aEstudar(c) && !c.mural)
-    .sort((a,b) => a.disciplina.localeCompare(b.disciplina, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
-  const discs = [...new Set(livres.map(c => c.disciplina))];
-  abrirModal("Adicionar ao mural",
-    livres.length
-      ? '<form id="formMural"><p class="sub" style="margin-top:0">Conteúdos cadastrados que ainda não têm sessão. ' +
-          'Marque os que falta estudar.</p>' +
-        discs.map(d => '<div class="campo largo" style="margin-top:10px"><span>' + esc(d) + '</span><div class="opcoes">' +
-          livres.filter(c => c.disciplina === d).map(c =>
-            '<label class="opcao"><input type="checkbox" name="mural" value="' + esc(chaveDaFicha(c)) + '">' +
-            '<span>' + esc(c.nome) + '</span></label>').join("") + '</div></div>').join("") +
-        '<div class="linha acoes-form"><button class="btn" type="submit">Adicionar ao mural</button>' +
-        '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
-        '<span class="erro-form" id="erroMural"></span></div></form>'
-      : '<div class="vazio"><strong>Nenhum conteúdo para escolher</strong>Todos os conteúdos cadastrados já têm ' +
-        'sessão ou já estão no mural. Crie conteúdos novos na aba <b>Disciplinas</b>.</div>' +
-        '<div class="linha acoes-form"><button class="btn ghost" type="button" data-acao="abrir-conteudos">' +
-        'Ir para a aba Disciplinas</button></div>',
-    () => { const f = $("#formMural"); if (!f) return;
-      f.addEventListener("submit", ev => {
-        ev.preventDefault();
-        const escolhidas = new FormData(f).getAll("mural").map(fichaPorChave).filter(Boolean);
-        if (!escolhidas.length){ $("#erroMural").textContent = "Marque pelo menos um conteúdo."; return; }
-        // entram no fim da fila, na ordem da lista
-        let proxima = filaAEstudar().reduce((m, c) => Math.max(m, c.prioridade ?? -1), -1) + 1;
-        escolhidas.forEach(c => { c.mural = true; c.prioridade = proxima++; });
-        persistir(); fecharModal(); render();
-        toast(escolhidas.length + (escolhidas.length === 1 ? " conteúdo no mural." : " conteúdos no mural."));
-      }); });
 }
 /** grava a prioridade na ordem da tela; quem está escondido atrás do "+" vem depois */
 function gravarOrdemMural(lista){
@@ -7090,8 +7053,8 @@ function modalAjuda(){
           'data da prova, meta diária e até quando pretende estudar.</li>' +
         '<li><b>Cadastre o que vai estudar.</b> Na aba ' + aba("Disciplinas") + ': as disciplinas e os conteúdos de cada uma ' +
           '(dá para colar a lista do edital, um por linha ou numerada — 1. Crase 2. Regência).</li>' +
-        '<li><b>Monte o mural.</b> Na aba ' + aba("Hoje") + ', o card <b>Falta estudar</b>: escolha os conteúdos que não ' +
-          'podem ser esquecidos e arraste para pôr em ordem.</li>' +
+        '<li><b>Ponha em ordem o que falta.</b> Na aba ' + aba("Hoje") + ', o card <b>Falta estudar</b> já mostra, sozinho, ' +
+          'todo conteúdo cadastrado que ainda não tem sessão — arraste para pôr na ordem em que quer estudar.</li>' +
         '<li><b>Estude.</b> Ligue o <b>cronômetro</b> (aba ' + aba("Hoje") + ') ou use <b>▶ estudar</b> no mural; ao terminar, ' +
           'a sessão é registrada em ' + aba("Sessões") + ' — com a <b>dificuldade</b> do assunto, que é obrigatória.</li>' +
         '<li><b>Siga a agenda.</b> A aba ' + aba("Agenda") + ' diz quando voltar a cada conteúdo. Terminou de ver um conteúdo? ' +
@@ -7145,7 +7108,7 @@ function modalAjuda(){
           'você não registra a mesma coisa duas vezes.</li>' +
         '<li><b>A fase mora no conteúdo.</b> Em andamento, a agenda chama para <b>continuar</b>; concluído, para <b>revisar</b>. ' +
           'Concluir em ' + aba("Disciplinas") + ', no card da ' + aba("Agenda") + ' ou no formulário da sessão dá no mesmo.</li>' +
-        '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') usa o cadastro: o conteúdo sai dele na primeira sessão.</li>' +
+        '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') é automático: todo conteúdo cadastrado sem sessão está nele, e sai na primeira sessão.</li>' +
         '<li><b>Questões e tempo</b> entram pela sessão e aparecem em ' + aba("Questões") + ' e ' + aba("Progresso") + '. ' +
           'As <b>anotações</b> não mexem no cronograma: são conhecimento à parte.</li>' +
       '</ul>'],
@@ -7948,11 +7911,6 @@ document.addEventListener("click", ev => {
     case "novo-conteudo":                                    // aba Disciplinas: só com a disciplina escolhida
       if (alvo.dataset.disc) modalNovosConteudos(alvo.dataset.disc);
       break;
-    case "novo-afazer": modalMural(); break;                 // mural Falta estudar: escolher entre os cadastrados
-    case "tirar-afazer": {
-      const c = fichaPorChave(alvo.dataset.chave); if (!c) break;
-      c.mural = false; delete c.prioridade;
-      persistir(); render(); toast("“" + c.nome + "” saiu do mural — continua cadastrado."); break; }
     case "nova-disciplina": modalNovaDisciplina(); break;
     case "renomear-disciplina": {
       const antigo = alvo.dataset.disc;

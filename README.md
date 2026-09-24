@@ -1423,15 +1423,12 @@ uma vez só (`db.fasesMigradas`).
 
 ## Falta estudar — o mural da aba Hoje
 
-No lugar do antigo card *Para lembrar*, a aba **Hoje** tem o mural **Falta estudar**: uma lista que
-**você monta** com os conteúdos que não podem ser esquecidos. Nada se digita nele — os conteúdos são
-**escolhidos** entre os do cadastro, os mesmos que aparecem nas sessões.
+No lugar do antigo card *Para lembrar*, a aba **Hoje** tem o mural **Falta estudar**. Ele é
+**automático** (desde 24/09): todo conteúdo do cadastro que ainda **não tem sessão** aparece nele sozinho —
+não há botão de adicionar nem ✕ para tirar. Conteúdo novo (aba **Disciplinas** ou formulário da sessão)
+entra no fim da lista; registrada a primeira sessão dele, ele **sai do mural sozinho**.
 
-- **+ Adicionar conteúdos a estudar** — abre os conteúdos cadastrados que ainda **não têm sessão** e
-  não estão no mural, por disciplina; marque os que falta estudar. Conteúdo novo se cria onde sempre
-  se criou: aba **Disciplinas** ou o formulário da sessão.
-- **✕** tira do mural sem apagar o conteúdo.
-- **Arraste pela alça ⠿** (ou use ↑ ↓ no teclado, que é o caminho do celular) para priorizar. A ordem
+- **Arraste pela alça ⠿** (ou use ↑ ↓ no teclado) para priorizar. A ordem
   fica gravada; o que nunca foi arrumado vai para o fim, na ordem em que foi cadastrado.
 - **▶ estudar** abre a sessão já com a disciplina e o conteúdo (a dificuldade continua para você
   escolher). Registrada a primeira sessão, o conteúdo **sai do mural sozinho**.

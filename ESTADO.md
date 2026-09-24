@@ -514,6 +514,18 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    abrindo por `http://127.0.0.1` (logo, não é só o `file://`). Próxima tentativa, combinada para depois: o ícone
    em arquivo de imagem ao lado do `index.html`, em vez de embutido (data URI).
 
+53. **Levantamento: celular, tablet e computador** (24/09, só levantamento — nada alterado). Resultado completo em
+   **`LEVANTAMENTO-CELULAR.md`**. Computador pronto; no celular, duas telas abrem fora da tela (registrar/editar
+   sessão e lançar questões), reordenar não funciona no toque, a aba Disciplinas fica esmagada e os dados não passam
+   entre aparelhos. **Ordem combinada com o Pedro:** primeiro preparar para o celular, depois o PWA (que depende de
+   hospedar — ainda não hospedado). Continua em outro momento.
+
+54. **Falta estudar automático** (24/09, pedido do Pedro). O mural deixou de ser montado à mão: **todo conteúdo
+   cadastrado sem sessão aparece nele sozinho** (`filaAEstudar` = `aEstudar`), e sai na primeira sessão. Saíram o
+   botão "+ Adicionar conteúdos a estudar", o modal de escolha (`modalMural`) e o ✕. Fica a ordem: arrastar/↑↓
+   grava `prioridade`; conteúdo novo entra no fim. O campo `mural` das fichas antigas ficou sem uso. Conteúdo
+   concluído sem sessão não entra (não é "falta estudar"). `mural.js` reescrita; Ajuda e README atualizados.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir
