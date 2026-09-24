@@ -497,6 +497,23 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
      .json no Chrome fica de lado, porque o próximo passo é ligar um banco de dados; com dois aparelhos na nuvem, vale
      a última gravação (aceito).
 
+50. **Caixas das questões iguais em todo lugar** (24/09, pedido do Pedro). Editar a sessão e editar pela aba Questões
+   usam as mesmas caixas do registrar (`camposQuestoes`): sem questões, vêm **vazias** com o exemplo apagado (20 / 14),
+   em vez de um "0" para apagar. O acerto zero só aparece quando há questões. Ponto 12 da `varredura.js`.
+
+51. **Ícone da aba do navegador** (24/09, pedido do Pedro): o livro aberto da marca do cabeçalho, branco no bloco
+   verde (`--accent-forte`), embutido no próprio `index.html` — sem arquivo à parte. Três versões do mesmo desenho:
+   PNG 64px (Safari mais antigo não usa ícone SVG), SVG (os demais) e `apple-touch-icon` 180px (iPhone/iPad).
+
+52. **Do cronômetro até a sessão** (24/09, pedido do Pedro). Com uma sessão escolhida como destino do tempo — antes
+   de iniciar ou já rodando nela —, o cronômetro mostra **ver na aba Sessões →** (`botaoIrParaSessao`): leva à aba
+   Sessões, rola até a linha e a acende (`ui.focoSessao`, uso único). Filtro que esconderia a sessão é limpo, com
+   aviso. Sem sessão escolhida (nenhum destino ou "Nova sessão"), não aparece. Suíte nova `cronosessao.js`.
+
+   **Pendente — ícone no Safari:** no Chrome o ícone novo (item 51) aparece; no Safari 26.3 não apareceu nem
+   abrindo por `http://127.0.0.1` (logo, não é só o `file://`). Próxima tentativa, combinada para depois: o ícone
+   em arquivo de imagem ao lado do `index.html`, em vez de embutido (data URI).
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

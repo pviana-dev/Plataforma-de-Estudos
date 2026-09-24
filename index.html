@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plataforma de Estudos</title>
+<!-- o ícone da aba é a mesma marca do cabeçalho: o livro aberto, branco no bloco verde.
+     Três versões do mesmo desenho: PNG (versões mais antigas do Safari não usam ícone SVG), SVG (nítido
+     em qualquer tamanho, nos demais) e o do iPhone/iPad ao "Adicionar à Tela de Início". -->
+<link rel="icon" type="image/png" sizes="64x64" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAQKADAAQAAAABAAAAQAAAAABlmWCKAAAE1klEQVR4Ae1bW0gUURj+d1zzbpomXiIvqQkqhlqBdEeIoocgSaheujyVQS9BEZHhY49ZT9ZTBYUPPUQRGBVJYJQgrmBmXqJUvN8v6a7NNzbLNDvuzBy3nXFnP1idOXMu//edy5zL/LZlHqQBcwsL9KXdQY7vHdTT/4sGx0Zpdn6OlpxODan/XxR7SAhFhkdQUvwmykjdQoVZuVScl08RYWGaCrWpCdA/PETP3zfQh5bP9HtxUVOmRkfaEBpKe4tK6fj+ckpJ3OzVnFUFANmnDS/pReNbcrpcXjMx68MQjqNjew5SZflRgihKUBRgYGSI7jx6QL0DfUpp1l1YenIqXT1znpITPFuDhwDdfT+p5uF9mpyZXndEvRkcGxVNN89dpEx+nJCCk96g5gORPDiiQsENHKVwC4A+j2YfaDUvJQtu4CgdzN0CYMALlD4vJS2/BkdwFSEIgFcdRnurAFzBGRAEwHt+vb7qWCoNXMFZEAAzPExyrAZwBncO01vpoGAVIcAZ3DnM7a0KR9c3smNhsxZw/HQzPyubMpLT+AVIuGpWcwvzNDI5Tm1dnTQxPSXE3xgdI+SREBunOQ/Y3dbdSa41TNN7+EmfHas6VuSlZ9GlilP8giNJdxYwvONHj5Aud2sGQUi96B8epNr6x/S1t1tvUiE+uIdsLyutdmlbEf9TCMjfulBFqD0W2Gw2SoyLF364ZkFMZBTt27GTHF0dNDIxrjsLp8tJHMt6HrWFmg+123UX6usEsKGq4jRTCwJ3/e2OZ4A+z9LsfU1ezA+25Gdmi7e6/jNVIQY8OTDFbHK0yIM97g+U7OJ3bxI8whEwODpC75o/KT6TBu4uKCIscaXISEmjVoY3GpMASqM9yD9780pqk8c1xouKQ4c9wsUAjAmvmxrdbwcxXOm/XAAlm5TSycOYuoA8E6336DreRnvxlao1P1/E86sAeM+rQUsctTz0PPerAFqaqZY4egiqxfWrAGrGGPE8KIARqpupzGALMFNtGGFLsAUYobqZygy2ADPVhhG2BFuAEaqbqcxgCzBTbRhhS7AFGKG6mcpk2hLD4YYc2KdTA3aE1IA4J+mI12hKZSnZ5DWTvw+ZBOgZ8DxNwh6dfJ9OiwHyOPlZOfyuc448WPWe9YSLaQzAsRZOZcwC2IJjMhYwCYBjrXv1T2hxaYmlTJ+mgQ04HmM9I2QSAAzae7vodl2toS0BNV9dd5f5bBA8bCeuXdb0qSwiK0HcytZyOowBTq1/t/FH1uhi3oABzxenwyiDaRCUGoem19rZIfyk4UrXGN3VBehUPWBRyps1jLkLsBZotnR+FWB6bkaVv5Y4qpnoiOBXARpbmml0csJt3tjUJOEnAs8Qx5+wVd64sszyjQCrkdGRkVRWWCwk/9i6QlZ6Pz07y5q17nTwNbCdrbm+HMifx3pTBR9Qc/C0sCrAncOHBVYFXGy4gm25VuUv+BdxJXkFq7qTBLIycKGBcxUH7yo4GFkN4AzuwjwA3lVwMLIKwBWcAYE1XMvgXWUVgKvoTueudriW+WJHx+wigiO4inALgEEBrmWYHAQqwA0cpT6EbgFAGn51cC0LRBHACdzkvoMefoMQwtKOkxAAgEeFZV1nVyRY+WtZ52mpCLheF+7z/LoGU3vMbrW6z/8BvF3qtaHHs0YAAAAASUVORK5CYII=">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2353786d%22/%3E%3Cg transform=%22translate%284 4%29%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H5.5A1.5 1.5 0 0 1 4 15V5.5Z%22/%3E%3Cpath d=%22M20 5.5A1.5 1.5 0 0 0 18.5 4H14a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h5A1.5 1.5 0 0 0 20 15V5.5Z%22/%3E%3C/g%3E%3C/svg%3E">
 <style>
 /* ============================================================
    PALETA — cores tranquilas para foco (bege quente + verde-sálvia).
@@ -661,6 +667,10 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
   15%,70%{box-shadow:0 0 0 3px var(--accent)}}
 .item.rev-linha.realce{animation:acende 2s ease-out}
 @media (prefers-reduced-motion:reduce){.item.rev-linha.realce{animation:none;box-shadow:0 0 0 3px var(--accent)}}
+/* a linha da sessão, na chegada vinda do cronômetro: o fundo acende e apaga */
+@keyframes acendeLinha{0%,100%{background:transparent}15%,70%{background:var(--accent-soft)}}
+tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
+@media (prefers-reduced-motion:reduce){tbody tr.realce td{animation:none;background:var(--accent-soft)}}
 
 /* --- linha de chips que rola para o lado em vez de quebrar ---
    Com muitas disciplinas a linha quebrava em duas, três, e empurrava a aba
@@ -2477,6 +2487,7 @@ const ui = {
   aDisciplina: "",                  // filtros da Agenda: disciplina, e depois conteúdo (chaveAssunto)
   aAssunto: "",
   focoRevisao: "",                  // salto do card de hoje para o lugar dele na lista (não é estado de tela)
+  focoSessao: "",                   // salto do cronômetro para a linha da sessão na aba Sessões (idem)
   cDisciplina: "",                  // filtro da aba Disciplinas
   diaSel: D.hoje(),                 // o painel já abre mostrando o dia de hoje
   formAberto: false,
@@ -2642,6 +2653,16 @@ function posRender(){
       try { alvo.scrollIntoView({ behavior: "smooth", block: "center" }); } catch(e){}
       alvo.classList.add("realce");
       setTimeout(() => alvo.classList.remove("realce"), 2200);
+    }
+  }
+  // veio do cronômetro: rola até a linha da sessão e a acende (uso único, como o de cima)
+  if (ui.focoSessao){
+    const linha = document.querySelector('tbody tr[data-id="' + CSS.escape(ui.focoSessao) + '"]');
+    ui.focoSessao = "";
+    if (linha){
+      try { linha.scrollIntoView({ behavior: "smooth", block: "center" }); } catch(e){}
+      linha.classList.add("realce");
+      setTimeout(() => linha.classList.remove("realce"), 2400);
     }
   }
   // devolve o foco ao campo que estava sendo digitado (a tela é redesenhada a cada tecla)
@@ -3109,6 +3130,14 @@ function opcoesDestino(){
   return h;
 }
 
+/* IR ATÉ A SESSÃO. Só existe quando o tempo vai para uma sessão já registrada
+   (escolhida no seletor ou já rodando nela) — "Nova sessão" ainda não tem para
+   onde levar. Leva à aba Sessões, rola até a linha e a acende. */
+function botaoIrParaSessao(alvo){
+  if (!alvo || alvo.tipo !== "registro") return "";
+  return '<button class="act atalho" type="button" data-acao="ir-para-sessao" data-id="' + esc(alvo.id) + '" ' +
+    'style="align-self:flex-start;margin-top:4px" title="Mostrar esta sessão na aba Sessões">ver na aba Sessões →</button>';
+}
 function blocoCronometro(){
   const c = db.cronometro;
   if (c){
@@ -3118,7 +3147,8 @@ function blocoCronometro(){
       '<span class="crono-info"><b><span class="pulso"></span>'+esc(alvo ? alvo.rotulo : "Nova sessão")+'</b>' +
       '<span>'+esc(alvo ? alvo.disciplina + " · " + alvo.detalhe : "disciplina e assunto ao encerrar")+'</span>' +
       (alvo ? '<span class="faixas">'+faixasDoAlvo(alvo, horaDe(c.inicio))+'</span>'
-            : '<span>começou às '+horaDe(c.inicio)+'</span>') + '</span>' +
+            : '<span>começou às '+horaDe(c.inicio)+'</span>') +
+      botaoIrParaSessao(alvo) + '</span>' +
       '<button class="btn" data-acao="crono-encerrar">'+(alvo ? "Encerrar e somar" : "Encerrar e registrar")+'</button>' +
       '<button class="btn ghost" data-acao="crono-cancelar">Descartar</button></div>';
   }
@@ -3138,6 +3168,7 @@ function blocoCronometro(){
       ? '<div class="campo largo"><div class="faixa-edicao" style="margin:0;flex-direction:column;align-items:flex-start">' +
           '<span>⏱ vai somar em <b>' + esc(alvo.rotulo) + '</b> · ' + esc(alvo.disciplina) + ' · ' + esc(alvo.detalhe) + '</span>' +
           (faixasDoAlvo(alvo) ? '<span class="faixas">já cronometrado: ' + faixasDoAlvo(alvo) + '</span>' : '') +
+          botaoIrParaSessao(alvo) +
         '</div></div>'
       : '<div class="campo largo"><p class="sub" style="margin:0">' +
         (destino ? 'Disciplina e assunto você preenche ao encerrar, no registro da sessão.'
@@ -3431,6 +3462,16 @@ function infoDaSessao(reg){
   return h + '</div>';
 }
 
+/* AS CAIXAS DAS QUESTÕES, iguais em todo lugar: registrar, editar a sessão e
+   editar pela aba Questões. Sem questões, a caixa vem VAZIA (com o exemplo
+   apagado), não com um "0" que precisava ser apagado antes de digitar. O
+   acerto zero só aparece quando há questões — aí ele é um dado. */
+function camposQuestoes(questoes, acertos){
+  const q = Number(questoes) > 0 ? Number(questoes) : "";
+  const a = q !== "" && acertos !== null && acertos !== undefined && acertos !== "" ? Number(acertos) || 0 : "";
+  return campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+q+'" placeholder="20">') +
+         campo("Acertos", '<input type="number" name="acertos" min="0" value="'+a+'" placeholder="14">');
+}
 /** O formulário do registro vive na tela sobreposta (modal), não dentro do card. */
 function formRegistroHtml(){
   const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
@@ -3483,8 +3524,7 @@ function formRegistroHtml(){
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
                      eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
       campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(v.minutos ?? "")+'" placeholder="60">') +
-      campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+(v.questoes ?? "")+'" placeholder="20">') +
-      campo("Acertos", '<input type="number" name="acertos" min="0" value="'+(v.acertos ?? "")+'" placeholder="14">') +
+      camposQuestoes(v.questoes, v.acertos) +
       (() => {
         // sessão nova de conteúdo já estudado: a dificuldade vem da última sessão dele
         const herdada = !ed && !v.dificuldade ? dificuldadeHerdada(v.disciplina, assuntosDe(v)) : null;
@@ -4172,8 +4212,7 @@ function modalQuestoesDaSessao(reg){
       '<p class="sub" style="margin-top:0">' + D.brFull(reg.data) + ' · ' + esc(reg.disciplina) + ' · <b>' +
         esc(rotuloAssuntos(reg)) + '</b></p>' +
       '<div class="campos">' +
-        campo("Questões feitas", '<input type="number" name="questoes" min="0" value="' + (reg.questoes || 0) + '">') +
-        campo("Acertos", '<input type="number" name="acertos" min="0" value="' + (reg.acertos || 0) + '">') +
+        camposQuestoes(reg.questoes, reg.acertos) +
       '</div>' +
       '<div class="linha acoes-form"><button class="btn" type="submit">Salvar</button>' +
       '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
@@ -7133,6 +7172,7 @@ function modalAjuda(){
         '<li>Na aba ' + aba("Hoje") + ', escolha <b>para onde vai o tempo</b> (uma sessão de hoje ou uma nova) e clique em ' +
           '<b>▶ Iniciar</b>. Ele segue contando em qualquer aba — o chip no topo mostra o tempo — e sobrevive a fechar a página.</li>' +
         '<li><b>Encerrar</b> soma o tempo na sessão escolhida ou abre o formulário de uma sessão nova já preenchido.</li>' +
+        '<li>Com uma sessão escolhida, <b>ver na aba Sessões →</b> leva até ela na lista.</li>' +
         '<li><b>Passou da meia-noite?</b> Ele pergunta: tudo no dia em que você começou, ou <b>dividir</b> — o resto vai para ' +
           'uma sessão nova do dia seguinte, igual à original.</li>' +
       '</ul>'],
@@ -8058,6 +8098,16 @@ document.addEventListener("click", ev => {
       render(); break;
     case "editar-revisao": ui.editandoRevisao = id; ui.prefRevisao = null; render(); break;
     case "abrir-sessao": ui.editandoRegistro = id; ui.formAberto = false; ui.aba = "registros"; render(); break;
+    case "ir-para-sessao": {                       // do cronômetro até a linha da sessão
+      if (!acharRegistro(id)) break;
+      ui.aba = "registros"; ui.formAberto = false; ui.editandoRegistro = null; ui.foco = null;
+      // um filtro que esconda a sessão faria o salto parar em lugar nenhum: sai da frente
+      if (!registrosFiltrados().some(r => r.id === id)){
+        ui.fDisciplina = ""; ui.fPeriodo = "todos"; ui.fBusca = ""; ui.fTipo = "todos";
+        toast("Filtros limpos para mostrar a sessão.");
+      }
+      ui.focoSessao = id;
+      render(); break; }
     case "remarcar-revisao": {
       const r = acharRevisao(id); if (!r) break;
       const k = chaveCard(r), ctx = contextoRevisao(r);

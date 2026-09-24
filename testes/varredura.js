@@ -10,7 +10,8 @@
    8. a bateria de uma sessão antiga (fora das 60 recentes) se edita sem trocar de sessão;
    9. excluir um conteúdo tira o nome dele dos cards mistos;
   10. disciplina sem uso se exclui; com sessão, o botão nem aparece;
-  11. dia com só uma bateria de questões conta na sequência. */
+  11. dia com só uma bateria de questões conta na sequência;
+  12. editar uma sessão sem questões mostra as caixas vazias, como no registrar (sem o "0"). */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
@@ -157,6 +158,13 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   w=abrir(s11,"hoje"); await espera(400);
   const seq=[...w.document.querySelectorAll(".tile")].find(t=>/Sequência/.test(t.textContent));
   ok("11. dias só com bateria de questões contam na sequência", /3 dias/.test(seq.textContent), seq.textContent);
+
+  /* ---- 12. caixas das questões iguais às do registrar ---- */
+  w=abrir(s11,"registros"); await espera(400);
+  click(w,w.document.querySelector('tr[data-id="r1"] td')); await espera(300);
+  const cx=[...w.document.querySelectorAll('#modalCaixa [name=questoes], #modalCaixa [name=acertos]')];
+  ok("12. editar sessão sem questões: caixas vazias, com o exemplo apagado (sem o 0)",
+     cx.length===2 && cx.every(i=>i.value==="") && cx[0].placeholder==="20", cx.map(i=>i.value));
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nvarredura de 24/09: defeitos corrigidos");
   process.exit(falhas?1:0);
