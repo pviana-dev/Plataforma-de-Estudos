@@ -1,6 +1,6 @@
 /* O ✎ da etiqueta, dentro de Editar sessão: renomeia a FICHA e propaga por todo
    o sistema — e não pode levar junto o que está digitado e ainda não foi salvo. */
-const fs=require("fs"),{JSDOM}=require("jsdom");
+const responderDialogos=require("./_dialogo.cjs"), fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
@@ -24,7 +24,7 @@ function abrir(resposta){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"registros",gravadoEm:hoje}));
-     w.prompt=t=>{ perguntado=t; return resposta; };
+     responderDialogos(w, t=>{ perguntado=t; return resposta; }, t=>{ avisado=t; });
      w.alert=t=>{ avisado=t; };
      w.confirm=()=>true; }});
   return dom.window;

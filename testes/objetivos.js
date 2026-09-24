@@ -2,6 +2,7 @@
    modo a qualquer momento sem perder nada; vestibular com quantos dias
    quiser; ligação OPCIONAL de disciplina/conteúdo a um dia, com silêncio
    depois do dia dele e volta espalhada depois do último. */
+const responderDialogos=require("./_dialogo.cjs");
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};  // data LOCAL, como o app
@@ -250,7 +251,7 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   /* ---- 11. renomear a disciplina leva a ligação junto ---- */
   w=abrir(Object.assign({}, base4, VEST([{id:"d1",nome:"1º dia",data:dia(10)},{id:"d2",nome:"2º dia",data:dia(20)}],{"Legislação":"d1"})),
           false, "conteudos");
-  w.prompt=()=>"Direito"; await espera(300);
+  responderDialogos(w, ()=>"Direito"); await espera(300);
   click(w, [...w.document.querySelectorAll('[data-acao="renomear-disciplina"]')].find(b=>b.dataset.disc==="Legislação"));
   await espera(400);
   ok("a ligação acompanha o nome novo", db(w).vestibular.disciplinas["Direito"]==="d1" && !db(w).vestibular.disciplinas["Legislação"],

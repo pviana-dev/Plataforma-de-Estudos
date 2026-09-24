@@ -1,7 +1,7 @@
 /* Renomear um conteúdo agora acontece num lugar só — Ajustes → Disciplinas e
    conteúdos — e vale para tudo o que aponta para aquele nome. Antes o nome era
    editado na etiqueta da sessão, e renomear numa não mexia nas outras. */
-const fs=require("fs"),{JSDOM}=require("jsdom");
+const responderDialogos=require("./_dialogo.cjs"), fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date());
@@ -20,7 +20,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let perguntado="";
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
-   w.confirm=()=>true; w.prompt=(msg,padrao)=>{ perguntado=msg; return "Crase e acento grave"; }; }});
+   w.confirm=()=>true; responderDialogos(w, msg=>{ perguntado=msg; return "Crase e acento grave"; }); }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

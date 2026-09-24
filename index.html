@@ -537,6 +537,10 @@ html[data-tema="escuro"] .aviso{background:#3a2e26;border-color:#5a4632;color:#e
   border-top:1px solid var(--grade);border-radius:0 0 13px 13px}
 /* formulários de registro e de revisão: tela sobreposta, larga */
 .modal.grande{max-width:880px}
+.overlay-topo{z-index:60}                 /* a pergunta curta fica por cima da tela sobreposta */
+.modal-pequeno{max-width:440px}
+.modal-pequeno .conteudo{padding:16px}
+.modal-pequeno input{font-size:15px;padding:10px 12px}
 .modal.grande > .conteudo{padding:18px 20px 16px}
 .modal.grande.com-rodape > .acoes-form{padding:12px 20px 16px}
 .modal header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);
@@ -952,6 +956,13 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
     <div class="conteudo" id="modalCorpo"></div>
   </div>
 </div>
+<!-- a pergunta curta (renomear, remarcar): abre POR CIMA da tela sobreposta, sem fechá-la -->
+<div class="overlay overlay-topo" id="dialogo" hidden>
+  <div class="modal modal-pequeno" role="dialog" aria-modal="true" aria-labelledby="dialogoTitulo">
+    <header><h3 id="dialogoTitulo"></h3><button class="icon-btn" type="button" data-dialogo="cancelar" aria-label="Fechar">✕</button></header>
+    <div class="conteudo" id="dialogoCorpo"></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -1357,6 +1368,37 @@ function migrarPlanoManual(d){
   d.planosManuaisMigrados = true;
   return n;
 }
+/* PREPARAR UM DADO QUE CHEGA — do navegador, de um backup importado, do
+   arquivo .json ou da nuvem. Todas as portas passam pelas MESMAS migrações, na
+   mesma ordem. Antes a importação pulava metade delas: um backup antigo entrava
+   sem fichas de conteúdo (e sem agenda) até o próximo F5, e aí a conversão da
+   escala de dificuldade rodava sobre números já cortados — Difícil virava Médio. */
+function prepararDados(d){
+  /* A escala da dificuldade é convertida no dado CRU: normalizarRegistros
+     já limita o valor a 1..3, e converter depois disso leria um "3" novo
+     (difícil) como o "3" velho (médio), rebaixando tudo. */
+  migrarDificuldades(d);
+  const x = Object.assign(estadoInicial(), d, {
+    registros: normalizarRegistros(Array.isArray(d.registros) ? d.registros : []),
+    revisoes:  normalizarRevisoes(Array.isArray(d.revisoes) ? d.revisoes : []),
+    erros:     Array.isArray(d.erros)     ? d.erros     : [],
+    disciplinas: Array.isArray(d.disciplinas) ? d.disciplinas : [],
+    grupos:    Array.isArray(d.grupos)    ? d.grupos    : [],
+    lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
+  });
+  x.dificuldadesMigradas = true;
+  const objetivoDeduzido = migrarObjetivo(x);
+  const abertos = migrarFases(x);
+  migrarPlanoManual(x);
+  const fichas = migrarConteudos(x);
+  const soltos = migrarIntegracoes(x).concat(migrarGrupos(x));
+  return { db: x, abertos, fichas, objetivoDeduzido, soltos };
+}
+/* DADO DANIFICADO NÃO É APAGADO. Se o que está salvo não se lê, o app começa
+   vazio — mas antes o texto original é copiado para uma chave à parte. Sem isso,
+   a primeira gravação (que acontece logo na abertura) escrevia por cima dele e
+   o que ainda dava para recuperar à mão se perdia de vez. */
+const CHAVE_DANIFICADO = "plataforma-estudos:v1:danificado";
 function carregar(){
   const base = estadoInicial();
   if (!temStorage) return { db: base, migrados: 0 };
@@ -1364,27 +1406,13 @@ function carregar(){
   try { bruto = localStorage.getItem(CHAVE); } catch(e){}
   if (bruto){
     try {
-      const d = JSON.parse(bruto);
-      /* A escala da dificuldade é convertida no dado CRU: normalizarRegistros
-         já limita o valor a 1..3, e converter depois disso leria um "3" novo
-         (difícil) como o "3" velho (médio), rebaixando tudo. */
-      migrarDificuldades(d);
-      const carregado = Object.assign(base, d, {
-        registros: normalizarRegistros(Array.isArray(d.registros) ? d.registros : []),
-        revisoes:  normalizarRevisoes(Array.isArray(d.revisoes) ? d.revisoes : []),
-        erros:     Array.isArray(d.erros)     ? d.erros     : [],
-        disciplinas: Array.isArray(d.disciplinas) ? d.disciplinas : [],
-        grupos:    Array.isArray(d.grupos)    ? d.grupos    : [],
-        lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
-      });
-      carregado.dificuldadesMigradas = true;
-      const objetivoDeduzido = migrarObjetivo(carregado);
-      const abertos = migrarFases(carregado);
-      migrarPlanoManual(carregado);
-      const fichas = migrarConteudos(carregado);
-      const soltos = migrarIntegracoes(carregado).concat(migrarGrupos(carregado));
-      return { db: carregado, migrados: 0, desintegrados: soltos, abertos, fichas, objetivoDeduzido };
-    } catch(e){ /* dado corrompido: começa limpo, sem apagar o original */ }
+      const r = prepararDados(JSON.parse(bruto));
+      return { db: r.db, migrados: 0, desintegrados: r.soltos, abertos: r.abertos, fichas: r.fichas,
+               objetivoDeduzido: r.objetivoDeduzido, atualizadoEm: Number(r.db.atualizadoEm || 0) };
+    } catch(e){
+      try { localStorage.setItem(CHAVE_DANIFICADO, bruto); } catch(x){}
+      return { db: base, migrados: 0, desintegrados: [], danificado: true };
+    }
   }
   const migrados = migrarPrototipo(base);
   return { db: base, migrados, desintegrados: [] };
@@ -1394,8 +1422,15 @@ const inicio = carregar();
 let db = inicio.db;
 
 let tSalvar = null;
+/* QUANDO O DADO DAQUI FOI MEXIDO DE VERDADE. A própria abertura grava (migração,
+   agenda garantida, primeira vez) e isso mudaria db.atualizadoEm — com o
+   navegador limpo, o "vazio" pareceria mais novo que o arquivo e a nuvem, e iria
+   por cima deles. Até o arranque terminar vale a data de quando o dado foi lido. */
+let arranqueFeito = false, mexeuDesdeAbertura = false;
+const dataDoLocal = () => mexeuDesdeAbertura ? Number(db.atualizadoEm || 0) : Number(inicio.atualizadoEm || 0);
 /** persistir(true) grava na hora — usado onde perder o instante importa (cronômetro). */
 function persistir(agora){
+  if (arranqueFeito) mexeuDesdeAbertura = true;
   if (!temStorage) return;
   clearTimeout(tSalvar);
   db.atualizadoEm = Date.now();
@@ -1459,7 +1494,29 @@ function excluirRegistro(id){
   if (reg) desligarSessaoRevisao(reg);           // a revisão volta a pendente, sem sessão
   db.registros = db.registros.filter(r => r.id !== id);
   db.lancamentos = (db.lancamentos || []).filter(l => l.registroId !== id);
-  db.revisoes  = db.revisoes.filter(r => r.registroId !== id);
+  /* A AGENDA É DO CONTEÚDO, NÃO DA SESSÃO. A escada de um conteúdo concluído
+     (e a volta de um aberto) fica pendurada na sessão mais recente dele — mas
+     excluir essa sessão não pode levar junto a escada inteira, com as revisões
+     JÁ FEITAS, quando outras sessões do mesmo conteúdo continuam registradas:
+     antes, recarregar a página recomeçava a escada do zero, sem histórico.
+     O item passa para outra sessão que fale dos mesmos conteúdos; só sai o que
+     não tem mais sessão nenhuma para chamá-lo. */
+  if (reg){
+    const outras = db.registros.slice().sort((a,b) => String(b.data).localeCompare(String(a.data)) ||
+                                                      (b.criadoEm||0) - (a.criadoEm||0));
+    db.revisoes = db.revisoes.filter(r => {
+      if (r.registroId !== id) return true;
+      const lista = (r.assuntos && r.assuntos.length) ? r.assuntos.slice() : assuntosDe(reg);
+      const cobre = x => x.disciplina === reg.disciplina && !ehRevisaoSessao(x) &&
+                         lista.every(a => temAssunto(x, chaveAssunto(reg.disciplina, a)));
+      const nova = outras.find(x => cobre(x) && planoDe(x) !== "sem") || outras.find(cobre);
+      if (!nova) return false;
+      r.registroId = nova.id;
+      if (!(r.assuntos && r.assuntos.length)) r.assuntos = lista;   // o card continua falando do mesmo
+      return true;
+    });
+    garantirAgenda();
+  }
   persistir();
 }
 /* Anotar não mexe em cronograma: as revisões seguem intocadas. */
@@ -1849,10 +1906,12 @@ function termosDoItem(rev){
         exemploNota:"Ex.: refazer as 10 questões que errei da aula 3" };
 }
 /** a volta em aberto de OUTRA sessão do mesmo conteúdo (é ela que anda, em vez de duplicar) */
-function voltaEmAberto(reg){
+function voltaEmAberto(reg, opcoes){
   const chave = chaveSessao(reg);
+  const manter = !!(opcoes && opcoes.manterAtrasadas), hoje = D.hoje();
   return db.revisoes.find(r => {
     if (r.feita || r.manual || !ehRetomada(r) || !r.registroId || r.registroId === reg.id) return false;
+    if (manter && r.data < hoje) return false;          // atrasada fica atrasada (replanejarTudo)
     if (r.id === reg.revisaoId) return false;          // é a volta que esta sessão está fechando
     /* Volta JÁ VENCIDA não anda: ela é cumprida por esta sessão (resolverLembrete)
        e fica no histórico como "voltei neste dia". Só a que ainda está por vir
@@ -1884,7 +1943,13 @@ function gerarRevisoes(reg, opcoes){
   // revisões feitas e as criadas/editadas à mão nunca são reescritas pelo replanejamento
   const mantidas = db.revisoes.filter(r => r.registroId === reg.id && (r.feita || r.manual));
   // o que se refaz aqui são as VOLTAS; a escada dos conteúdos fechados fica
-  db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id || r.feita || r.manual || !ehRetomada(r));
+  /* manterAtrasadas (replanejar tudo): a volta que já venceu continua onde está.
+     Mudar o horizonte refaz o que vem pela frente; o dia que era para ter sido
+     usado continua atrasado (decisão do Pedro) — antes ele sumia e a volta
+     reaparecia daqui a N dias, como se nada tivesse ficado para trás. */
+  const hojeJa = D.hoje();
+  const atrasadaMantida = r => !!(opcoes && opcoes.manterAtrasadas) && !r.feita && r.data < hojeJa;
+  db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id || r.feita || r.manual || !ehRetomada(r) || atrasadaMantida(r));
   const feitas = mantidas.filter(r => r.feita);
 
   const hoje = D.hoje();
@@ -1904,7 +1969,7 @@ function gerarRevisoes(reg, opcoes){
      voltas idênticas no mesmo dia. Havendo uma volta em aberto do mesmo
      conteúdo, ela ANDA para a frente e passa a pertencer à sessão nova, que
      é a que tem o contexto mais recente.                                   */
-  const irma = voltaEmAberto(reg);
+  const irma = voltaEmAberto(reg, opcoes);
   if (irma){ irma.registroId = reg.id; irma.data = quando; return; }
   /* E o resto segue a invariante: só nasce volta para o conteúdo que ainda
      não tem quem o chame de volta (ver conteudosSemVolta). */
@@ -2137,23 +2202,6 @@ function contatoComConteudos(fichas, data, opcoes){
 }
 
 
-function concluirRevisao(rev, dados){
-  rev.feita = true;
-  rev.feitaEm = D.hoje();                    // o tempo e a atividade entram na data atual
-  if (ehFuturo(rev.data)) rev.data = D.hoje();
-  rev.minutos = dados.minutos;
-  rev.questoes = dados.questoes;
-  rev.acertos = dados.acertos;
-  rev.dificuldade = dados.dificuldade;
-  rev.atividade = dados.atividade || "";
-  rev.nota = dados.nota || rev.nota || "";
-  const reg = acharRegistro(rev.registroId);
-  if (reg){
-    reg.dificuldade = dados.dificuldade;         // Leitner: a nova dificuldade manda no que vem pela frente
-    gerarRevisoes(reg, { base: D.hoje() });      // reagenda o que ainda falta
-  }
-  persistir();
-}
 function reabrirRevisao(rev){
   const s = sessaoDaRevisao(rev);
   if (s) delete s.revisaoId;                 // a sessão e as horas dela continuam
@@ -2337,6 +2385,26 @@ function renomearDisciplina(antigo, novo){
   if (ui.eAssunto && ui.eAssunto.split("|")[0] === (antigo || "").trim().toLowerCase())
     ui.eAssunto = chaveAssunto(novo, ui.eAssunto.split("|").slice(1).join("|"));
 }
+/* EXCLUIR UMA DISCIPLINA. Só a que nada usa: sem sessão, sem anotação e sem
+   revisão marcada à mão. Com qualquer uma delas o nome continua escrito no
+   dado, e a disciplina reapareceria sozinha (disciplinas() lê tudo) — aí o
+   caminho é renomear. Os conteúdos dela, todos "a estudar", saem junto. */
+function disciplinaExcluivel(disc){
+  const bate = d => (d || "").toLowerCase() === (disc || "").toLowerCase();
+  return !db.registros.some(r => bate(r.disciplina)) && !db.erros.some(e => bate(e.disciplina)) &&
+         !db.revisoes.some(r => bate(r.disciplina));
+}
+function excluirDisciplina(disc){
+  const bate = d => (d || "").toLowerCase() === (disc || "").toLowerCase();
+  const fichas = conteudosCad().filter(c => bate(c.disciplina)).length;
+  db.disciplinas = (db.disciplinas || []).filter(d => !bate(d));
+  db.conteudos = conteudosCad().filter(c => !bate(c.disciplina));
+  const lig = vestibular().disciplinas;
+  Object.keys(lig).forEach(k => { if (bate(k)) delete lig[k]; });
+  ["fDisciplina","eDisciplina","pDisciplina","cDisciplina","aDisciplina"].forEach(k => { if (bate(ui[k])) ui[k] = ""; });
+  if (Array.isArray(ui.qDiscs)) ui.qDiscs = ui.qDiscs.filter(d => !bate(d));
+  return fichas;
+}
 /** quanto um renome de disciplina alcança */
 function alcanceDaDisciplina(disc){
   const bate = d => (d || "").toLowerCase() === (disc || "").toLowerCase();
@@ -2375,6 +2443,9 @@ const minutosDoDia = (dia, regs, revs) =>
 function sequenciaDias(regs, revs){   // streak de dias consecutivos com estudo (sessões, revisões ou cronômetro)
   const dias = new Set((regs || db.registros).filter(r => (r.minutos||0) > 0 || (r.questoes||0) > 0).map(r => r.data));
   (regs || db.registros).forEach(r => (r.blocos || []).forEach(b => dias.add(b.data)));
+  // bateria de questões feita num dia é estudo naquele dia (das sessões em questão)
+  const ids = new Set((regs || db.registros).map(r => r.id));
+  (db.lancamentos || []).forEach(l => { if (ids.has(l.registroId) && (l.questoes || 0) > 0) dias.add(l.data); });
   (revs || db.revisoes).forEach(r => {
     if (r.feita && ((r.minutos||0) > 0 || (r.questoes||0) > 0)) dias.add(r.feitaEm || r.data);
     (r.blocos || []).forEach(b => dias.add(b.data));
@@ -2625,13 +2696,17 @@ function guardarRascunhoRegistro(){
   const rev = revSel ? acharRevisao(revSel.value) : null;
   const ctx = rev ? contextoRevisao(rev) : null;
   const tipo = tipoSel ? tipoSel.value : "estudo";
+  const edRasc = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   ui.rascunho = {
     tipo, revisaoId: rev ? rev.id : "",
     data: val("data") || D.hoje(),
     disciplina: ehTipoRevisao(tipo) && ctx ? ctx.disciplina : disciplinaDoForm(f),
     // conteúdo pertence a uma disciplina: trocando a disciplina, a lista recomeça
+    // (o que a sessão editada já tinha fica, mesmo sem ficha: é de um conteúdo excluído, e a sessão fala dele)
     assuntos: ehTipoRevisao(tipo) ? (ctx ? ctx.assuntos.slice() : [])
-            : lerAssuntosForm(f).filter(a => !!acharConteudo(disciplinaDoForm(f), a)),
+            : lerAssuntosForm(f).filter(a => !!acharConteudo(disciplinaDoForm(f), a) ||
+                (edRasc && edRasc.disciplina === disciplinaDoForm(f) &&
+                 assuntosDe(edRasc).some(x => x.toLowerCase() === a.toLowerCase()))),
     minutos: val("minutos"), questoes: val("questoes"), acertos: val("acertos"),
     // vazia continua vazia: redesenhar o formulário não escolhe a dificuldade por você
     dificuldade: val("dificuldade") || null, anotacoes: val("anotacoes"),
@@ -2645,6 +2720,11 @@ function guardarRascunhoRegistro(){
 function formLancamento(l){
   const regs = db.registros.slice().sort((a,b) => b.data.localeCompare(a.data)).slice(0, 60);
   const alvo = l ? l.registroId : "";
+  /* A lista mostra as 60 mais recentes; a sessão da bateria que está sendo
+     editada entra mesmo sendo mais antiga — senão o formulário obrigava a
+     trocar a bateria de sessão só para salvar. */
+  const ligada = alvo ? acharRegistro(alvo) : null;
+  if (ligada && !regs.includes(ligada)) regs.push(ligada);
   return '<form id="formLancamento"'+(l ? ' data-id="'+l.id+'"' : '')+'>' +
     '<p class="sub">As questões entram no conteúdo da sessão escolhida e contam no dia informado aqui — ' +
     'sem mexer no que a sessão registrou no dia dela.</p>' +
@@ -4217,7 +4297,8 @@ function telaRevisoes(){
   const dias = diasParaProva();
 
   let h = '<div class="tiles" style="margin-bottom:16px">' +
-    tile(semProva() ? "Na agenda" : "Faltam até a prova", String(pendentes.length), "itens agendados", "", "accent") +
+    // "Faltam até a prova" contava também o que vem depois dela (a prova não corta a escada)
+    tile("Na agenda", String(pendentes.length), "itens agendados", "", "accent") +
     tile("Atrasadas", String(atrasadas.length), atrasadas.length ? "⚠ resolva hoje" : "✓ em dia",
          "", atrasadas.length ? "critico" : "bom") +
     tile("Já concluídos", String(feitas.length), "de " + det.length + " no total", "", feitas.length ? "bom" : "") +
@@ -4740,10 +4821,16 @@ function salvarRevisaoManual(existente, data, disciplina, listaAssuntos, d){
   rev.rotulo = (d.rotulo || "").trim();       // vazio = volta a se chamar pela ordem
   rev.nota = (d.nota || "").trim();
   rev.manual = true;                       // não é reescrita pelo replanejamento automático
-  // a revisão é agenda: quem guarda tempo e questões é a sessão que a cumpre
-  rev.minutos = null; rev.questoes = null; rev.acertos = null; rev.dificuldade = null;
-  rev.feita = !!rev.sessaoId;
-  rev.feitaEm = rev.sessaoId ? rev.feitaEm : null;
+  /* A revisão é agenda: quem guarda tempo e questões é a sessão que a cumpre.
+     A EXCEÇÃO é a revisão feita no modelo antigo, sem sessão ligada: os números
+     moram nela, e editar (dar um nome, corrigir a data) não pode desmarcá-la
+     nem apagar as questões — antes as duas coisas aconteciam em silêncio. */
+  const feitaAntiga = !!(existente && existente.feita && !existente.sessaoId);
+  if (!feitaAntiga){
+    rev.minutos = null; rev.questoes = null; rev.acertos = null; rev.dificuldade = null;
+    rev.feita = !!rev.sessaoId;
+    rev.feitaEm = rev.sessaoId ? rev.feitaEm : null;
+  }
   if (!existente){
     if (!rev.ordem){
       const irmas = db.revisoes.filter(r => reg ? r.registroId === reg.id
@@ -4859,7 +4946,7 @@ function estatDisciplina(disc){
   return { questoes: q, acertos: a, taxa: pct(a, q), erros: errs.length,
            errosBobos: errs.filter(e => e.categoria === "bobo").length,
            refeitas: errs.filter(e => e.refeita).length,
-           conteudos: conteudosDe(disc).length };
+           conteudos: conteudosDaDisciplina(disc).length };   // o cadastro: o mesmo número da aba Disciplinas
 }
 
 function telaErros(){
@@ -4998,7 +5085,7 @@ function telaErros(){
         'Use o botão + acima: escreva o que você quer lembrar sobre isso.'
       : disc
         ? '<strong>Nenhuma anotação nesta disciplina ainda</strong>Escolha um conteúdo dela para começar a anotar.'
-        : '<strong>Nenhuma anotação ainda</strong>Escolha um conteúdo acima — eles vêm das sessões registradas na aba Sessões.') + '</div>';
+        : '<strong>Nenhuma anotação ainda</strong>Use o <b>+ Nova anotação</b> acima — a disciplina e o conteúdo vêm do cadastro (aba Disciplinas).') + '</div>';
   } else {
     // mesmo conteúdo + mesma disciplina (ou a mesma ausência de conteúdo) E MESMO DIA = um card só;
     // dias diferentes ficam em cards separados, mesmo sendo do mesmo conteúdo.
@@ -5493,10 +5580,20 @@ function telaPainel(){
   return h;
 }
 
+/* As BATERIAS AVULSAS também são questões. O Progresso as deixava de fora das
+   barras e do painel do dia, enquanto a aba Questões e o "% de acerto geral"
+   as contavam — a mesma disciplina aparecia com duas taxas. A bateria conta no
+   dia em que foi feita (l.data), não no da sessão a que está ligada. */
+function lancsNoEscopo(disc, dia){
+  return (db.lancamentos || []).map(l => ({ l, reg: acharRegistro(l.registroId) }))
+    .filter(x => x.reg && (!disc || x.reg.disciplina === disc) && (!dia || x.l.data === dia));
+}
 /** barras por disciplina; com uma disciplina filtrada, por assunto dela */
 function barrasGrupo(modo, regs, revs, disc, porDia){
-  const nomes = disc ? [...new Set(regs.flatMap(r => assuntosDe(r)))]
-                     : disciplinas().filter(d => regs.some(r => r.disciplina === d));
+  const lancs = modo === "taxa" ? lancsNoEscopo(disc, porDia ? ui.diaSel : "") : [];
+  const nomes = disc ? [...new Set(regs.concat(lancs.map(x => x.reg)).flatMap(r => assuntosDe(r)))]
+                     : disciplinas().filter(d => regs.some(r => r.disciplina === d) ||
+                                                 lancs.some(x => x.reg.disciplina === d));
   const dados = nomes.map(nome => {
     if (disc && !porDia){                        // drill-down: crédito rateado entre os assuntos da sessão
       const e = estatAssunto(disc, nome);
@@ -5507,8 +5604,9 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
     if (disc){                                   // com um dia escolhido, conta só o que caiu nele
       const rs = regs.filter(r => assuntosDe(r).includes(nome));
       const n = r => assuntosDe(r).length || 1;
-      const q = rs.reduce((t,r)=>t+(r.questoes||0)/n(r),0);
-      const a = rs.reduce((t,r)=>t+(r.acertos||0)/n(r),0);
+      const ls = lancs.filter(x => assuntosDe(x.reg).includes(nome));
+      const q = rs.reduce((t,r)=>t+(r.questoes||0)/n(r),0) + ls.reduce((t,x)=>t+(x.l.questoes||0)/n(x.reg),0);
+      const a = rs.reduce((t,r)=>t+(r.acertos||0)/n(r),0)  + ls.reduce((t,x)=>t+(x.l.acertos||0)/n(x.reg),0);
       const min = rs.reduce((t,r)=>t+(r.minutos||0)/n(r),0);
       return { nome, q: Math.round(q), valor: modo === "taxa" ? pct(a,q) : Math.round(min),
                rot: modo === "taxa" ? (pct(a,q) === null ? "—" : pct(a,q)+"%") : hhmm(Math.round(min)),
@@ -5518,8 +5616,11 @@ function barrasGrupo(modo, regs, revs, disc, porDia){
     const idsr = new Set(rs.map(r => r.id));
     const rvTodas = revs.filter(r => idsr.has(r.registroId));
     const rv = rvTodas.filter(r => r.feita);
-    const q = rs.reduce((t,r)=>t+(r.questoes||0),0) + rv.reduce((t,r)=>t+(r.questoes||0),0);
-    const a = rs.reduce((t,r)=>t+(r.acertos||0),0)  + rv.reduce((t,r)=>t+(r.acertos||0),0);
+    const ls = lancs.filter(x => x.reg.disciplina === nome);
+    const q = rs.reduce((t,r)=>t+(r.questoes||0),0) + rv.reduce((t,r)=>t+(r.questoes||0),0) +
+              ls.reduce((t,x)=>t+(x.l.questoes||0),0);
+    const a = rs.reduce((t,r)=>t+(r.acertos||0),0)  + rv.reduce((t,r)=>t+(r.acertos||0),0) +
+              ls.reduce((t,x)=>t+(x.l.acertos||0),0);
     const min = rs.reduce((t,r)=>t+(r.minutos||0),0) + rvTodas.reduce((t,r)=>t+(r.minutos||0),0);
     return { nome, q, valor: modo === "taxa" ? pct(a,q) : min,
              rot: modo === "taxa" ? (pct(a,q) === null ? "—" : pct(a,q)+"%") : hhmm(min),
@@ -5674,6 +5775,14 @@ function detalhesDoDia(dia, regs, revs){
                  questoes: doDia ? (rv.questoes||0) : 0, acertos: doDia ? (rv.acertos||0) : 0,
                  extra: [atividadeDe(rv) ? atividadeDe(rv).nome : "", faixasRev.join(" · ")].filter(Boolean).join(" · ") });
   });
+  // baterias avulsas feitas neste dia, das sessões que estão no escopo
+  const ids = new Set(regs.map(r => r.id));
+  (db.lancamentos || []).forEach(l => {
+    if (l.data !== dia || !ids.has(l.registroId)) return;
+    const reg = acharRegistro(l.registroId);
+    itens.push({ tipo: "questões", rotulo: rotuloAssuntos(reg), disciplina: reg.disciplina, minutos: 0,
+                 questoes: l.questoes || 0, acertos: l.acertos || 0, extra: "bateria avulsa" });
+  });
   const minutos = itens.reduce((t,x) => t + x.minutos, 0);
   const questoes = itens.reduce((t,x) => t + x.questoes, 0);
   const acertos  = itens.reduce((t,x) => t + x.acertos, 0);
@@ -5793,33 +5902,6 @@ function barraRevisoes(feitas, pendentes, atrasadas){
 /* ==========================================================================
    6. AÇÕES / EVENTOS
    ========================================================================== */
-/* Renomear um assunto deixaria para trás as anotações e as revisões avulsas que
-   apontavam para o nome antigo — elas virariam órfãs sem ninguém perceber.
-   Quando a troca é inequívoca (um nome saiu, um entrou) e nenhuma outra sessão
-   usa o nome antigo, a plataforma oferece levar tudo junto.                  */
-/* Mantida por compatibilidade com backups antigos que ainda chamam este
-   caminho; a renomeação corrente é a de renomearConteudo(). */
-function propagarRenomeacao(disciplina, antes, depois){
-  const igual = (a,b) => chaveAssunto(disciplina,a) === chaveAssunto(disciplina,b);
-  const saiu   = antes.filter(a => !depois.some(b => igual(a,b)));
-  const entrou = depois.filter(b => !antes.some(a => igual(a,b)));
-  if (saiu.length !== 1 || entrou.length !== 1) return;
-  const velho = saiu[0], novo = entrou[0], k = chaveAssunto(disciplina, velho);
-  if (db.registros.some(r => r.disciplina === disciplina && temAssunto(r, k))) return;  // outra sessão ainda usa
-  const erros = db.erros.filter(e => chaveAssunto(e.disciplina, e.assunto) === k);
-  const revs  = db.revisoes.filter(r => !r.registroId && r.disciplina === disciplina &&
-                                        (r.assuntos || []).some(a => chaveAssunto(disciplina, a) === k));
-  if (!erros.length && !revs.length) return;
-  const quanto = [erros.length ? erros.length + (erros.length === 1 ? " anotação" : " anotações") : "",
-                  revs.length ? revs.length + (revs.length === 1 ? " revisão avulsa" : " revisões avulsas") : ""]
-                 .filter(Boolean).join(" e ");
-  if (!confirm("“" + velho + "” virou “" + novo + "”.\n\nLevar junto " + quanto +
-               " que apontava(m) para o nome antigo?")) return;
-  erros.forEach(e => { e.assunto = novo; });
-  revs.forEach(r => { r.assuntos = (r.assuntos || []).map(a => chaveAssunto(disciplina, a) === k ? novo : a); });
-  toast(quanto + " renomeada(s) junto.");
-}
-
 function enviarRegistro(ev){
   ev.preventDefault();
   const f = ev.target, dado = Object.fromEntries(new FormData(f).entries());
@@ -5900,7 +5982,12 @@ function enviarRegistro(ev){
             : planoAntes === "sem"   ? "individual"         // voltar a ter revisões
             : planoAntes;
   registrarDisciplina(reg.disciplina);
-  listaAssuntos.forEach(a => registrarConteudo(reg.disciplina, a));   // cadastro dos conteúdos
+  /* Cadastro dos conteúdos — só dos que ENTRARAM agora. O nome que a sessão já
+     tinha e não tem mais ficha é de um conteúdo EXCLUÍDO: recriar a ficha aqui
+     o trazia de volta (com agenda) só por você ter corrigido a descrição. */
+  const jaTinha = new Set(anterior && anterior.disciplina === reg.disciplina
+                          ? assuntosDe(anterior).map(a => a.toLowerCase()) : []);
+  listaAssuntos.forEach(a => { if (!jaTinha.has(a.toLowerCase())) registrarConteudo(reg.disciplina, a); });
 
   if (anterior && anterior.tipo === "estudo" && ehTipoRevisao(tipo)){
     db.revisoes = db.revisoes.filter(r => r.registroId !== reg.id);   // o plano dela deixa de existir
@@ -6256,15 +6343,60 @@ function fraseAlcance(disc, nome){
   return "Muda em todo o sistema: " + (partes.length ? partes.join(", ") + " e " + ultimo : ultimo) + ".";
 }
 
+/* A PERGUNTA CURTA DO PRÓPRIO APP. Era o prompt() do navegador — caixa cinza,
+   fora do estilo, e no remarcar pedia a data digitada como "aaaa-mm-dd". Esta
+   abre por cima da tela sobreposta sem fechá-la (renomear um conteúdo com a
+   sessão aberta não pode perder o que foi digitado nela). Devolve uma Promise
+   com o valor, ou null se cancelou. `validar` devolve a mensagem de erro, ou "",
+   e o erro aparece ali mesmo, sem alert. */
+let dialogoAberto = null;                 // { cancelar } enquanto a pergunta está na tela
+function pedirValor(o){
+  return new Promise(resolve => {
+    const caixa = $("#dialogo"), corpo = $("#dialogoCorpo");
+    const foco = document.activeElement;
+    $("#dialogoTitulo").textContent = o.titulo;
+    corpo.innerHTML = '<form id="formDialogo" novalidate>' +
+      (o.texto ? '<p class="sub" style="margin-top:0">' + esc(o.texto) + '</p>' : '') +
+      '<div class="campos uma-coluna">' +
+        campo(o.rotulo, '<input name="valor" type="' + (o.tipo || "text") + '" autocomplete="off"' +
+          (o.min ? ' min="' + esc(o.min) + '"' : '') + (o.max ? ' max="' + esc(o.max) + '"' : '') +
+          ' maxlength="' + (o.maxlength || 80) + '" value="' + esc(o.valor || "") + '">', true) +
+      '</div>' +
+      '<div class="linha acoes-form"><button class="btn" type="submit">' + esc(o.botao || "Salvar") + '</button>' +
+      '<button class="btn ghost" type="button" data-dialogo="cancelar">Cancelar</button>' +
+      '<span class="erro-form" id="erroDialogo"></span></div></form>';
+    const f = $("#formDialogo"), inp = f.querySelector('[name="valor"]');
+    const fechar = valor => {
+      caixa.hidden = true; corpo.innerHTML = ""; dialogoAberto = null;
+      if (foco && foco.focus && document.contains(foco)) try { foco.focus(); } catch(e){}
+      resolve(valor);
+    };
+    dialogoAberto = { cancelar: () => fechar(null) };
+    caixa.querySelectorAll('[data-dialogo="cancelar"]').forEach(b => { b.onclick = ev => { ev.stopPropagation(); fechar(null); }; });
+    caixa.onclick = ev => { ev.stopPropagation(); if (ev.target === caixa) fechar(null); };
+    inp.addEventListener("input", () => { $("#erroDialogo").textContent = ""; inp.classList.remove("campo-errado"); });
+    f.addEventListener("submit", ev => {
+      ev.preventDefault();
+      const v = (inp.value || "").trim().replace(/\s+/g, " ");
+      const erro = o.validar ? o.validar(v) : (v ? "" : "Preencha o campo.");
+      if (erro){ $("#erroDialogo").textContent = erro; inp.classList.add("campo-errado"); inp.focus(); return; }
+      fechar(v);
+    });
+    caixa.hidden = false;
+    inp.focus(); if (inp.select && (o.tipo || "text") === "text") inp.select();
+  });
+}
+
 /* O ✎ dos dois lugares passa por aqui: pergunta o nome, recusa duplicata na
-   mesma disciplina e propaga. Devolve o nome novo, ou "" se nada mudou. */
-function pedirNomeDoConteudo(disc, antigo){
-  const novo = (prompt("Novo nome para “" + antigo + "”:\n\n" + fraseAlcance(disc, antigo), antigo) || "").trim();
+   mesma disciplina e propaga. Devolve (numa Promise) o nome novo, ou "" se
+   nada mudou. */
+async function pedirNomeDoConteudo(disc, antigo){
+  const novo = await pedirValor({ titulo: "Renomear conteúdo", rotulo: "Novo nome para “" + antigo + "”",
+    texto: fraseAlcance(disc, antigo), valor: antigo, maxlength: 120, botao: "Renomear",
+    validar: v => !v ? "Escreva o nome."
+      : acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()
+        ? "Já existe um conteúdo com esse nome nesta disciplina." : "" });
   if (!novo || novo === antigo) return "";
-  if (acharConteudo(disc, novo) && novo.toLowerCase() !== antigo.toLowerCase()){
-    alert("Já existe um conteúdo com esse nome nesta disciplina.");
-    return "";
-  }
   renomearConteudo(disc, antigo, novo);
   persistir();
   return novo;
@@ -6405,6 +6537,17 @@ function excluirConteudo(disc, nome){
      vínculo, que apontaria para um item que não existe mais. */
   saindo.forEach(rev => { const sv = sessaoDaRevisao(rev); if (sv) delete sv.revisaoId; });
   db.revisoes = db.revisoes.filter(r => !ids.has(r.id));
+  /* O card que fala também de outro conteúdo fica — mas sem o nome do que saiu:
+     "LAI · Licitações" passa a ser "Licitações". O que já foi feito é história
+     e continua como foi. */
+  const alvo = (nome || "").toLowerCase();
+  db.revisoes.forEach(r => {
+    if (r.feita) return;
+    const ctx = contextoRevisao(r);
+    if (!ctx || ctx.disciplina !== disc) return;
+    if (!ctx.assuntos.some(a => (a || "").toLowerCase() === alvo)) return;
+    r.assuntos = ctx.assuntos.filter(a => (a || "").toLowerCase() !== alvo);
+  });
   if (ficha) db.conteudos = conteudosCad().filter(c => c !== ficha);
   return { itens: saindo.length, sessoes: sessoesDoConteudo(disc, [nome]).length };
 }
@@ -6440,7 +6583,7 @@ function replanejarTudo(){
     if (dono && sessaoEmSilencio(dono)) return true;
     return r.data <= ultimoDiaRevisao() && !diaDeProva(r.data);
   });
-  db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje() }));
+  db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje(), manterAtrasadas: true }));
   garantirAgenda();
 }
 
@@ -6521,6 +6664,9 @@ function telaConteudos(){
           (ligacoesAtivas() ? seletorDiaDisciplina(d) : '') +
           '<button class="act" data-acao="renomear-disciplina" data-disc="'+esc(d)+'" ' +
             'title="Renomear em todo o sistema — nas sessões, na agenda e nas anotações">✎ renomear</button>' +
+          (disciplinaExcluivel(d)
+            ? '<button class="act excluir" data-acao="excluir-disciplina" data-disc="'+esc(d)+'" ' +
+              'title="Nada usa esta disciplina ainda: dá para excluí-la">✕ excluir</button>' : '') +
           /* o "a estudar" não conta: sem nada estudado em aberto, sobra reabrir o
              que foi fechado — ou nenhum dos dois, numa disciplina só de edital */
           (andando
@@ -6553,7 +6699,7 @@ function telaConteudos(){
           '</div>';
       }).join("")
     : '<div class="vazio"><strong>Nenhuma disciplina ainda</strong>' +
-      'Registre uma sessão na aba <b>Sessões</b> — a disciplina e o conteúdo nascem por lá.</div>';
+      'Use o <b>+ Nova disciplina</b> acima — ou registre uma sessão na aba <b>Sessões</b>, que cria a disciplina junto.</div>';
 
   return h + '</div>';
 }
@@ -6578,22 +6724,18 @@ function seletorDiaConteudo(ficha){
     opcoesDias(atual) +
     '<option value="-"' + (atual === "-" ? " selected" : "") + '>nenhum dia</option></select>';
 }
-/* Mudou uma ligação: só as sessões cujo limite mudou são replanejadas. A que
-   caiu em silêncio (ligada a um dia que já passou) não é tocada — o que ela
-   tem na agenda fica guardado, escondido, até o último dia. */
+/* Mudou uma ligação. Desde que a prova deixou de cortar o plano (limiteDe é o
+   mesmo para todos), a ligação não muda DATA nenhuma: ela só decide o SILÊNCIO,
+   que é lido na hora de mostrar a agenda. Por isso nada é replanejado — antes
+   havia aqui uma comparação de limites que nunca dava diferença. */
 function mudarLigacao(disc, nome, valor){
-  const regs = db.registros.filter(r => r.disciplina === disc);
-  const antes = new Map(regs.map(r => [r.id, limiteDe(r)]));
   if (nome){
-    const ficha = acharConteudo(disc, nome); if (!ficha) return 0;
+    const ficha = acharConteudo(disc, nome); if (!ficha) return;
     if (valor) ficha.diaProva = valor; else delete ficha.diaProva;
   } else {
     if (valor) vestibular().disciplinas[disc] = valor; else delete vestibular().disciplinas[disc];
   }
-  let n = 0;
-  regs.forEach(r => { if (limiteDe(r) !== antes.get(r.id)){ gerarRevisoes(r, { base: D.hoje() }); n++; } });
   garantirAgenda();
-  return n;
 }
 
 /* NOVA DISCIPLINA numa tela do próprio app (era o prompt() do navegador): um
@@ -6784,6 +6926,30 @@ function fraseObjetivo(){
   return dias.length + (dias.length === 1 ? " dia de prova" : " dias de prova") +
          ", o último em " + D.brFull(dias[dias.length-1].data) + " — cronograma refeito.";
 }
+/* Os dados salvos não se leram: o app abriu vazio, e o texto original ficou
+   guardado à parte (CHAVE_DANIFICADO). Daqui dá para baixá-lo — é o que se
+   manda para quem for tentar recuperar — e importar o último backup. */
+function modalDadosDanificados(){
+  abrirModal("Os dados salvos não abriram",
+    '<p class="sub">O que estava salvo neste navegador está danificado e não pôde ser lido. A plataforma abriu ' +
+      '<b>vazia</b>, mas <b>nada foi apagado</b>: uma cópia do que estava salvo foi guardada à parte.</p>' +
+    '<ol class="aj-passos">' +
+      '<li>Se você tem um backup (.json), use o botão <b>↑</b> do topo para importá-lo.</li>' +
+      '<li>Baixe a cópia danificada e guarde — com ela, dá para tentar recuperar o que faltar.</li>' +
+    '</ol>' +
+    '<div class="linha acoes-form"><button class="btn" type="button" data-acao="baixar-danificado">Baixar a cópia danificada</button>' +
+    '<button class="btn ghost" type="button" data-acao="fechar-modal">Fechar</button></div>');
+}
+function baixarDanificado(){
+  let txt = "";
+  try { txt = localStorage.getItem(CHAVE_DANIFICADO) || ""; } catch(e){}
+  if (!txt){ toast("Não há cópia danificada guardada."); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([txt], { type: "application/json" }));
+  a.download = "estudos-danificado-" + D.hoje() + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 /* PRIMEIRA ABERTURA: para que a pessoa estuda. O modo já fica "sem objetivo"
    antes de a pergunta abrir — fechar a caixa é uma resposta, e ela não volta. */
 function modalObjetivo(){
@@ -6884,7 +7050,7 @@ function modalAjuda(){
         '<li><b>Diga para que estuda.</b> Na <b>engrenagem</b> do topo: objetivo (sem objetivo, concurso ou vestibular), ' +
           'data da prova, meta diária e até quando pretende estudar.</li>' +
         '<li><b>Cadastre o que vai estudar.</b> Na aba ' + aba("Disciplinas") + ': as disciplinas e os conteúdos de cada uma ' +
-          '(dá para colar a lista do edital, um por linha).</li>' +
+          '(dá para colar a lista do edital, um por linha ou numerada — 1. Crase 2. Regência).</li>' +
         '<li><b>Monte o mural.</b> Na aba ' + aba("Hoje") + ', o card <b>Falta estudar</b>: escolha os conteúdos que não ' +
           'podem ser esquecidos e arraste para pôr em ordem.</li>' +
         '<li><b>Estude.</b> Ligue o <b>cronômetro</b> (aba ' + aba("Hoje") + ') ou use <b>▶ estudar</b> no mural; ao terminar, ' +
@@ -6910,7 +7076,7 @@ function modalAjuda(){
           'entram pela <b>sessão</b> que o cumpre.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Disciplinas") + '</dt><dd>O cadastro: criar e renomear disciplinas e conteúdos, <b>✓ concluir</b> e ' +
           '<b>↩ reabrir</b> um conteúdo (ou a disciplina inteira). Renomear aqui muda o nome em todo o sistema. ' +
-          '<b>+ Novo conteúdo</b> lança vários de uma vez (o edital, um por linha): eles ficam "a estudar", sem nada na ' +
+          '<b>+ Novo conteúdo</b> lança vários de uma vez (o edital, um por linha ou numerado): eles ficam "a estudar", sem nada na ' +
           'agenda, até a primeira sessão. <b>Excluir</b> tira o conteúdo do cadastro e da agenda — as sessões continuam ' +
           'registradas, com as horas e as questões.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Anotações") + '</dt><dd>O que você aprendeu, por disciplina ou por conteúdo: texto com cores e formatação, ' +
@@ -7055,6 +7221,11 @@ function ligarAjustes(){
         const novo = lerObjetivo(ev.target);
         if (novo.erro){ $("#erroAjustes").textContent = novo.erro; return; }
         const tetoAntes = db.revisarAte;
+        /* Só o que decide DATAS replaneja. Antes todo "Salvar" refazia a agenda
+           inteira contando de hoje — mudar a meta diária remarcava os cards de
+           continuar e sumia com os atrasados. */
+        const datasAntes = JSON.stringify([db.revisarAte || "", db.estudoAte || "", db.diasRetomada || {},
+                                           agendaAutomatica(), db.posProva || ""]);
         const mudouObjetivo = aplicarObjetivo(novo);
         db.revisarAte = d.revisarAte || "";                   // sem teto de um ano (saiu em 23/09)
         if (db.revisarAte && db.revisarAte <= D.hoje()) db.revisarAte = "";
@@ -7071,14 +7242,17 @@ function ligarAjustes(){
         const automaticoAntes = agendaAutomatica(), automatico = !!d.automatico;
         if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda === "apagar");
         db.agendaAutomatica = automatico;
-        replanejarTudo();
+        const mudouDatas = mudouObjetivo || datasAntes !== JSON.stringify([db.revisarAte || "", db.estudoAte || "",
+                             db.diasRetomada || {}, agendaAutomatica(), db.posProva || ""]);
+        if (mudouDatas) replanejarTudo();
         persistir(); fecharModal(); render();
         toast(automaticoAntes && !automatico ? "Agendamento automático desligado — a agenda é a sua rotina."
              : !automaticoAntes && automatico ? "Agendamento automático ligado — cronograma refeito."
              : d.religar ? "Agendamento religado — cronograma refeito."
              : db.revisarAte && db.revisarAte !== tetoAntes ? "Revisões agendadas até " + D.brFull(db.revisarAte) + "."
              : mudouObjetivo ? fraseObjetivo()
-             : "Ajustes salvos — cronograma recalculado.");
+             : mudouDatas ? "Ajustes salvos — cronograma recalculado."
+             : "Ajustes salvos — a agenda continua a mesma.");
       });
 }
 
@@ -7216,7 +7390,7 @@ async function iniciarNuvem(){
     const linha = await baixarDaNuvem();
     if (linha && pareceBackup(linha.conteudo)){
       const daNuvem = new Date(linha.atualizado_em).getTime();
-      const daqui   = Number(db.atualizadoEm || 0);
+      const daqui   = dataDoLocal();             // a gravação da própria abertura não conta
       if (daNuvem > daqui + 2000){                 // a nuvem tem algo mais recente
         aplicarDados(linha.conteudo);
         persistir(true); render();
@@ -7312,7 +7486,16 @@ async function iniciarArquivo(){
     if (p !== "granted"){ arq.estado = "permissao"; pintarChipArquivo(); return; }
     arq.estado = "pronto";
     const d = await lerDoArquivo();
-    if (pareceBackup(d)){ aplicarDados(d); persistir(true); render(); }
+    /* QUEM ESTÁ MAIS NOVO GANHA, como na nuvem. Antes o arquivo substituía o
+       navegador sempre: se uma gravação no arquivo tivesse falhado, o que foi
+       feito depois (só no navegador) sumia na abertura seguinte. A comparação é
+       com o dado COMO ESTAVA ao abrir (dataDoLocal) — a própria abertura grava
+       e mexeria na data. Navegador vazio (dados limpos) vale 0: o arquivo
+       entra, que é para isso que ele existe. */
+    if (pareceBackup(d)){
+      if (Number(d.atualizadoEm || 0) >= dataDoLocal()){ aplicarDados(d); persistir(true); render(); }
+      else { await gravarArquivo(); toast("O navegador tinha alterações mais novas que o arquivo — o arquivo foi atualizado."); }
+    }
     pintarChipArquivo();
   } catch(e){ arq.estado = "erro"; arq.erro = e.message || String(e); pintarChipArquivo(); }
 }
@@ -7521,14 +7704,9 @@ const pareceBackup = d => !!d && typeof d === "object" &&
   Array.isArray(d.registros) && Array.isArray(d.revisoes) && Array.isArray(d.erros);
 /** adota um JSON como estado atual (usado pela importação e pelo arquivo local) */
 function aplicarDados(d){
-  db = Object.assign(estadoInicial(), d);
-  migrarObjetivo(db);
-  db.registros   = normalizarRegistros(db.registros);
-  db.revisoes    = normalizarRevisoes(db.revisoes);
-  db.lancamentos = Array.isArray(db.lancamentos) ? db.lancamentos : [];
-  migrarPlanoManual(db);
-  // backups antigos: o plano por disciplina e, depois dele, os grupos de revisão
-  const soltos = migrarIntegracoes(db).concat(migrarGrupos(db));
+  const r = prepararDados(d);                 // as mesmas migrações da abertura (ver prepararDados)
+  db = r.db;
+  const soltos = r.soltos;
   soltos.forEach(id => { const r = acharRegistro(id); if (r) gerarRevisoes(r, { base: D.hoje() }); });
   garantirAgenda();
   return soltos.length;
@@ -7580,6 +7758,7 @@ document.addEventListener("click", ev => {
       break; }
     case "tirar-dia-prova": { const linha = alvo.closest(".dia-prova"); if (linha) linha.remove(); break; }
     case "fechar-modal": fecharModal(); break;
+    case "baixar-danificado": baixarDanificado(); break;
     case "concluir": { const r = acharRevisao(id); if (r) registrarRevisao(r); break; }
     case "reabrir":  { const r = acharRevisao(id);
       if (r && confirm("Desmarcar esta revisão? A sessão de estudo ligada a ela continua registrada.")){
@@ -7590,7 +7769,10 @@ document.addEventListener("click", ev => {
     case "cancelar-edicao": ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; render(); break;
     case "excluir-registro": {
       const r = acharRegistro(id); if (!r) break;
-      if (confirm('Excluir o registro de "'+rotuloAssuntos(r)+'" e o que ele tem na agenda?')){
+      const nLanc = lancamentosDoRegistro(id).length;
+      if (confirm('Excluir a sessão de "'+rotuloAssuntos(r)+'" ('+D.brFull(r.data)+')?' +
+          (nLanc ? '\n\nJunto sai' + (nLanc === 1 ? ' 1 bateria de questões lançada' : 'm ' + nLanc + ' baterias de questões lançadas') + ' nela.' : '') +
+          '\n\nA agenda do conteúdo continua, se outra sessão dele estiver registrada.')){
         excluirRegistro(id); if (ui.editandoRegistro === id) ui.editandoRegistro = null;
         render(); toast("Registro excluído.");
       }
@@ -7740,14 +7922,26 @@ document.addEventListener("click", ev => {
       if (a.sessoes)   partes.push(a.sessoes + (a.sessoes === 1 ? " sessão" : " sessões"));
       if (a.anotacoes) partes.push(a.anotacoes + (a.anotacoes === 1 ? " anotação" : " anotações"));
       const aviso = partes.length ? "Muda em todo o sistema: " + partes.join(", ") + "." : "Nada usa esse nome ainda.";
-      const novo = (prompt("Novo nome para a disciplina “" + antigo + "”:\n\n" + aviso, antigo) || "").trim();
-      if (!novo || novo === antigo) break;
-      if (disciplinas().some(d => d.toLowerCase() === novo.toLowerCase() &&
-                                  d.toLowerCase() !== antigo.toLowerCase())){
-        alert("Já existe uma disciplina com esse nome."); break;
-      }
-      renomearDisciplina(antigo, novo); persistir(); render();
-      toast("Renomeada em todo o sistema.");
+      pedirValor({ titulo: "Renomear disciplina", rotulo: "Novo nome para “" + antigo + "”", texto: aviso,
+                   valor: antigo, maxlength: 60, botao: "Renomear",
+                   validar: v => !v ? "Escreva o nome."
+                     : disciplinas().some(d => d.toLowerCase() === v.toLowerCase() && d.toLowerCase() !== antigo.toLowerCase())
+                       ? "Já existe uma disciplina com esse nome." : "" })
+        .then(novo => {
+          if (!novo || novo === antigo) return;
+          renomearDisciplina(antigo, novo); persistir(); render();
+          toast("Renomeada em todo o sistema.");
+        });
+      break; }
+    case "excluir-disciplina": {
+      const disc = alvo.dataset.disc;
+      if (!disciplinaExcluivel(disc)) break;
+      const n = conteudosDaDisciplina(disc).length;
+      if (!confirm("Excluir a disciplina “" + disc + "”?" +
+                   (n ? "\n\nSaem junto " + n + (n === 1 ? " conteúdo cadastrado" : " conteúdos cadastrados") +
+                        " (nenhum tem sessão ainda)." : "") + "\n\nNão dá para desfazer.")) break;
+      excluirDisciplina(disc); persistir(); render();
+      toast("Disciplina “" + disc + "” excluída.");
       break; }
     case "filtrar-conteudos":
       ui.cDisciplina = ui.cDisciplina === alvo.dataset.disc ? "" : alvo.dataset.disc;
@@ -7805,12 +7999,13 @@ document.addEventListener("click", ev => {
       persistir(); render();
       toast("“" + nome + "” excluído — " + r.itens + " item(ns) saíram da agenda.");
       break; }
-    case "renomear-conteudo": {
-      const novo = pedirNomeDoConteudo(alvo.dataset.disc, alvo.dataset.cont);
-      if (!novo) break;
-      render();
-      toast("Renomeado em todo o sistema.");
-      break; }
+    case "renomear-conteudo":
+      pedirNomeDoConteudo(alvo.dataset.disc, alvo.dataset.cont).then(novo => {
+        if (!novo) return;
+        render();
+        toast("Renomeado em todo o sistema.");
+      });
+      break;
     /* O MESMO RENOME, VINDO DO FORMULÁRIO DA SESSÃO. A diferença é que aqui NÃO
        se pode redesenhar: formRegistroHtml() remonta os campos a partir do
        registro SALVO, e um render() com a sessão aberta apagaria a descrição,
@@ -7825,13 +8020,14 @@ document.addEventListener("click", ev => {
       const disc = disciplinaDoForm(form);
       if (!disc || !acharConteudo(disc, antigo)){
         // disciplina sendo criada agora, ou conteúdo que ainda não virou ficha
-        alert("Este conteúdo ainda não está no cadastro. Salve a sessão primeiro — a ficha nasce com ela.");
+        toast("Este conteúdo ainda não está no cadastro. Salve a sessão primeiro — a ficha nasce com ela.");
         return;
       }
-      const novo = pedirNomeDoConteudo(disc, antigo);
-      if (!novo) return;
-      trocarNomeNoForm(form, antigo, novo);
-      toast("Renomeado em todo o sistema.");
+      pedirNomeDoConteudo(disc, antigo).then(novo => {
+        if (!novo) return;
+        trocarNomeNoForm(form, antigo, novo);
+        toast("Renomeado em todo o sistema.");
+      });
       return; }
     case "concluir-conteudo": {
       const disc = alvo.dataset.disc, nomes = (alvo.dataset.conts || "").split("|").filter(Boolean);
@@ -7864,15 +8060,19 @@ document.addEventListener("click", ev => {
     case "abrir-sessao": ui.editandoRegistro = id; ui.formAberto = false; ui.aba = "registros"; render(); break;
     case "remarcar-revisao": {
       const r = acharRevisao(id); if (!r) break;
-      const nova = prompt("Nova data para esta revisão (aaaa-mm-dd):", D.hoje());
-      if (!nova || !/^\d{4}-\d{2}-\d{2}$/.test(nova)){ if (nova) toast("Data inválida."); break; }
-      if (nova < D.hoje()){ toast("Escolha hoje ou uma data à frente."); break; }
-      const k = chaveCard(r);
-      if (db.revisoes.some(o => o.id !== r.id && !o.feita && o.data === nova && chaveCard(o) === k)){
-        toast("Já existe revisão deste conteúdo nesse dia — escolha outra data."); break;
-      }
-      remarcarRevisao(r, nova); render();
-      toast("Revisão remarcada para " + D.brFull(nova) + ".");
+      const k = chaveCard(r), ctx = contextoRevisao(r);
+      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: D.hoje(), botao: "Remarcar",
+                   texto: (ctx ? ctx.rotulo + " · " : "") + "estava marcada para " + D.brFull(r.data) + ".",
+                   validar: v => !/^\d{4}-\d{2}-\d{2}$/.test(v) ? "Escolha a data."
+                     : v < D.hoje() ? "Escolha hoje ou uma data à frente."
+                     : diaDeProva(v) ? "Esse dia é de prova — escolha outro."
+                     : db.revisoes.some(o => o.id !== r.id && !o.feita && o.data === v && chaveCard(o) === k)
+                       ? "Já existe um item deste conteúdo nesse dia — escolha outra data." : "" })
+        .then(nova => {
+          if (!nova) return;
+          remarcarRevisao(r, nova); render();
+          toast("Remarcada para " + D.brFull(nova) + ".");
+        });
       break;
     }
     case "novo-lancamento": ui.editandoLancamento = "novo"; ui.aba = "questoes"; render(); break;
@@ -7958,12 +8158,11 @@ document.addEventListener("change", ev => {
   // ligação opcional a um dia de prova (aba Disciplinas)
   if (ev.target.matches && ev.target.matches("select[data-vinc-disc]")){
     const disc = ev.target.dataset.vincDisc, nome = ev.target.dataset.vincCont || "";
-    const n = mudarLigacao(disc, nome, ev.target.value);
+    mudarLigacao(disc, nome, ev.target.value);
     persistir(); render();
     const dia = acharDiaProva(ev.target.value);
     toast((nome || disc) + (dia ? " ligado a " + nomeDoDia(dia) : ev.target.value === "-" ? " sem dia de prova"
-                                  : nome ? " segue a disciplina" : " sem dia de prova") +
-          (n ? " · agenda refeita em " + n + (n === 1 ? " sessão" : " sessões") : "") + ".");
+                                  : nome ? " segue a disciplina" : " sem dia de prova") + ".");
     return;
   }
   // "Isto apareceu numa questão?": o bloco abre e fecha na hora, sem redesenhar
@@ -8000,7 +8199,9 @@ document.addEventListener("change", ev => {
   if (mapa[ev.target.id]){ ui[mapa[ev.target.id]] = ev.target.value; ui.foco = null; render(); }
 });
 document.addEventListener("keydown", ev => {
-  if (ev.key === "Escape" && !$("#overlay").hidden) fecharModal();
+  if (ev.key !== "Escape") return;
+  if (dialogoAberto){ dialogoAberto.cancelar(); return; }       // a pergunta curta fecha sozinha
+  if (!$("#overlay").hidden) fecharModal();
 });
 document.addEventListener("mousedown", ev => {
   if (sug && !sug.ul.contains(ev.target) && ev.target !== sug.inp) fecharSugestoes();
@@ -8209,7 +8410,8 @@ if (primeiraVez || inicio.objetivoDeduzido){
   persistir();                    // o modo deduzido de base antiga fica gravado
 }
 render();
-if (primeiraVez) modalObjetivo();
+if (inicio.danificado) modalDadosDanificados();
+else if (primeiraVez) modalObjetivo();
 // a prova passou e ninguém disse o que fazer: pergunta uma vez
 if (precisaPerguntarPosProva()) modalPosProva();
 /* Esta chamada é DEPOIS do render() de cima, então o que ela marcar não está na
@@ -8228,6 +8430,7 @@ if (inicio.abertos){
   toast(inicio.abertos + " conteúdo(s) passaram a “em andamento” — a agenda agora chama para voltar ao assunto. " +
         "Marque “terminei” quando fechar cada um.");
 }
+arranqueFeito = true;             // daqui em diante, gravar é mexer de verdade (ver dataDoLocal)
 iniciarArquivo();                 // religa o .json escolhido antes, se houver
 iniciarNuvem();                   // e a conta da nuvem, se houver sessão salva
 // voltou a ter conexão: sobe o que ficou pendente

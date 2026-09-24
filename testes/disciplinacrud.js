@@ -1,7 +1,7 @@
 /* Criar e renomear disciplinas pela aba Disciplinas. Renomear tem de alcançar
    tudo o que escreve o nome: a lista, as sessões, a agenda, as anotações e as
    fichas de conteúdo — senão o cadastro se parte em duas. */
-const fs=require("fs"),{JSDOM}=require("jsdom");
+const responderDialogos=require("./_dialogo.cjs"), fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
 const hoje=iso(new Date()), dia=n=>iso(new Date(Date.now()+n*864e5));
@@ -25,7 +25,7 @@ function abrir(resposta){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"conteudos",gravadoEm:hoje}));
-     w.prompt=t=>{ perguntado=t; return resposta; };
+     responderDialogos(w, t=>{ perguntado=t; return resposta; }, t=>{ avisado=t; });
      w.alert=t=>{ avisado=t; };
      w.confirm=()=>true; }});
   return dom.window;

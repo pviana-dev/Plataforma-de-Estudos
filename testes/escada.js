@@ -8,6 +8,7 @@
    - Conteúdo concluído nunca fica sem revisão: havendo revisões, as próximas
      nascem depois delas; não havendo, a escada nasce.
    - "LAI, LGPD" é o mesmo que "LGPD, LAI". */
+const responderDialogos=require("./_dialogo.cjs");
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 const iso=d=>{const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
@@ -206,7 +207,7 @@ async function novaSessao(w, data, conteudos, dificuldade){
   const seed12=()=>base({revisarAte:dia(12),conteudos:[ficha("LAI",{concluidoEm:dia(-3)})],
     registros:[sess("r1",{data:dia(-3)})], revisoes:[rev("a","r1",dia(-1)), rev("b","r1",dia(2)), rev("c","r1",dia(6))]});
   w=abrir(seed12()); await espera(400);
-  w.prompt=()=>dia(3);
+  responderDialogos(w, ()=>dia(3));
   click(w, w.document.querySelector('[data-acao="remarcar-revisao"][data-id="a"]')); await espera(300);
   l=escada(w);
   const pos=id=>off(l.find(r=>r.id===id).data);

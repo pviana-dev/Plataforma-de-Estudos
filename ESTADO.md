@@ -469,6 +469,34 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    grava em `reg.questoes/acertos` — o mesmo dado da sessão, então a aba Sessões já mostra o novo. Suíte nova
    `questoessessao.js`; `disciplinacrud` e `novoconteudo` ajustados.
 
+49. **Varredura geral e correções** (24/09, pedido do Pedro). Revisão do app inteiro; cada defeito foi reproduzido
+   antes de corrigir. Suíte nova `varredura.js` (falha nos 11 pontos na versão anterior).
+   - **Salvar os Ajustes** só replaneja se mudou algo que decide datas (objetivo, datas de prova, revisar até, estudo
+     previsto, dias até continuar, automático). E replanejar (`replanejarTudo`) **mantém o card atrasado** onde está
+     (`manterAtrasadas`) — antes mudar a meta diária remarcava todos os cards de continuar e sumia com os atrasados.
+   - **Excluir uma sessão** não apaga mais a escada do conteúdo: os itens passam para outra sessão que fale dos mesmos
+     conteúdos; só sai o que não tem mais sessão. O aviso agora diz quantas baterias de questões saem junto.
+   - **Dado danificado** não é apagado: cópia em `plataforma-estudos:v1:danificado`, tela avisando e botão para baixá-la.
+   - **Todas as portas de entrada** (navegador, importar, arquivo, nuvem) passam por `prepararDados` — importar backup
+     antigo pulava migrações (sem fichas nem agenda até o F5, e depois Difícil virava Médio).
+   - **Revisão feita no modelo antigo** (sem sessão) não é desmarcada nem perde as questões ao ser editada.
+   - **Editar sessão antiga** não recria a ficha de um conteúdo excluído (só entram no cadastro os nomes novos).
+   - **Progresso** conta as baterias avulsas (barras, painel do dia e sequência), como a aba Questões.
+   - **Arquivo .json e nuvem**: quem está mais novo ganha, comparando com a data do dado **ao abrir** (`dataDoLocal`) —
+     a gravação da própria abertura fazia o navegador limpo parecer mais novo que o arquivo/nuvem.
+   - **Bateria de sessão antiga** (fora das 60 recentes) edita sem trocar de sessão; **excluir conteúdo** tira o nome
+     dele dos cards mistos pendentes.
+   - **Pergunta curta do app** (`pedirValor`, `#dialogo`, por cima da tela sobreposta) no lugar do `prompt()` em renomear
+     disciplina/conteúdo e **remarcar** (que pedia a data digitada). Testes respondem a ela por `testes/_dialogo.cjs`.
+   - **Excluir disciplina** sem uso (sem sessão, anotação nem revisão à mão), com os conteúdos "a estudar" dela.
+   - Textos: README (aba Disciplinas), avisos de lista vazia, Ajuda (lista numerada), "Faltam até a prova" → "Na agenda",
+     contagem de conteúdos da disciplina = cadastro. Código morto removido (`concluirRevisao`, `propagarRenomeacao`,
+     o replanejamento que nunca acontecia em `mudarLigacao`).
+   - **Decisões do Pedro sobre o que ficou em aberto (24/09):** o card *Questões das sessões* lista **só** as sessões
+     com questões (fica como está); disciplina com sessão **não se exclui** — o caminho é renomear; o teste do arquivo
+     .json no Chrome fica de lado, porque o próximo passo é ligar um banco de dados; com dois aparelhos na nuvem, vale
+     a última gravação (aceito).
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

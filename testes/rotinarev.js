@@ -1,4 +1,4 @@
-const fs=require("fs"),{JSDOM}=require("jsdom");
+const responderDialogos=require("./_dialogo.cjs"), fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
 
 /* A aba Agenda abre na visão POR DIA. Quem testa os cards por assunto precisa
@@ -27,7 +27,7 @@ seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0,prompts=[]; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;
-   w.prompt=m=>{prompts.push(m);return iso(new Date(Date.now()+2*864e5));};}});
+   responderDialogos(w, m=>{prompts.push(m);return iso(new Date(Date.now()+2*864e5));});}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
