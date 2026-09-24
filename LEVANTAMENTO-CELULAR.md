@@ -11,13 +11,16 @@ com toque e user agent de iPhone), com dados de exemplo, em três larguras: **ce
 elementos que passam da borda, posição das caixas). O código foi lido atrás do que depende de mouse/teclado.
 
 > Atenção para quem repetir: o Chrome **headless puro** (`--window-size=390,…`) tem largura mínima de 500px — a
-> foto sai "cortada à direita" e parece defeito, mas é artefato. Só a emulação dá a medida certa.
+> foto sai "cortada à direita" e parece defeito, mas é artefato. Só a emulação dá a medida certa. E **nada de
+> escrever o diagnóstico dentro da página**: um `<pre>` com linhas compridas alarga a página no celular (a tela
+> "cresce" para caber) e produziu o falso item 1. Meça pelo protocolo e devolva o resultado para fora.
 
 ## Veredito
 
 - **Computador: pronto.** Tudo bem distribuído.
 - **Celular: funciona, mas não foi pensado para ele.** A página cabe na tela (nenhuma aba estoura a largura),
-  porém há duas telas quebradas, gestos que não existem no toque e os dados não passam de um aparelho para outro.
+  porém há gestos que não existem no toque, a aba Disciplinas espremida e os dados não passam de um aparelho
+  para outro. (As "duas telas quebradas" do primeiro levantamento eram falso alarme — ver item 1.)
 
 ### O que já funciona bem no celular
 - Hoje, Agenda, Anotações, Questões e Progresso cabem na tela: cards em coluna, números dois por linha,
@@ -31,7 +34,7 @@ elementos que passam da borda, posição das caixas). O código foi lido atrás 
 
 | # | Problema | Onde | Tipo de correção |
 |---|---|---|---|
-| 1 | **Registrar/Editar sessão e Lançar questões abrem fora da tela** no celular: a caixa fica com 880px de largura e aparece abaixo da área visível (medido: x=125, y=867, w=880 numa tela de 390). Ajuda, Ajustes e Nova revisão estão certas (w=354). Causa provável: um `<select>` de opções longas (sessão, disciplina) dá largura mínima ao item da grade do `.overlay`, e o `.modal.grande` (max-width 880) cresce junto. | `.overlay` / `.modal.grande`, `formRegistroHtml`, `formLancamento` | CSS pequeno: `grid-template-columns:minmax(0,1fr)` no overlay, `min-width:0` na caixa, `max-width:100%` nos selects |
+| 1 | ~~Registrar/Editar sessão e Lançar questões abrem fora da tela~~ — **FALSO ALARME** (conferido em 24/09): quem alargava a página era a própria ferramenta de medição (um relatório em texto comprido, anexado à página). Medido sem ela, na versão anterior, as duas telas já cabiam (354px de 390). Ficou só uma precaução no CSS (a caixa e os campos podem encolher). | — | — |
 | 2 | **Dados não passam entre aparelhos**: cada navegador tem os seus (localStorage). Usar no computador e no celular = duas bases separadas. O arquivo .json automático só existe no Chrome/Edge de computador. | arquitetura | o banco de dados (Supabase, próximo passo) |
 | 3 | **Reordenar não funciona no toque**: anotações e mural "Falta estudar" usam arrastar do HTML (não existe no celular) e setas ↑↓ do teclado (o celular não tem). O comentário no código que diz que as setas "são o caminho que funciona no celular" está errado. | `ARRASTAVEIS`, `moverItem` | botões ↑ ↓ visíveis em telas de toque (`@media (hover:none)`) |
 | 4 | **Aba Disciplinas esmagada**: cada conteúdo com uma palavra por linha e o "✎ renomear" por cima do nome. | `telaConteudos` (linha do conteúdo) | empilhar os botões embaixo do nome em tela estreita |
@@ -51,6 +54,7 @@ margens do iPhone com entalhe (`env(safe-area-inset-*)`), que só importam no mo
 
 ## Ordem sugerida
 
-1. **Primeiro:** 1, 4 e 6 — CSS, pequeno, e o celular fica usável.
+1. **Primeiro:** 1, 4 e 6 — CSS, pequeno. **FEITO em 24/09** (item 55 do ESTADO.md): 1 era falso alarme; 4 e 6
+   corrigidos; de brinde, o aviso do rodapé (toast), que no celular virava uma coluna estreita, usa a tela toda.
 2. **Depois:** 3, 5 e 7 — adaptar ao toque (↑↓ visíveis, sessões em cartões, abas embaixo); 8, 9 e 10 junto.
 3. **Com a hospedagem e o banco de dados:** 2, o PWA e o ícone no Safari.

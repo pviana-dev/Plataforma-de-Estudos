@@ -526,6 +526,18 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    grava `prioridade`; conteúdo novo entra no fim. O campo `mural` das fichas antigas ficou sem uso. Conteúdo
    concluído sem sessão não entra (não é "falta estudar"). `mural.js` reescrita; Ajuda e README atualizados.
 
+55. **Primeiros passos no celular** (24/09; itens 1, 4 e 6 do `LEVANTAMENTO-CELULAR.md`).
+   - **Aba Disciplinas** (item 4): em tela estreita (≤620px) o nome do conteúdo fica com a linha inteira e
+     renomear/concluir/excluir descem para a linha de baixo (`.item-conteudo`). Antes: uma palavra por linha e o
+     "renomear" por cima do nome.
+   - **Zoom do iPhone** (item 6): em tela de toque (`pointer:coarse`), campos com 16px — abaixo disso o Safari do
+     iPhone amplia a página ao tocar no campo. No computador, nada muda.
+   - **Aviso do rodapé (toast)**: usa a largura da tela (era preso à metade dela e, no celular, virava uma coluna
+     estreita).
+   - **Item 1 era falso alarme**: a ferramenta de medição alargava a página. Medido sem ela, registrar sessão e
+     lançar questões já cabiam. Ficou só uma precaução no CSS (caixa e campos podem encolher). Corrigido no
+     levantamento, com o aviso para quem medir de novo.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

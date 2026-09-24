@@ -225,12 +225,12 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(0,0,0,.
 
 /* ---------- formulário ---------- */
 .campos{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-.campo{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--text-2)}
+.campo{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--text-2);min-width:0}
 .campo input[type="checkbox"],.campo input[type="radio"]{
   width:auto;padding:0;margin:0;border:none;background:none;accent-color:var(--accent);flex:none}
 .campo input,.campo select,.campo textarea{
   border:1px solid var(--campo-borda);background:var(--campo-fundo);border-radius:8px;padding:8px 10px;
-  outline:none;transition:.15s;width:100%}
+  outline:none;transition:.15s;width:100%;min-width:0;max-width:100%}
 .campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--accent);background:var(--campo-fundo);
   box-shadow:0 0 0 3px var(--foco)}
 .btn:focus-visible,.aba:focus-visible,.icon-btn:focus-visible,.act:focus-visible,.btn-add:focus-visible,
@@ -526,15 +526,24 @@ svg{display:block;max-width:100%;height:auto;overflow:visible}
 .vazio strong{display:block;color:var(--text);font-weight:550;margin-bottom:4px;font-size:14.5px}
 .aviso{background:#f7ece4;border:1px solid #e3c9b4;color:#8a5a37;border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px}
 html[data-tema="escuro"] .aviso{background:#3a2e26;border-color:#5a4632;color:#e0bd96}
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);background:var(--text);color:var(--bg);
-  padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:60;max-width:90vw}
-.toast.show{opacity:.96;transform:translate(-50%,0)}
-.overlay{position:fixed;inset:0;background:rgba(30,32,30,.42);display:grid;place-items:center;padding:18px;z-index:50}
+/* O AVISO USA A LARGURA DA TELA (celular, 24/09). Era left:50% com
+   translate(-50%): a caixa só podia crescer até a borda direita, isto é, METADE
+   da tela — no celular o texto virava uma coluna estreita de seis, sete linhas.
+   Agora ele fica entre as duas margens e se centra pela própria largura. */
+.toast{position:fixed;left:16px;right:16px;bottom:24px;margin:0 auto;width:fit-content;max-width:560px;
+  transform:translateY(14px);background:var(--text);color:var(--bg);
+  padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:60}
+.toast.show{opacity:.96;transform:translateY(0)}
+.overlay{position:fixed;inset:0;background:rgba(30,32,30,.42);display:grid;place-items:center;padding:18px;z-index:50;
+  grid-template-columns:minmax(0,1fr)}
+/* A coluna da grade não cresce com o conteúdo, e os campos podem encolher
+   (min-width:0): um <select> de opções compridas (a sessão, a disciplina) nunca
+   empurra a caixa para além da tela. Precaução para o celular (24/09). */
 .overlay[hidden]{display:none}   /* a classe vence o [hidden] do navegador: precisa ser explícito */
 /* A caixa é uma coluna: cabeçalho fixo, miolo que rola, rodapé de ações fixo.
    Quem rola é só o miolo — a barra de rolagem termina no fio acima dos botões,
    em vez de correr ao lado deles. */
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:560px;width:100%;
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:560px;width:100%;min-width:0;
   max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.18)}
 .modal > header{flex:none}
 .modal > .conteudo{flex:1 1 auto;min-height:0;overflow:auto}
@@ -914,6 +923,16 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
 @media (max-width:620px){
   .wrap{padding:16px 13px 70px}
   .tile .val{font-size:21px}
+  /* aba Disciplinas: o nome do conteúdo fica com a linha inteira e os botões
+     (renomear, concluir, excluir) descem para a linha de baixo — lado a lado, o
+     nome era espremido a uma palavra por linha e o "renomear" ia por cima dele */
+  .item-conteudo .rev-topo{flex-wrap:wrap;row-gap:4px}
+  .item-conteudo .rev-topo .corpo{flex:1 1 100%}
+}
+/* TELA DE TOQUE: campo com letra menor que 16px faz o iPhone dar zoom na página
+   inteira ao tocar nele (e ela fica ampliada depois). Com 16px, não há zoom. */
+@media (pointer:coarse){
+  input:not([type="checkbox"]):not([type="radio"]),select,textarea{font-size:16px}
 }
 </style>
 </head>
@@ -6681,7 +6700,7 @@ function telaConteudos(){
           (itens.length
             ? itens.map(c => {
                 const nSess = sessoesDoConteudo(d, [c.nome]).length;
-                return '<div class="item"><div class="rev-topo">' +
+                return '<div class="item item-conteudo"><div class="rev-topo">' +
                   '<div class="corpo"><div class="titulo">'+esc(c.nome)+'</div>' +
                   '<div class="meta">'+nSess+(nSess === 1 ? " sessão" : " sessões")+' · ' +
                   (c.fase === "concluido" ? "concluído" + (c.concluidoEm ? " em " + D.br(c.concluidoEm) : "")
