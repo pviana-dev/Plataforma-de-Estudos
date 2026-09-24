@@ -72,7 +72,7 @@ async function novaSessao(w, data, conteudos, dificuldade){
   (conteudos||["LAI"]).forEach(c=>porConteudo(w.document, w, c));
   const f2=w.document.querySelector("#formRegistro");
   if (f2.querySelector("[name=minutos]")) f2.querySelector("[name=minutos]").value="30";
-  if (dificuldade && f2.querySelector("[name=dificuldade]")) f2.querySelector("[name=dificuldade]").value=String(dificuldade);
+  f2.querySelector("[name=dificuldade]").value=String(dificuldade||2);      // obrigatória, sem padrão
   f2.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
   return (w.document.querySelector("#erroRegistro")||{}).textContent||"";
 }

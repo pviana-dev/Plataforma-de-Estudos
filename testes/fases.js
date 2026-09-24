@@ -122,6 +122,7 @@ async function gravarSessao(w){
   ok("e mostra qual volta está sendo fechada", !!w.document.querySelector("#revisaoAlvo"),
      w.document.querySelector("#modalCorpo").textContent.slice(0,80));
   w.document.querySelector('#modalCaixa [name="minutos"]').value="50";
+  w.document.querySelector('#modalCaixa [name="dificuldade"]').value="2";      // obrigatória, sem padrão
   w.document.querySelector("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(450);
   const nova=db(w).registros.find(r=>r.id!=="r1");

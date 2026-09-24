@@ -32,7 +32,7 @@ const $=(w,s)=>w.document.querySelector(s);
 // o número e o texto vêm em elementos colados (<b>10</b><span>dias…): junta com um espaço
 const topo=w=>[...$(w,"#regressiva").childNodes].map(n=>n.textContent).join(" ").replace(/🔥/g,"").replace(/\s+/g," ").trim();
 async function ajustes(w, fn){
-  click(w, $(w,"#btnAjuda")); await espera(250);
+  click(w, $(w,"#btnAjustes")); await espera(250);
   await fn(w.document);
   $(w,"#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(350);

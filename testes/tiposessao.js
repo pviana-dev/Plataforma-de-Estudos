@@ -48,6 +48,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].some(t=>/LAI/.test(t.textContent)),
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.textContent));
   $("#modalCorpo [name=minutos]").value="40";
+  { const _d=$("#formRegistro [name=dificuldade]"); if (_d && !_d.value) _d.value="2"; }   // obrigatória, sem padrão
   $("#modalCorpo #formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(400);
 

@@ -91,6 +91,7 @@ setTimeout(() => {
         setTimeout(() => {
           porConteudo(doc, w, "LAI");
           $('#modalCaixa [name="minutos"]').value = "30";
+          { const _d=$("#formRegistro [name=dificuldade]"); if (_d && !_d.value) _d.value="2"; }   // obrigatória, sem padrão
           $("#formRegistro").dispatchEvent(new w.Event("submit", { bubbles:true, cancelable:true }));
           setTimeout(() => {
             const d2 = lerDb();

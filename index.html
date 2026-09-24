@@ -109,12 +109,26 @@ header.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;ga
 .marca{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
   background:var(--accent-forte);color:#fff;box-shadow:0 2px 8px var(--brilho)}
 html[data-tema="escuro"] .marca{color:#1c2123;box-shadow:none}
+/* a engrenagem dos ajustes tem a mesma cara do livro da marca: bloco cheio na cor da identidade */
+.icon-btn.btn-ajustes{border-radius:11px;background:var(--accent-forte);border-color:var(--accent-forte);color:#fff;
+  box-shadow:0 2px 8px var(--brilho)}
+/* Hover: como o botão já é cheio (igual ao livro), o efeito precisa ser outro que
+   "encher" — ele escurece (--accent-ink), sobe um pouco e ganha o brilho forte dos
+   botões "+ Adicionar". Sem esta regra valia o hover genérico do .icon-btn (fundo
+   claro), e o ícone branco sumia. */
+.icon-btn.btn-ajustes{transition:background .15s,box-shadow .15s,transform .15s}
+.icon-btn.btn-ajustes:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff;
+  transform:translateY(-2px);box-shadow:0 6px 16px var(--brilho)}
+html[data-tema="escuro"] .icon-btn.btn-ajustes:hover{color:#1b2224;box-shadow:0 6px 16px var(--brilho)}
+/* O mesmo hover nos outros botões de ícone do cabeçalho (?, exportar, importar,
+   tema): verde fechado, ícone claro, sobe um pouco e brilha. Parados, continuam
+   discretos — só a engrenagem é cheia, como o livro. */
+.top .dir .icon-btn{transition:background .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s}
+.top .dir .icon-btn:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff;
+  transform:translateY(-2px);box-shadow:0 6px 16px var(--brilho)}
+html[data-tema="escuro"] .top .dir .icon-btn:hover{color:#1b2224}
 .brand h1{font-size:25px;font-weight:650;letter-spacing:-.5px;line-height:1.1;white-space:nowrap}
 .brand h1 span{font-weight:400;color:var(--muted);letter-spacing:-.2px}
-/* que dia é hoje: embaixo do nome, em todas as abas — é a referência de "hoje",
-   "atrasado" e "amanhã" que a agenda inteira usa */
-.hoje-topo{font-size:13px;color:var(--text-2);margin-top:3px;white-space:nowrap}
-.hoje-topo b{font-weight:600;color:var(--text)}
 .chip-data{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:9px;
   border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;transition:.15s}
 /* onde os dados estão sendo gravados */
@@ -127,6 +141,17 @@ html[data-tema="escuro"] .marca{color:#1c2123;box-shadow:none}
 .chip-arq.falha{background:var(--critico-soft);border-color:rgba(208,59,59,.35);color:var(--critico-ink);font-weight:550}
 .chip-arq[hidden]{display:none}
 .chip-data b{color:var(--text);font-weight:550;font-variant-numeric:tabular-nums}
+/* ajustes: dias da retomada por dificuldade, três campos curtos lado a lado */
+.dias-volta{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2)}
+.dias-volta input{width:64px}
+/* A prova e HOJE no mesmo botão, em duas linhas com as datas alinhadas: hoje é a
+   referência de "atrasado" e "amanhã" da agenda inteira. O rótulo "Hoje" é igual
+   ao "Prova"; só a data de hoje leva a cor da identidade. Um fio separa as duas. */
+.chip-data{display:inline-grid;grid-template-columns:auto auto;column-gap:8px;row-gap:3px;
+  align-items:baseline;text-align:left;padding:5px 12px;line-height:1.25}
+.chip-data .so{grid-column:1 / -1}
+.chip-data .hoje-rot,.chip-data .hoje-data{padding-top:3px;border-top:1px dashed var(--border)}
+.chip-data .hoje-data{color:var(--accent-ink);font-weight:600;font-variant-numeric:tabular-nums}
 .chip-data:hover{border-color:var(--accent);color:var(--accent-ink)}
 .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
   border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:.15s;font-size:15px}
@@ -208,9 +233,18 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(0,0,0,.
 .campo textarea{resize:vertical;min-height:62px;line-height:1.55}
 .campo textarea.texto-grande{min-height:170px}
 .campo textarea.texto-medio{min-height:126px}
-/* data não precisa da largura toda da coluna */
+/* data e número não precisam da largura toda da coluna */
 .campo input[type="date"]{max-width:175px}
+.campo input[type="number"]{max-width:130px}
+.campo .dias-volta input{width:72px;max-width:72px}
 .campo.largo{grid-column:1/-1}
+/* uma coluna: cada campo embaixo do outro, nada lado a lado (tela de ajustes) */
+.campos.uma-coluna,.uma-coluna .campos{grid-template-columns:1fr}
+.uma-coluna .opcoes{flex-direction:column;align-items:flex-start}
+.uma-coluna .dias-volta{display:inline-flex;align-self:flex-start}
+.uma-coluna .dias-volta span:first-child{min-width:64px}
+.uma-coluna .dia-prova{flex-direction:column;align-items:stretch}   /* nome e data do dia de prova, um embaixo do outro */
+.uma-coluna .dia-prova .excluir{align-self:flex-start}
 .ajuda-campo{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.35}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
    anima a altura sem precisar saber quanto o conteúdo mede; o `visibility` no
@@ -245,8 +279,12 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(0,0,0,.
 .opcao{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text);line-height:1.3;
   border:1px solid var(--campo-borda);background:var(--campo-fundo);border-radius:9px;padding:9px 13px;
   cursor:pointer;transition:.15s}
-.opcao:hover{border-color:var(--accent)}
+/* hover visível também na opção já marcada (antes só a borda mudava, e ela já era
+   verde): anel suave, sobe um pouco; marcada, o fundo escurece um tom */
+.opcao:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);transform:translateY(-1px)}
 .opcao:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+.opcao:has(input:checked):hover{background:var(--filtro-borda);box-shadow:0 2px 8px var(--brilho)}
+@media (prefers-reduced-motion: reduce){ .opcao:hover{transform:none} }
 /* etiqueta só de leitura (o conteúdo vem da revisão, não se escolhe aqui).
    A regra vivia dentro do editor de grupo, que saiu com a integração. */
 .tag.fixo{background:transparent;border-style:dashed;padding-right:11px;opacity:.85}
@@ -313,6 +351,12 @@ tr.sep-dia .meta{font-weight:400;color:var(--text-2)}
 .acerto b{font-size:13px;font-weight:600;min-width:38px;text-align:right}
 .act{font-size:12px;color:var(--muted);padding:3px 8px;border-radius:6px;transition:.15s}
 .act:hover{background:var(--surface-3);color:var(--text)}
+/* atalhos que preenchem um campo (+1 mês, +3 meses…): têm fundo próprio para se
+   verem como botões, e enchem de verde no hover */
+.act.atalho{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--filtro-borda);
+  font-weight:550;padding:5px 10px;border-radius:8px}
+.act.atalho:hover{background:var(--accent-forte);border-color:var(--accent-forte);color:#fff;box-shadow:0 2px 8px var(--brilho)}
+html[data-tema="escuro"] .act.atalho:hover{color:#1b2224}
 .act.danger:hover{color:var(--critico)}
 /* "+ ver todos": fecha a lista de assuntos como um rodapé, largura cheia */
 .ver-mais{display:block;width:100%;margin-top:10px;padding:9px;font-size:13px;font-weight:600;
@@ -682,6 +726,15 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .apr-item[draggable="true"]{cursor:grabbing}
 .apr-item.arrastando{opacity:.45;background:var(--accent-soft)}
 @media (hover:none){.apr-item .arrasta{opacity:1}}   /* no toque não há hover */
+/* mural "Falta estudar" (aba Hoje): uma linha por conteúdo, alça sempre visível */
+.mural-lista{display:flex;flex-direction:column}
+.mural-item{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--border)}
+.mural-item:last-child{border-bottom:none}
+.mural-item .arrasta{cursor:grab;padding:0 5px;line-height:1.5;color:var(--muted)}
+.mural-item .arrasta:active{cursor:grabbing}
+.mural-item.arrastando{opacity:.45;background:var(--accent-soft)}
+.mural-nome{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.mural-nome b{font-weight:550;color:var(--text)}
 .apr-texto{flex:1;min-width:0}
 .apr-texto .detalhe{margin-top:9px;padding-top:8px;border-top:1px dashed var(--grade)}
 .apr-pe{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}
@@ -766,6 +819,61 @@ select.sel-dia:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--foco)
 details.ajuda{margin-top:10px;font-size:13px;color:var(--text-2)}
 details.ajuda summary{cursor:pointer;color:var(--accent-ink);font-size:12.5px}
 details.ajuda p{margin:8px 0 0}
+/* o tutorial da Ajuda: seções em cartão que abrem e fecham, um índice em cima */
+.aj-layout{display:grid;grid-template-columns:210px 1fr;gap:18px;align-items:start}
+.aj-sumario{position:sticky;top:0;display:flex;flex-direction:column;gap:2px;padding:10px 8px;
+  border:1px solid var(--filtro-borda);border-radius:var(--radius);background:var(--aj-sumario-fundo, var(--filtro-fundo))}
+/* o sumário tem um verde mais claro que o das barras de filtro (aprovado pelo Pedro em
+   24/09), só no tema claro; sem esta linha ele usaria --filtro-fundo */
+:root:not([data-tema="escuro"]) .aj-sumario{--aj-sumario-fundo:#f6f9f7}
+.aj-sumario-tit{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.45px;color:var(--text-2);
+  padding:2px 8px 6px}
+.aj-sumario a{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:13px;
+  color:var(--text-2);text-decoration:none;border-left:3px solid transparent;transition:.15s}
+.aj-sumario a:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.aj-sumario a[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:600;
+  border-left-color:var(--accent-forte)}
+.aj-sumario .aj-num{width:20px;height:20px;font-size:11px}
+.aj-ir{display:none}
+@media (max-width:700px){
+  .aj-layout{grid-template-columns:1fr}
+  .aj-sumario{display:none}
+  .aj-ir{display:block;width:100%;margin:4px 0 8px;padding:8px 10px;border-radius:8px;
+    border:1px solid var(--campo-borda);background:var(--campo-fundo)}
+}
+details.tutorial{border:1px solid var(--filtro-borda);border-radius:var(--radius);background:var(--surface);margin-top:8px;
+  overflow:hidden}
+/* o título da seção tem o mesmo fundo verde-claro do sumário; o número, um verde mais escuro */
+details.tutorial summary{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;
+  font-weight:600;font-size:14px;color:var(--text);list-style:none;background:var(--filtro-fundo)}
+details.tutorial summary::-webkit-details-marker{display:none}
+details.tutorial summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.tutorial[open] summary::after{transform:rotate(180deg)}
+details.tutorial summary:hover{color:var(--accent-ink)}
+details.tutorial[open] summary{border-bottom:1px solid var(--filtro-borda)}
+.aj-num{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:12.5px;
+  background:var(--accent-forte);color:#fff;font-weight:650}
+html[data-tema="escuro"] .aj-num{color:#1b2224}
+.aj-corpo{padding:10px 16px 14px;font-size:13.5px;color:var(--text-2);line-height:1.6}
+.aj-corpo p{margin:6px 0}
+.aj-corpo b{color:var(--text)}
+.aj-corpo .aj-aba{color:var(--accent-ink)}
+.aj-passos,.aj-lista{margin:6px 0 0;padding-left:20px}
+.aj-passos li,.aj-lista li{margin:0;padding:7px 0}
+/* separadores: um fio entre cada subtópico da seção (passos, itens, abas, campos)… */
+.aj-passos li + li,.aj-lista li + li,.aj-abas .aj-item + .aj-item{border-top:1px solid var(--border)}
+/* …e um tracejado entre os blocos de texto da seção */
+.aj-corpo > * + *{border-top:1px dashed var(--border);margin-top:8px;padding-top:8px}
+.aj-abas{margin:0}
+.aj-abas .aj-item{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:8px 0}
+.aj-abas dt{font-weight:600;color:var(--text)}
+.aj-abas dd{margin:0}
+@media (max-width:620px){ .aj-abas .aj-item{grid-template-columns:1fr;gap:2px} }
+.aj-fluxo{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 10px}
+.aj-fluxo span{display:flex;flex-direction:column;padding:7px 11px;border-radius:9px;
+  background:var(--accent-soft);border:1px solid var(--filtro-borda)}
+.aj-fluxo small{font-size:11.5px;color:var(--text-2)}
+.aj-fluxo i{font-style:normal;color:var(--muted)}
 @media (max-width:780px){
   header.top{grid-template-columns:1fr;justify-items:center;text-align:center}
   .top .dir{justify-content:center}
@@ -787,14 +895,20 @@ details.ajuda p{margin:8px 0 0}
           <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h5A1.5 1.5 0 0 0 20 15V5.5Z"/>
         </svg>
       </span>
-      <div><h1>Plataforma <span>de Estudos</span></h1>
-        <div class="hoje-topo" id="hojeTopo"></div></div>
+      <h1>Plataforma <span>de Estudos</span></h1>
     </div>
     <div id="regressiva"></div>
     <div class="dir">
       <div id="cronoChip"></div>
       <button class="chip-data" id="chipData" data-acao="abrir-ajustes"></button>
-      <button class="icon-btn" id="btnAjuda" title="Ajuda e ajustes" aria-label="Ajuda e ajustes">?</button>
+      <button class="icon-btn btn-ajustes" id="btnAjustes" data-acao="abrir-ajustes" title="Ajustes" aria-label="Ajustes">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnAjuda" title="Ajuda" aria-label="Ajuda">?</button>
       <button class="chip-arq" id="chipNuvem" data-acao="painel-nuvem" title="Sua conta e a sincronização"></button>
       <button class="chip-arq" id="chipArquivo" data-acao="painel-arquivo" title="Onde os dados estão sendo gravados"></button>
       <button class="icon-btn" id="btnExportar" title="Exportar backup (.json)" aria-label="Exportar backup">↓</button>
@@ -846,7 +960,6 @@ const CONFIG = {
      esperar mais; o difícil volta mais cedo. */
   FATOR_DIFICULDADE: { 1: 1.5, 2: 1, 3: 0.7 },
   HORIZONTE_LIVRE: 180,                 // dias à frente quando não há teto escolhido (com ou sem prova)
-  HORIZONTE_MAX_DIAS: 365,              // teto de planejamento: no máximo um ano à frente
   MAX_REVISOES: 9,                      // nenhum assunto passa disso (o tamanho da escada)
   /* Quanto a dificuldade deixa o assunto ir fundo na escada: um assunto
      tranquilo não precisa das 9 revisões só porque há um ano de janela. */
@@ -854,9 +967,19 @@ const CONFIG = {
 
   /* VOLTAS ao conteúdo ainda em andamento. Não é revisão: é continuar de onde
      parou, então o intervalo NÃO cresce — crescer é para material já fechado.
-     Curto para o que está difícil, mais folgado para o que está indo bem. */
-  VOLTA_DIAS: { dificil: 1, normal: 2, facil: 4 },
-  VOLTA_TETO: 7,                        // nenhuma volta passa disso
+     O padrão sai de duas coisas: a DIFICULDADE (difícil volta antes) e o TEMPO
+     DE ESTUDO PREVISTO — os dias até a prova (ou até o "revisar até"): com a
+     prova perto não dá para deixar o conteúdo esfriar; sem prazo, o fácil pode
+     esperar mais. Os números são por dificuldade: 1 = fácil, 2 = médio, 3 = difícil.
+     Nos ajustes você troca qualquer um deles (db.diasRetomada). */
+  VOLTA_DIAS: {
+    perto: { 3: 1, 2: 1, 1: 2 },        // até VOLTA_PERTO dias até a prova: nada esfria
+    medio: { 3: 1, 2: 2, 1: 3 },        // até VOLTA_MEDIO dias
+    longe: { 3: 1, 2: 2, 1: 4 }         // mais que isso, ou sem prazo: o ritmo de sempre
+  },
+  VOLTA_PERTO: 30,
+  VOLTA_MEDIO: 90,
+  VOLTA_MAX_ESCOLHA: 30,                // nos ajustes: de 1 a 30 dias
   RETORNO_POR_DIA: 3,                   // depois da prova: primeiras revisões por dia, no máximo
   AVISO_ABERTO_DIAS: 14,                // depois disso, o card sugere fechar o conteúdo
   ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na visão por assunto antes do "+"
@@ -911,13 +1034,8 @@ const CONFIG = {
     2: { nome: "Médio",   curto: "Médio",   classe: "" },
     3: { nome: "Difícil", curto: "Difícil", classe: "b-critico" }
   },
-  DICAS: [
-    "Revisar é resolver questões, não reler o resumo — recordação ativa fixa muito mais.",
-    "Intercale disciplinas no mesmo dia (prática intercalada): o cérebro aprende a escolher a estratégia, não só a aplicá-la.",
-    "Errou por desatenção? Isso não é revisão de conteúdo: é treino de leitura do enunciado.",
-    "Curva do esquecimento: o que você estudou hoje começa a sumir em 24–48h. A primeira revisão é a que mais rende.",
-    "Anote o ensinamento do erro, não só o erro — é a lição que você vai reler na véspera."
-  ]
+  /* o mural "Falta estudar" da aba Hoje abre com estes; o resto atrás do "+" */
+  MURAL_VISIVEIS: 8
 };
 
 /* ==========================================================================
@@ -1413,20 +1531,20 @@ const nomeDoDia = d => (d && d.nome || "").trim() || "a prova";
 const semProva = () => !ultimaProva();
 /** a prova ainda está à frente? (depois dela o cronograma muda de regra) */
 const provaFutura = () => !!ultimaProva() && ultimaProva() > D.hoje();
-/** O agendamento está de pé? Só para quando você diz que encerrou. Passada a
-    prova, a pergunta "e depois?" aparece, mas não segura nada enquanto não é
-    respondida: as revisões seguem normalmente (decisão do Pedro, 23/09). */
-const agendamentoAtivo = () => db.posProva !== "encerrei";
+/** O agendamento AUTOMÁTICO está de pé? Para em dois casos, os dois escolhidos
+    por você: "encerrei" depois da prova, ou a chave "Criar os agendamentos
+    automaticamente" desligada nos ajustes — quem tem a própria rotina marca as
+    datas à mão, e o sistema não cria, não empurra e não refaz nada. Passada a
+    prova, a pergunta "e depois?" não segura nada (decisão do Pedro, 23/09). */
+const agendaAutomatica = () => db.agendaAutomatica !== false;
+const agendamentoAtivo = () => db.posProva !== "encerrei" && agendaAutomatica();
 /* ATÉ QUANDO O SISTEMA AGENDA: o teto que você escolheu ("revisar até") ou,
    sem ele, o horizonte livre, que anda junto com hoje. A PROVA NÃO É TETO: as
    revisões seguem depois dela — só o dia da prova é pulado (foraDaProva).
-   Nada passa de um ano à frente — planejar além disso é ficção. */
+   O "revisar até" não tem limite (decisão do Pedro, 23/09: saiu o teto de um
+   ano). A escada termina sozinha no último degrau, então nada cresce sem fim. */
 function ultimoDiaRevisao(){
-  const hoje = D.hoje();
-  const maximo = D.soma(hoje, CONFIG.HORIZONTE_MAX_DIAS);
-  let fim = db.revisarAte || D.soma(hoje, CONFIG.HORIZONTE_LIVRE);
-  if (fim > maximo) fim = maximo;
-  return fim;
+  return db.revisarAte || D.soma(D.hoje(), CONFIG.HORIZONTE_LIVRE);
 }
 /** dias até a próxima prova; negativo = desde a última; null = sem prova */
 function diasParaProva(){
@@ -1435,7 +1553,8 @@ function diasParaProva(){
   return D.dif(D.hoje(), prox ? prox.data : ultimaProva());
 }
 /** como dizer o prazo nos textos da tela */
-const rotuloPrazo = () => !agendamentoAtivo() ? "— agendamento encerrado"
+const rotuloPrazo = () => !agendaAutomatica() ? "— agendamento automático desligado"
+                        : !agendamentoAtivo() ? "— agendamento encerrado"
                         : db.revisarAte ? "até " + D.brFull(db.revisarAte)
                         : "no seu ritmo";
 
@@ -1643,10 +1762,27 @@ const conteudoAberto = alvo => faseDe(alvo) === "andamento";
    medindo desempenho na tela, mas ficou fora do cronograma: ela oscila com o
    lote de questões do dia e fazia o plano balançar junto, sem você ter pedido. */
 function diasDaVolta(dificuldade){
-  const dias = dificuldade >= 3 ? CONFIG.VOLTA_DIAS.dificil
-             : dificuldade <= 1 ? CONFIG.VOLTA_DIAS.facil
-             : CONFIG.VOLTA_DIAS.normal;
-  return Math.min(dias, CONFIG.VOLTA_TETO);
+  const nivel = tresNiveis(dificuldade);
+  const escolhido = Number((db.diasRetomada || {})[nivel]);          // o que você pôs nos ajustes
+  if (escolhido >= 1) return Math.min(CONFIG.VOLTA_MAX_ESCOLHA, Math.round(escolhido));
+  return diasDaVoltaPadrao(nivel);
+}
+/* O TEMPO DE ESTUDO PREVISTO: até quando você pretende estudar. Não é só a
+   prova — vale também sem objetivo nenhum. Nesta ordem: o que você disse nos
+   ajustes ("estudo previsto até"), a prova que está à frente, o "revisar até".
+   Sem nenhum deles, não há prazo. */
+function fimDoEstudoPrevisto(estudoAte, revisarAte){
+  const ate = estudoAte === undefined ? db.estudoAte : estudoAte;
+  if (ate && ate > D.hoje()) return ate;
+  if (provaFutura()) return ultimaProva();
+  return (revisarAte === undefined ? db.revisarAte : revisarAte) || "";
+}
+/** o padrão: dificuldade × tempo de estudo previsto (`fim` só para a tela prever antes de salvar) */
+function diasDaVoltaPadrao(nivel, fim){
+  if (fim === undefined) fim = fimDoEstudoPrevisto();
+  const faltam = fim ? D.dif(D.hoje(), fim) : Infinity;
+  const faixa = faltam <= CONFIG.VOLTA_PERTO ? "perto" : faltam <= CONFIG.VOLTA_MEDIO ? "medio" : "longe";
+  return CONFIG.VOLTA_DIAS[faixa][tresNiveis(nivel)];
 }
 /** a revisão é uma volta (conteúdo aberto) ou revisão de verdade? */
 const ehRetomada = rev => !!rev && !!rev.retomada;
@@ -2220,13 +2356,14 @@ const ui = {
   verTodasProximas: false, verTodosAssuntos: false, mesCal: "",
   visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false, agendaCompleta: false,
   faseAgenda: "abertos",            // sub-aba da Agenda: o que falta fazer ou o que já passou
-  aAssunto: "",                     // filtro de assunto da Agenda, na visão por assunto (chaveCard)
+  aDisciplina: "",                  // filtros da Agenda: disciplina, e depois conteúdo (chaveAssunto)
+  aAssunto: "",
   focoRevisao: "",                  // salto do card de hoje para o lugar dele na lista (não é estado de tela)
   cDisciplina: "",                  // filtro da aba Disciplinas
   diaSel: D.hoje(),                 // o painel já abre mostrando o dia de hoje
   formAberto: false,
   pDisciplina: "",
-  dicaIdx: Math.floor(Math.random()*CONFIG.DICAS.length)
+  verTodoMural: false
 };
 
 let tToast = null;
@@ -2271,8 +2408,8 @@ const CAMPOS_TELA = ["aba",
   "fDisciplina","fPeriodo","fOrdem","fBusca","fTipo",           // filtros de Registros
   "eDisciplina","eAssunto","eSoImportantes","eJuntarTudo",      // filtros das Anotações
   "qVisao","qPeriodo","qDiscs","pDisciplina","diaSel","mesCal",        // Questões e Painel
-  "verTodasProximas","verTodosAssuntos",                        // listas abertas/fechadas
-  "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aAssunto","agendaCompleta",   // como a Agenda está sendo vista
+  "verTodasProximas","verTodosAssuntos","verTodoMural",         // listas abertas/fechadas
+  "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aDisciplina","aAssunto","agendaCompleta",   // como a Agenda está sendo vista
   "cDisciplina",                                                // filtro da aba Disciplinas
   "compondo","rascunhoAnot"];                                   // e o que está sendo escrito
 function abaSalva(){
@@ -2345,13 +2482,13 @@ function render(){
                 : dias > 0 ? fogo+'<b>'+dias+'</b><span>'+(dias===1?"dia":"dias")+' para '+esc(nomeProx)+'</span>'+fogo
                 : dias === 0 ? fogo+'<b>hoje</b><span>é '+esc(nomeProx)+'</span>'+fogo
                 : '<b>'+(-dias)+'</b><span>'+(dias===-1?"dia":"dias")+' desde '+esc(nomeProx)+'</span>';
-  const semanaHoje = new Date(D.hoje() + "T12:00").toLocaleDateString("pt-BR", { weekday: "long" });
-  $("#hojeTopo").innerHTML = 'Hoje é <b>' + esc(semanaHoje) + ', ' + D.brFull(D.hoje()) + '</b>';
   const chip = $("#chipData");
-  chip.innerHTML = objetivo() === "livre" ? 'Sem objetivo'
-                 : !dia ? esc(nomeObjetivo()) + ' · data a definir'
-                 : objetivo() === "vestibular" ? esc(nomeDoDia(dia)) + ' <b>' + D.brFull(dia.data) + '</b>'
-                 : 'Prova <b>' + D.brFull(dia.data) + '</b>';
+  const semanaHoje = new Date(D.hoje() + "T12:00").toLocaleDateString("pt-BR", { weekday: "long" });
+  chip.innerHTML = (objetivo() === "livre" ? '<span class="so">Sem objetivo</span>'
+                 : !dia ? '<span class="so">' + esc(nomeObjetivo()) + ' · data a definir</span>'
+                 : objetivo() === "vestibular" ? '<span>' + esc(nomeDoDia(dia)) + '</span><b>' + D.brFull(dia.data) + '</b>'
+                 : '<span>Prova</span><b>' + D.brFull(dia.data) + '</b>') +
+    '<span class="hoje-rot">Hoje</span><span class="hoje-data" title="' + esc(semanaHoje) + '">' + D.brFull(D.hoje()) + '</span>';
   chip.title = (semProva() ? "Revisões em intervalos crescentes, sem prazo"
                            : "Revisões agendadas até " + D.brFull(ultimoDiaRevisao())) +
                " · clique para escolher o objetivo e as datas";
@@ -2449,7 +2586,8 @@ function guardarRascunhoRegistro(){
     assuntos: ehTipoRevisao(tipo) ? (ctx ? ctx.assuntos.slice() : [])
             : lerAssuntosForm(f).filter(a => !!acharConteudo(disciplinaDoForm(f), a)),
     minutos: val("minutos"), questoes: val("questoes"), acertos: val("acertos"),
-    dificuldade: val("dificuldade") || 3, anotacoes: val("anotacoes")
+    // vazia continua vazia: redesenhar o formulário não escolhe a dificuldade por você
+    dificuldade: val("dificuldade") || null, anotacoes: val("anotacoes")
   };
 }
 
@@ -2462,11 +2600,11 @@ function formLancamento(l){
     '<p class="sub">As questões entram no conteúdo da sessão escolhida e contam no dia informado aqui — ' +
     'sem mexer no que a sessão registrou no dia dela.</p>' +
     '<div class="campos">' +
-      '<label class="campo largo"><span>Sessão *</span><select name="registroId" required>' +
+      '<div class="campo largo"><span id="rotSessaoLanc">Sessão *</span><select name="registroId" aria-labelledby="rotSessaoLanc" required>' +
         (alvo && regs.some(r => r.id === alvo) ? "" : '<option value="">Escolha a sessão…</option>') +
         regs.map(r => '<option value="'+esc(r.id)+'"'+(r.id === alvo ? " selected" : "")+'>' +
                       D.br(r.data) + ' · ' + esc(r.disciplina) + ' · ' + esc(rotuloAssuntos(r)) + '</option>').join("") +
-      '</select></label>' +
+      '</select></div>' +
       campo("Data das questões *", '<input type="date" name="data" value="'+(l ? l.data : D.hoje())+'" max="'+D.hoje()+'" required>') +
       campo("Questões feitas *", '<input type="number" name="questoes" min="1" max="999" value="'+(l ? l.questoes : "")+'" placeholder="20" required>') +
       campo("Acertos", '<input type="number" name="acertos" min="0" max="999" value="'+(l && l.acertos != null ? l.acertos : "")+'" placeholder="14">') +
@@ -2539,11 +2677,14 @@ function sincronizarTelaForm(){
 function redesenharTelaForm(){ telaForm = null; render(); }
 
 /* ---------- componentes reutilizados ---------- */
-/** Dificuldade percebida: quanto maior, mais revisões o assunto recebe. */
+/** Dificuldade percebida: quanto maior, mais revisões o assunto recebe.
+    OBRIGATÓRIA e sem padrão numa sessão nova (valor vazio): é dela que saem a
+    retomada e a escada, então quem decide é você — nada de "médio" por inércia. */
 function seletorDificuldade(valor){
-  const v = tresNiveis(valor);
-  return '<select name="dificuldade" class="sel-dificuldade">' +
-    [1,2,3].map(n => '<option value="'+n+'"'+(v === n ? " selected" : "")+'>' +
+  const v = valor ? tresNiveis(valor) : 0;
+  return '<select name="dificuldade" class="sel-dificuldade" required>' +
+    (v ? '' : '<option value="" selected disabled>Escolha a dificuldade…</option>') +
+    [3,2,1].map(n => '<option value="'+n+'"'+(v === n ? " selected" : "")+'>' +
       esc(CONFIG.DIFICULDADES[n].nome) + '</option>').join("") + '</select>';
 }
 function badgeDificuldade(valor){
@@ -2686,15 +2827,98 @@ function telaHoje(){
            (ui.verTodasProximas ? "− mostrar menos" : "+ ver todas as " + proximas.length) + '</button>'
          : '') + '</div>';
 
-  h += '<div class="card"><h2>Para lembrar</h2>' +
-       '<details class="ajuda"><summary>Por que revisar resolvendo questões?</summary>' +
-       '<p>Recordação ativa: buscar a informação na memória fixa muito mais do que reler. ' +
-       'O registro de questões e acertos existe justamente para medir isso.</p></details>' +
-       '<p class="sub" style="margin-top:14px">💡 ' + esc(CONFIG.DICAS[ui.dicaIdx]) + '</p>' +
-       '<button class="btn mini ghost" data-acao="outra-dica">outra dica</button></div>';
+  h += cardFaltaEstudar();
   h += '</div>';
   return h;
 }
+/* FALTA ESTUDAR — o mural de lembrete (pedido do Pedro, 23/09). É uma lista
+   que VOCÊ monta, escolhendo entre os conteúdos do cadastro (os mesmos das
+   sessões) — nada se digita aqui. Só entra conteúdo sem sessão nenhuma, e
+   registrada a primeira sessão dele, ele sai daqui sozinho (ver aEstudar). A
+   ficha guarda `mural` (está no mural) e `prioridade` (a ordem): arrastar pela
+   alça ⠿ (ou ↑ ↓ no teclado) regrava a prioridade; o ✕ tira do mural sem
+   apagar o conteúdo. */
+function filaAEstudar(){
+  return conteudosCad().filter(c => c.mural && aEstudar(c)).slice().sort((a,b) =>
+    ((a.prioridade ?? Infinity) - (b.prioridade ?? Infinity)) || ((a.criadoEm || 0) - (b.criadoEm || 0)) ||
+    a.disciplina.localeCompare(b.disciplina, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
+}
+const fichaPorChave = k => conteudosCad().find(c => chaveDaFicha(c) === k) || null;
+function cardFaltaEstudar(){
+  const fila = filaAEstudar();
+  const vis = ui.verTodoMural ? fila : fila.slice(0, CONFIG.MURAL_VISIVEIS);
+  return '<div class="card"><h2>Falta estudar' +
+      (fila.length ? '<span class="dica">' + fila.length + (fila.length === 1 ? " conteúdo" : " conteúdos") +
+                     ' · arraste para priorizar</span>' : '') + '</h2>' +
+    '<button class="btn-add" data-acao="novo-afazer"><span class="mais">+</span> Adicionar conteúdos a estudar' +
+      '<span class="pista">escolha entre os cadastrados</span></button>' +
+    (fila.length
+      ? '<div class="mural-lista">' + vis.map(c =>
+          '<div class="mural-item" data-afazer="' + esc(chaveDaFicha(c)) + '">' +
+            '<button class="act arrasta" data-acao="mover-afazer" data-id="' + esc(chaveDaFicha(c)) + '" ' +
+              'title="Arraste para mudar a prioridade — ou use as setas ↑ ↓" aria-label="Mover ' + esc(c.nome) + ' na fila">⠿</button>' +
+            '<span class="mural-nome"><b>' + esc(c.nome) + '</b><span class="badge">' + esc(c.disciplina) + '</span></span>' +
+            '<span class="spacer"></span>' +
+            '<button class="act atalho" data-acao="estudar-afazer" data-chave="' + esc(chaveDaFicha(c)) + '" ' +
+              'title="Abrir uma sessão deste conteúdo">▶ estudar</button>' +
+            '<button class="act excluir" data-acao="tirar-afazer" data-chave="' + esc(chaveDaFicha(c)) + '" ' +
+              'title="Tirar do mural (o conteúdo continua cadastrado)" aria-label="Tirar ' + esc(c.nome) + ' do mural">✕</button>' +
+          '</div>').join("") + '</div>' +
+        (fila.length > CONFIG.MURAL_VISIVEIS
+          ? '<button class="act ver-mais" data-acao="toggle-mural">' +
+            (ui.verTodoMural ? "− mostrar menos" : "+ ver todos os " + fila.length) + '</button>' : '')
+      : '<div class="vazio"><strong>Nada na fila</strong>Escolha, entre os conteúdos cadastrados, o que falta ' +
+        'estudar — cada um sai sozinho daqui na primeira sessão.</div>') +
+    '</div>';
+}
+/* ESCOLHER O QUE ENTRA NO MURAL. Os conteúdos do cadastro que ainda não têm
+   sessão e não estão no mural, agrupados por disciplina, em caixas de marcar.
+   Conteúdo novo se cria onde sempre se criou: aba Disciplinas ou a sessão. */
+function modalMural(){
+  const livres = conteudosCad().filter(c => aEstudar(c) && !c.mural)
+    .sort((a,b) => a.disciplina.localeCompare(b.disciplina, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
+  const discs = [...new Set(livres.map(c => c.disciplina))];
+  abrirModal("Adicionar ao mural",
+    livres.length
+      ? '<form id="formMural"><p class="sub" style="margin-top:0">Conteúdos cadastrados que ainda não têm sessão. ' +
+          'Marque os que falta estudar.</p>' +
+        discs.map(d => '<div class="campo largo" style="margin-top:10px"><span>' + esc(d) + '</span><div class="opcoes">' +
+          livres.filter(c => c.disciplina === d).map(c =>
+            '<label class="opcao"><input type="checkbox" name="mural" value="' + esc(chaveDaFicha(c)) + '">' +
+            '<span>' + esc(c.nome) + '</span></label>').join("") + '</div></div>').join("") +
+        '<div class="linha acoes-form"><button class="btn" type="submit">Adicionar ao mural</button>' +
+        '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+        '<span class="erro-form" id="erroMural"></span></div></form>'
+      : '<div class="vazio"><strong>Nenhum conteúdo para escolher</strong>Todos os conteúdos cadastrados já têm ' +
+        'sessão ou já estão no mural. Crie conteúdos novos na aba <b>Disciplinas</b>.</div>' +
+        '<div class="linha acoes-form"><button class="btn ghost" type="button" data-acao="abrir-conteudos">' +
+        'Ir para a aba Disciplinas</button></div>',
+    () => { const f = $("#formMural"); if (!f) return;
+      f.addEventListener("submit", ev => {
+        ev.preventDefault();
+        const escolhidas = new FormData(f).getAll("mural").map(fichaPorChave).filter(Boolean);
+        if (!escolhidas.length){ $("#erroMural").textContent = "Marque pelo menos um conteúdo."; return; }
+        // entram no fim da fila, na ordem da lista
+        let proxima = filaAEstudar().reduce((m, c) => Math.max(m, c.prioridade ?? -1), -1) + 1;
+        escolhidas.forEach(c => { c.mural = true; c.prioridade = proxima++; });
+        persistir(); fecharModal(); render();
+        toast(escolhidas.length + (escolhidas.length === 1 ? " conteúdo no mural." : " conteúdos no mural."));
+      }); });
+}
+/** grava a prioridade na ordem da tela; quem está escondido atrás do "+" vem depois */
+function gravarOrdemMural(lista){
+  if (!lista) return false;
+  const naTela = [...lista.querySelectorAll("[data-afazer]")].map(el => el.dataset.afazer);
+  const resto = filaAEstudar().map(chaveDaFicha).filter(k => !naTela.includes(k));
+  let mudou = false;
+  naTela.concat(resto).forEach((k, i) => {
+    const c = fichaPorChave(k);
+    if (c && c.prioridade !== i){ c.prioridade = i; mudou = true; }
+  });
+  if (mudou) persistir();
+  return mudou;
+}
+
 /* O que já foi registrado hoje, só para conferência — a edição continua sendo
    na aba Sessões, que é onde as horas de fato moram. */
 function blocoRegistrosDeHoje(){
@@ -2779,9 +3003,9 @@ function blocoCronometro(){
       '<select id="cronoDestino" name="destino">' + opcoes + '</select></div>' +
     // o botão fica sempre clicável: sem destino ele EXPLICA o que falta, em vez
     // de não fazer nada — botão morto parece defeito
-    '<label class="campo"><span>&nbsp;</span><button class="btn" type="submit"' +
+    '<div class="campo"><span>&nbsp;</span><button class="btn" type="submit"' +
       (destino ? "" : ' title="Escolha para onde o tempo vai antes de iniciar"') +
-      '>▶ Iniciar</button></label>' +
+      '>▶ Iniciar</button></div>' +
     (alvo
       ? '<div class="campo largo"><div class="faixa-edicao" style="margin:0;flex-direction:column;align-items:flex-start">' +
           '<span>⏱ vai somar em <b>' + esc(alvo.rotulo) + '</b> · ' + esc(alvo.disciplina) + ' · ' + esc(alvo.detalhe) + '</span>' +
@@ -2922,7 +3146,7 @@ function finalizarCrono(dividir){
   // --- nova sessão: abre o registro pré-preenchido
   ui.prefill = {
     data: bloco.data, disciplina: c.disciplina, assuntos: c.assunto ? [c.assunto] : [],
-    minutos, questoes: "", acertos: "", dificuldade: 2,
+    minutos, questoes: "", acertos: "", dificuldade: null,
     inicio: bloco.inicio, fim: bloco.fim,
     anotacoes: "Sessão cronometrada: " + bloco.inicio + " → " + bloco.fim +
                (bloco.viradas ? " do dia seguinte" : "") + " (" + hhmm(minutos) + ").",
@@ -3068,7 +3292,7 @@ function formRegistroHtml(){
   const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   const pre = !ed && ui.prefill ? ui.prefill : null;
   let base = ed || pre || { data: D.hoje(), disciplina:"", assuntos:[], minutos:"", questoes:"", acertos:"",
-                            dificuldade: NIVEL_PADRAO, anotacoes:"" };
+                            dificuldade: null, anotacoes:"" };      // a dificuldade é você quem escolhe
   // veio da agenda para uma sessão que já existia: ela passa a cumprir aquele item
   if (ed && ui.ligarRevisao){
     const daAgenda = acharRevisao(ui.ligarRevisao);
@@ -3092,7 +3316,10 @@ function formRegistroHtml(){
     h += '<div class="faixa-edicao">✎ Editando <b>'+esc(rotuloAssuntos(ed))+'</b> · '+esc(ed.disciplina)+' · '+D.brFull(ed.data)+'</div>' +
          infoDaSessao(ed);
   } else {
-    h += '<p class="sub">Ao salvar, o sistema agenda automaticamente as revisões ' + rotuloPrazo() + '.</p>';
+    h += agendaAutomatica()
+      ? '<p class="sub">Ao salvar, o sistema agenda automaticamente as revisões ' + rotuloPrazo() + '.</p>'
+      : '<p class="sub">O agendamento automático está desligado: as datas da agenda são as que você marca ' +
+        '(aba Agenda, <b>+ Adicionar revisão</b>).</p>';
     if (pre) h += '<div class="faixa-edicao">⏱ Sessão cronometrada: <b>'+hhmm(pre.minutos)+'</b> ('+esc(pre.inicio)+' → '+esc(pre.fim)+
       '). Complete as questões e o domínio para salvar.<span class="spacer"></span>' +
       '<button class="btn mini ghost" type="button" data-acao="descartar-prefill">Descartar</button></div>';
@@ -3114,7 +3341,7 @@ function formRegistroHtml(){
       campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(v.minutos ?? "")+'" placeholder="60">') +
       campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+(v.questoes ?? "")+'" placeholder="20">') +
       campo("Acertos", '<input type="number" name="acertos" min="0" value="'+(v.acertos ?? "")+'" placeholder="14">') +
-      campo("Dificuldade do assunto", seletorDificuldade(dificuldadeDe(v))) +
+      campo("Dificuldade do assunto *", seletorDificuldade(ed || v.dificuldade ? dificuldadeDe(v) : null)) +
       (eRevisao ? "" : campoIntegracao(v)) +
       campo("Descrição", '<textarea name="anotacoes" placeholder="O que ficou confuso, o que revisar…">'+esc(v.anotacoes||"")+'</textarea>', true) +
     '</div><div class="linha acoes-form">' +
@@ -3150,8 +3377,8 @@ function telaHistorico(){
       [["data-desc","Data (mais recente)"],["data-asc","Data (mais antiga)"],
        ["dificuldade-desc","Mais difícil"],["tempo-desc","Mais tempo"]]
         .map(([k,n]) => '<option value="'+k+'"'+(ui.fOrdem===k?" selected":"")+'>'+n+'</option>').join("") + '</select>') +
-    '<label class="campo busca campo-busca"><span>Buscar</span><span class="lupa" aria-hidden="true">⌕</span>' +
-      '<input id="fBusca" type="search" value="'+esc(ui.fBusca)+'" placeholder="assunto ou descrição"></label>' +
+    '<div class="campo busca campo-busca"><span id="rotBusca">Buscar</span><span class="lupa" aria-hidden="true">⌕</span>' +
+      '<input id="fBusca" type="search" aria-labelledby="rotBusca" value="'+esc(ui.fBusca)+'" placeholder="assunto ou descrição"></div>' +
     '</div>' +
     (filtrando ? '<div class="filtros-acoes"><span class="marca-filtro">filtro ativo</span>' +
       '<span class="spacer"></span><button class="btn mini ghost" data-acao="limpar-filtros-reg">limpar filtros</button></div>' : '') +
@@ -3278,6 +3505,10 @@ function ligarSeletoresDisciplina(){
          formulário (guardando o que já estava digitado) para o campo de
          conteúdo passar a mostrar só o que é daquela disciplina. */
       if (!criar && sel.closest("#formRegistro")){ guardarRascunhoRegistro(); redesenharTelaForm(); }
+      /* No formulário de revisão (tela sobreposta) basta trocar as opções do
+         seletor de conteúdo — sem redesenhar, as datas já marcadas ficam. */
+      const campo = sel.closest("#formRevisao") && document.getElementById("campoAssunto");
+      if (!criar && campo) campo.innerHTML = opcoesDeConteudo(sel.value, lerAssuntosForm(sel.closest("form")));
     });
   });
 }
@@ -3292,9 +3523,17 @@ function lerDisciplina(form){
   return sel.value;
 }
 
+/* O CAMPO NÃO É <label>. Era, e o <label> ocupa a linha inteira: clicar no
+   branco ao lado de "Data da prova" abria o calendário. Agora só o controle
+   responde ao clique; o nome continua ligado a ele (aria-labelledby) para quem
+   usa leitor de tela. */
+let seqCampo = 0;
 function campo(rot, inner, largo, ajuda){
-  return '<label class="campo'+(largo?" largo":"")+'"><span>'+esc(rot)+'</span>'+inner+
-    (ajuda ? '<span class="ajuda-campo">'+esc(ajuda)+'</span>' : '') + '</label>';
+  const id = "rotCampo" + (++seqCampo);
+  const ligado = inner.replace(/<(input|select|textarea)\b(?![^>]*type="(?:hidden|checkbox|radio)")/,
+                               m => m + ' aria-labelledby="' + id + '"');
+  return '<div class="campo'+(largo?" largo":"")+'"><span id="'+id+'">'+esc(rot)+'</span>'+ligado+
+    (ajuda ? '<span class="ajuda-campo">'+esc(ajuda)+'</span>' : '') + '</div>';
 }
 /** Assuntos da sessão: vários, em etiquetas. A descrição continua sendo um campo só. */
 /* O TEXTO DA ETIQUETA NÃO SE DIGITA. Já se digitou: o nome mudava só NESTA
@@ -3372,8 +3611,8 @@ function htmlPainelRevisao(v, ed){
   const rev = atual ? acharRevisao(atual) : null;
   const ctx = rev ? contextoRevisao(rev) : null;
   return '<div class="painel-rev">' +
-    '<label class="campo"><span>Qual revisão esta sessão cumpre? *</span>' +
-      '<select name="revisaoAlvo" id="revisaoAlvo">' + opcoes + '</select></label>' +
+    '<div class="campo"><span id="rotRevisaoAlvo">Qual revisão esta sessão cumpre? *</span>' +
+      '<select name="revisaoAlvo" id="revisaoAlvo" aria-labelledby="rotRevisaoAlvo">' + opcoes + '</select></div>' +
     (lista.length ? '' : '<p class="sub" style="margin:8px 0 0">Não há revisão de hoje nem atrasada para cumprir. ' +
       'Agende uma na aba <b>Agenda</b> — ou registre isto como estudo.</p>') +
     (ctx ? '<p class="sub" style="margin:8px 0 0">O conteúdo vem da revisão: <b>'+esc(ctx.rotulo)+'</b> · ' +
@@ -3451,6 +3690,18 @@ function campoOpcoes(rot, itens){
     itens.map(o => '<label class="opcao"><input type="checkbox" name="'+o.nome+'"'+(o.marcado?" checked":"")+'>' +
                    '<span>'+esc(o.texto)+'</span></label>').join("") + '</div></div>';
 }
+/** as opções do seletor de conteúdo: os da disciplina que ainda não estão na lista */
+function opcoesDeConteudo(disc, lista){
+  const jaNa = a => (lista || []).some(x => x.toLowerCase() === a.nome.toLowerCase());
+  const opcoes = conteudosDaDisciplina(disc || "").filter(c => !jaNa(c))
+    .map(c => '<option value="'+esc(c.nome)+'">'+esc(c.nome) +
+              (c.fase === "concluido" ? " — concluído" : "") + '</option>').join("");
+  return '<option value="">' +
+      (opcoes ? "Escolha um conteúdo…"
+              : disc ? "Nenhum conteúdo cadastrado em " + esc(disc)
+                     : "Escolha a disciplina para ver os conteúdos") + '</option>' +
+    opcoes + '<option value="__novo">＋ Criar novo conteúdo</option>';
+}
 function camposAssuntos(lista, rotulo, dica, travado, disciplina){
   // dica === "" desliga a linha de ajuda; travado = o conteúdo vem da revisão
   const ajuda = dica === undefined
@@ -3467,22 +3718,10 @@ function camposAssuntos(lista, rotulo, dica, travado, disciplina){
      ligeiramente diferente — era assim que nasciam "LAI", "LAI " e "Lei de
      acesso", três fichas para a mesma coisa.                                */
   const disc = disciplina || "";
-  const doCadastro = conteudosDaDisciplina(disc);
-  const jaNa = a => lista.some(x => x.toLowerCase() === a.nome.toLowerCase());
-  const opcoes = doCadastro.filter(c => !jaNa(c))
-    .map(c => '<option value="'+esc(c.nome)+'">'+esc(c.nome) +
-              (c.fase === "concluido" ? " — concluído" : "") + '</option>').join("");
   return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos da sessão *")+'</span>' +
     '<div id="listaAssuntosForm" class="tags" style="margin-bottom:7px">' + lista.map(tagAssunto).join("") + '</div>' +
     '<div class="linha" style="gap:7px;flex-wrap:nowrap">' +
-      '<select id="campoAssunto" style="flex:1">' +
-        '<option value="">' +
-          (opcoes ? "Escolha um conteúdo…"
-                  : disc ? "Nenhum conteúdo cadastrado em " + esc(disc)
-                         : "Escolha a disciplina para ver os conteúdos") + '</option>' +
-        opcoes +
-        '<option value="__novo">＋ Criar novo conteúdo</option>' +
-      '</select>' +
+      '<select id="campoAssunto" style="flex:1">' + opcoesDeConteudo(disc, lista) + '</select>' +
       '<button class="btn mini ghost" type="button" data-acao="add-assunto">+ adicionar</button></div>' +
     '<input id="novoConteudoNome" class="nova-disciplina" hidden placeholder="Nome do novo conteúdo" style="margin-top:6px">' +
     (ajuda ? '<span style="font-size:11.5px;color:var(--muted);margin-top:4px">'+esc(ajuda)+'</span>' : '') +
@@ -3862,6 +4101,9 @@ function telaRevisoes(){
      (avulsa, marcada `manual`), não uma volta — voltas quem marca é a agenda,
      sozinha, enquanto o conteúdo está aberto. */
   h += '<button class="btn-add" data-acao="nova-revisao"><span class="mais">+</span> Adicionar revisão</button>';
+  if (!agendaAutomatica())
+    h += '<p class="sub" style="margin:-6px 0 14px">Agendamento automático <b>desligado</b>: a agenda é a sua rotina. ' +
+         'No <b>+ Adicionar revisão</b> dá para marcar várias datas de uma vez. Para religar, use a <b>engrenagem</b> no topo.</p>';
 
   /* O que é para hoje vem logo depois, igual à aba Hoje: quem abre esta aba
      quer saber o que fazer agora. O card é FIXO — não obedece aos filtros de
@@ -3903,19 +4145,28 @@ function telaRevisoes(){
      Organizar — três visões da mesma agenda. Por dia é o padrão porque é a pergunta
        que a pessoa traz ("o que faço agora?"); por assunto serve para olhar um
        conteúdo inteiro; o mês é a visão de longe.
-     Assunto — só na visão por assunto: reduz a agenda a um conteúdo. */
+     Disciplina e Conteúdo — nas três visões: primeiro a disciplina, depois o
+       conteúdo dela (sem disciplina, o conteúdo lista todos, com a disciplina
+       ao lado). O ✕ limpa os dois. O card "Agenda de hoje" não obedece. */
   const fase = ui.faseAgenda === "concluidos" ? "concluidos" : "abertos";
-  const naFaseTudo = fatiaAgenda(det, fase);
-  const naFase = fase === "abertos" ? agendaVisivel(naFaseTudo) : naFaseTudo;
   const nPorFazer = det.filter(x => !jaPassou(x)).length;
   const visao = ["dia","assunto","mes"].indexOf(ui.visaoAgenda) >= 0 ? ui.visaoAgenda : "dia";
   // as opções saem da agenda inteira, não da sub-aba: trocar de "Situação" não apaga a escolha
-  const opcoesAssunto = new Map();
+  const discsAgenda = [...new Set(det.map(x => x.ctx.disciplina))].sort((a,b) => a.localeCompare(b, "pt-BR"));
+  const filtroDisc = discsAgenda.includes(ui.aDisciplina) ? ui.aDisciplina : "";
+  const opcoesConteudo = new Map();
   det.forEach(x => {
-    const k = chaveCard(x.rev);
-    if (!opcoesAssunto.has(k)) opcoesAssunto.set(k, { rotulo: x.ctx.rotulo, disciplina: x.ctx.disciplina });
+    if (filtroDisc && x.ctx.disciplina !== filtroDisc) return;
+    (x.ctx.assuntos || []).forEach(a => {
+      const k = chaveAssunto(x.ctx.disciplina, a);
+      if (!opcoesConteudo.has(k)) opcoesConteudo.set(k, { nome: a, disciplina: x.ctx.disciplina });
+    });
   });
-  const filtroAssunto = opcoesAssunto.has(ui.aAssunto) ? ui.aAssunto : "";
+  const filtroAssunto = opcoesConteudo.has(ui.aAssunto) ? ui.aAssunto : "";
+  const passaFiltro = x => (!filtroDisc || x.ctx.disciplina === filtroDisc) &&
+    (!filtroAssunto || (x.ctx.assuntos || []).some(a => chaveAssunto(x.ctx.disciplina, a) === filtroAssunto));
+  const naFaseTudo = fatiaAgenda(det, fase).filter(passaFiltro);
+  const naFase = fase === "abertos" ? agendaVisivel(naFaseTudo) : naFaseTudo;
   h += '<div class="card filtros-agenda barra-filtro" style="padding:11px 13px;margin-bottom:14px">' +
     '<div class="linha"><span class="hl-tema">Situação:</span>' +
     [["abertos","A fazer",nPorFazer],["concluidos","Concluídos",det.length - nPorFazer]].map(([k,rot,n]) =>
@@ -3927,15 +4178,21 @@ function telaRevisoes(){
       '<button class="aba" data-acao="visao-agenda" data-visao="'+k+'" aria-selected="'+(visao===k)+'">' +
       rot + '</button>').join("") +
     '</div>' +
-    (visao === "assunto"
-      ? '<div class="linha"><label class="hl-tema" for="aAssunto">Assunto:</label>' +
-        '<select id="aAssunto"><option value="">Todos os assuntos</option>' +
-        [...opcoesAssunto.entries()]
-          .sort((a,b) => a[1].rotulo.localeCompare(b[1].rotulo, "pt-BR", { sensitivity: "base" }))
-          .map(([k,o]) => '<option value="'+esc(k)+'"'+(filtroAssunto === k ? " selected" : "")+'>' +
-                          esc(o.rotulo + " · " + o.disciplina) + '</option>').join("") +
-        '</select></div>'
-      : '') +
+    '<div class="linha"><span class="hl-tema" id="rotADisc">Disciplina:</span>' +
+      '<select id="aDisciplina" aria-labelledby="rotADisc"><option value="">Todas as disciplinas</option>' +
+      discsAgenda.map(d => '<option value="'+esc(d)+'"'+(filtroDisc === d ? " selected" : "")+'>'+esc(d)+'</option>').join("") +
+      '</select></div>' +
+    '<div class="linha"><span class="hl-tema" id="rotAAssunto">Conteúdo:</span>' +
+      '<select id="aAssunto" aria-labelledby="rotAAssunto"><option value="">Todos os conteúdos</option>' +
+      [...opcoesConteudo.entries()]
+        .sort((a,b) => a[1].nome.localeCompare(b[1].nome, "pt-BR", { sensitivity: "base" }))
+        .map(([k,o]) => '<option value="'+esc(k)+'"'+(filtroAssunto === k ? " selected" : "")+'>' +
+                        esc(o.nome + (filtroDisc ? "" : " · " + o.disciplina)) + '</option>').join("") +
+      '</select>' +
+      (filtroDisc || filtroAssunto
+        ? '<button class="act atalho" type="button" data-acao="limpar-filtros-agenda" title="Tirar os filtros de disciplina e conteúdo">✕ limpar</button>'
+        : '') +
+    '</div>' +
     (fase === "abertos"
       /* O rótulo diz "Revisões" porque é nelas que a escolha pesa: a retomada é
          sempre uma por conteúdo — a próxima —, então só a escada se expande. */
@@ -3955,17 +4212,16 @@ function telaRevisoes(){
   const grupos = new Map();
   naFase.forEach(x => {
     const k = chaveCard(x.rev);
-    if (filtroAssunto && k !== filtroAssunto) return;
     if (!grupos.has(k)) grupos.set(k, { chave: k, disciplina: x.ctx.disciplina, assunto: x.ctx.rotulo,
                                         sub: x.ctx.sub,
                                         primeiro: x.ctx.assuntos[0] || "", ctx: x.ctx, itens: [] });
     grupos.get(k).itens.push(x);
   });
 
-  if (!grupos.size && filtroAssunto){
+  if (!grupos.size && (filtroDisc || filtroAssunto)){
     return h + '<div class="vazio"><strong>' +
-      (fase === "concluidos" ? "Nada concluído deste assunto em dias anteriores" : "Nada a fazer neste assunto") +
-      '</strong>Troque o assunto no filtro acima, ou volte para “Todos os assuntos”.</div>' + ajudaCronograma();
+      (fase === "concluidos" ? "Nada concluído com este filtro em dias anteriores" : "Nada a fazer com este filtro") +
+      '</strong>Troque a disciplina ou o conteúdo no filtro acima, ou use <b>✕ limpar</b>.</div>' + ajudaCronograma();
   }
   if (!grupos.size){
     return h + (fase === "concluidos"
@@ -4230,7 +4486,8 @@ function formRevisao(rev){
     (rev && rev.registroId
       ? '<div class="linha" style="margin-bottom:10px"><span class="badge">ligada a uma sessão de estudo</span></div>' : '') +
     '<div class="campos">' +
-      campo("Data " + t.doItem + " *", '<input type="date" name="data" value="'+(rev ? rev.data : D.hoje())+'" required>') +
+      (novo ? campoDatasEmCadeia()
+            : campo("Data " + t.doItem + " *", '<input type="date" name="data" value="'+rev.data+'" required>')) +
       campo("Nome " + t.doItem + " (opcional)",
             '<input name="rotulo" maxlength="60" value="'+esc(rev && rev.rotulo ? rev.rotulo : "")+'" ' +
             'placeholder="'+esc(volta ? t.nomePadrao : rev ? "Revisão " + (ordemVisivel(rev) || 1) : "Revisão 1")+'" autocomplete="off">',
@@ -4251,6 +4508,55 @@ function formRevisao(rev){
 }
 
 
+/* CRIAÇÃO EM CADEIA. Quem monta a própria rotina (ou traz uma de fora) marca
+   várias datas de uma vez para o mesmo conteúdo, e cada data vira um card.
+   As datas ficam em etiquetas (inputs escondidos "datas"); a caixa de data
+   também vale sozinha — sem etiqueta nenhuma, é um card só, como sempre foi.
+   Dois atalhos geram as etiquetas a partir da data da caixa: "a cada N dias,
+   K vezes" e a escada padrão. */
+function campoDatasEmCadeia(){
+  return '<div class="campo largo"><span>Datas *</span>' +
+    '<div class="linha" style="gap:7px;flex-wrap:wrap">' +
+      '<input type="date" name="data" id="dataRevisao" value="'+D.hoje()+'" style="flex:0 1 190px">' +
+      '<button class="act" type="button" data-acao="add-data-rev">+ adicionar esta data</button>' +
+    '</div>' +
+    '<div id="datasRevisao" class="tags" style="margin-top:7px"></div>' +
+    '<div class="linha" style="gap:7px;flex-wrap:wrap;margin-top:7px">' +
+      '<span class="ajuda-campo" style="margin:0">A partir da data:</span>' +
+      '<span class="ajuda-campo" style="margin:0">a cada</span>' +
+      '<input type="number" id="cadeiaCada" min="1" max="90" value="7" style="width:62px">' +
+      '<span class="ajuda-campo" style="margin:0">dias,</span>' +
+      '<input type="number" id="cadeiaVezes" min="1" max="30" value="4" style="width:62px">' +
+      '<span class="ajuda-campo" style="margin:0">vezes</span>' +
+      '<button class="act" type="button" data-acao="gerar-datas-rev">gerar</button>' +
+      '<button class="act" type="button" data-acao="escada-datas-rev" title="Revisões em intervalos crescentes">escada D+' +
+        CONFIG.INTERVALOS_LIVRES.slice(0, 5).join(", ") + '</button>' +
+    '</div>' +
+    '<span class="ajuda-campo">Uma data só? Basta a caixa. Várias? Cada etiqueta vira um card, todos com o mesmo conteúdo.</span></div>';
+}
+/** põe uma data na lista de etiquetas (sem repetir), em ordem */
+function adicionarDataCadeia(data){
+  const box = document.getElementById("datasRevisao");
+  if (!box || !data) return;
+  const atuais = [...box.querySelectorAll('input[name="datas"]')].map(i => i.value);
+  if (atuais.includes(data)) return;
+  atuais.push(data); atuais.sort();
+  box.innerHTML = atuais.map(dt => '<span class="tag" data-data="'+dt+'">' + esc(D.semana(dt)) + ', ' + D.br(dt) +
+    '<input type="hidden" name="datas" value="'+dt+'">' +
+    '<button type="button" data-acao="tirar-data-rev" aria-label="Tirar esta data">✕</button></span>').join("");
+}
+function gerarDatasCadeia(escada){
+  const base = (document.getElementById("dataRevisao") || {}).value || D.hoje();
+  const offs = escada
+    ? CONFIG.INTERVALOS_LIVRES.slice(0, 5)
+    : (() => {
+        const cada = Math.max(1, Math.min(90, Number((document.getElementById("cadeiaCada") || {}).value) || 7));
+        const vezes = Math.max(1, Math.min(30, Number((document.getElementById("cadeiaVezes") || {}).value) || 4));
+        return Array.from({ length: vezes }, (_, i) => i * cada);
+      })();
+  offs.forEach(o => adicionarDataCadeia(D.soma(base, o)));
+}
+
 function enviarRevisao(ev){
   ev.preventDefault();
   const f = ev.target, d = Object.fromEntries(new FormData(f).entries());
@@ -4259,26 +4565,47 @@ function enviarRevisao(ev){
   const listaAssuntos = lerAssuntosForm(f);
   const disciplina = lerDisciplina(f);
   const tf = termosDoItem(f.dataset.id ? acharRevisao(f.dataset.id) : null);   // "revisão" ou "retomada"
-  if (!d.data){ aviso.textContent = "Informe a data " + tf.doItem + "."; return; }
+  // em cadeia: as etiquetas mandam; sem etiqueta, vale a caixa de data
+  const datas = f.dataset.id ? [d.data].filter(Boolean)
+              : (() => { const l = new FormData(f).getAll("datas").filter(Boolean);
+                         return l.length ? [...new Set(l)].sort() : [d.data].filter(Boolean); })();
+  if (!datas.length){ aviso.textContent = "Informe a data " + tf.doItem + "."; return; }
   if (!disciplina){ aviso.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
   if (!listaAssuntos.length){ aviso.textContent = "Adicione ao menos um assunto."; return; }
-
-  /* A única trava é o próprio dia de prova. Depois da prova vale marcar
-     normalmente: as revisões seguem, e parar é escolha sua. */
-  if (d.data >= D.hoje() && diaDeProva(d.data)){
-    aviso.textContent = "Esse dia é de prova (" + D.brFull(d.data) + ") — escolha outro para " + tf.esta + "."; return;
+  const deProva = datas.find(dt => dt >= D.hoje() && diaDeProva(dt));
+  if (deProva){
+    aviso.textContent = "Esse dia é de prova (" + D.brFull(deProva) + ") — escolha outro para " + tf.esta + "."; return;
   }
-
-  const rev = f.dataset.id ? acharRevisao(f.dataset.id) : { id: uid(), ordem: 0 };
+  if (datas.length > 1){
+    datas.forEach(dt => salvarRevisaoManual(null, dt, disciplina, listaAssuntos, d));
+    persistir();
+    ui.editandoRevisao = null; ui.prefRevisao = null;
+    render();
+    toast(datas.length + " revisões adicionadas (" + datas.map(D.br).join(", ") + ").");
+    return;
+  }
+  const rev = salvarRevisaoManual(f.dataset.id ? acharRevisao(f.dataset.id) : null, datas[0],
+                                  disciplina, listaAssuntos, d);
+  persistir();
+  ui.editandoRevisao = null; ui.prefRevisao = null;
+  render();
+  toast(f.dataset.id ? (ehRetomada(rev) ? "Retomada atualizada." : "Revisão atualizada.")
+                     : "Revisão adicionada.");
+}
+/* Grava UMA revisão marcada à mão (nova, com existente = null, ou editada).
+   A única trava de data — o dia de prova — é conferida antes, em enviarRevisao.
+   Depois da prova vale marcar normalmente: as revisões seguem. */
+function salvarRevisaoManual(existente, data, disciplina, listaAssuntos, d){
+  const rev = existente || { id: uid(), ordem: 0 };
   // casa com uma sessão de estudo que tenha exatamente estes assuntos; senão, fica avulsa
   const chave = chaveConteudos(disciplina, listaAssuntos);
   const reg = db.registros.find(r => chaveSessao(r) === chave);
 
-  const dataAntes = f.dataset.id ? rev.data : null;
+  const dataAntes = existente ? rev.data : null;
   rev.registroId = reg ? reg.id : null;
   if (reg){ delete rev.disciplina; delete rev.assuntos; }
-  else { rev.disciplina = disciplina; rev.assuntos = listaAssuntos; }
-  rev.data = d.data;
+  else { rev.disciplina = disciplina; rev.assuntos = listaAssuntos.slice(); }
+  rev.data = data;
   rev.rotulo = (d.rotulo || "").trim();       // vazio = volta a se chamar pela ordem
   rev.nota = (d.nota || "").trim();
   rev.manual = true;                       // não é reescrita pelo replanejamento automático
@@ -4286,7 +4613,7 @@ function enviarRevisao(ev){
   rev.minutos = null; rev.questoes = null; rev.acertos = null; rev.dificuldade = null;
   rev.feita = !!rev.sessaoId;
   rev.feitaEm = rev.sessaoId ? rev.feitaEm : null;
-  if (!f.dataset.id){
+  if (!existente){
     if (!rev.ordem){
       const irmas = db.revisoes.filter(r => reg ? r.registroId === reg.id
                                               : (!r.registroId && r.disciplina === disciplina));
@@ -4298,11 +4625,7 @@ function enviarRevisao(ev){
      seguintes andam a partir dela, cada uma mantendo a sua distância. */
   if (!ehRetomada(rev) && !rev.feita && rev.data !== dataAntes)
     contatoComConteudos(fichasDaRevisao(rev), rev.data, { exceto: rev.id, mesmoDia: true });
-  persistir();
-  ui.editandoRevisao = null; ui.prefRevisao = null;
-  render();
-  toast(f.dataset.id ? (ehRetomada(rev) ? "Retomada atualizada." : "Revisão atualizada.")
-                     : "Revisão adicionada.");
+  return rev;
 }
 
 /* ---------- TELA: APRENDIZADO COM QUESTÕES ----------
@@ -5139,7 +5462,7 @@ function calendario(regs, revs){
     const rv = revPorDia.get(data);
     const ponto = rv ? (rv.atrasada ? "var(--critico)" : rv.pendente ? "var(--accent-forte)" : "var(--bom)") : "";
     const titulo = D.extenso(data) + " — " + (min ? hhmm(min) : "sem estudo") +
-      (rv ? " · " + (rv.atrasada ? rv.atrasada + " atrasada(s)" : rv.pendente ? rv.pendente + " revisão(ões)" : rv.feita + " feita(s)") : "") +
+      (rv ? " · " + (rv.atrasada ? rv.atrasada + " atrasada(s)" : rv.pendente ? rv.pendente + " item(ns) na agenda" : rv.feita + " feito(s)") : "") +
       (prova ? " · PROVA" : "");
     celulas += '<button class="cal-dia' + (doMes ? "" : " fora") + (eHoje ? " hoje" : "") +
       (prova ? " prova" : "") + (sel ? " sel" : "") + '" data-acao="sel-dia" data-dia="' + data + '"' +
@@ -5412,8 +5735,8 @@ function enviarRegistro(ev){
       erro.textContent = "Esta sessão já tem revisão cumprida — não dá para transformá-la em revisão."; return;
     }
     const agendadas = db.revisoes.filter(r => r.registroId === anterior0.id).length;
-    if (agendadas && !confirm("Transformar em revisão apaga as " + agendadas +
-        " revisão(ões) que esta sessão tinha agendado. Continuar?")) return;
+    if (agendadas && !confirm("Transformar em revisão apaga os " + agendadas +
+        " item(ns) que esta sessão tinha na agenda. Continuar?")) return;
   }
   if (revAlvo){                     // uma revisão vale por uma sessão só
     const dono = sessaoDaRevisao(revAlvo);
@@ -5422,6 +5745,13 @@ function enviarRegistro(ev){
     }
   }
   if (acertos > questoes){ erro.textContent = "Acertos não podem passar do total de questões."; return; }
+  if (!["1","2","3"].includes(String(dado.dificuldade || ""))){
+    erro.textContent = "Escolha a dificuldade do assunto: difícil, média ou fácil.";
+    const sel = f.querySelector('[name="dificuldade"]');
+    if (sel){ sel.classList.add("campo-errado"); sel.focus();
+              sel.addEventListener("change", () => sel.classList.remove("campo-errado"), { once: true }); }
+    return;
+  }
   if (!dado.data){ erro.textContent = "Informe a data do estudo."; return; }
   if (num(dado.minutos) > 0 && ehFuturo(dado.data)){
     erro.textContent = "Data futura (" + D.brFull(dado.data) + ") não pode receber tempo de estudo — registre o tempo no dia em que estudar.";
@@ -5480,17 +5810,29 @@ function enviarRegistro(ev){
   garantirAgenda();              // aberto sem volta ou fechado sem escada: não fica
   persistir();
   ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; ui.ligarRevisao = "";
-  const n = db.revisoes.filter(r => r.registroId === reg.id && !r.feita).length;
+  const resumo = resumoDaAgenda(salvo);
   render();
-  /* A mensagem conta o que ACONTECEU, não quantas revisões a sessão tem. Antes
-     dizia "N revisão(ões) agendada(s)" em todo salvamento — inclusive quando
-     você só corrigiu a descrição e nada foi agendado —, e dava a impressão de
-     que o cronograma tinha sido refeito. */
-  toast(!anterior ? (n ? n + " revisão(ões) agendada(s) até " + D.brFull(limiteDe(reg))
-                       : "Sessão registrada — sem tempo hábil para novas revisões.")
-      : !planoMudou ? "Alterações salvas — o cronograma continua o mesmo."
-      : n ? "Alterações salvas · cronograma refeito: " + n + " revisão(ões) até " + D.brFull(limiteDe(reg))
-          : "Alterações salvas — esta sessão ficou sem revisões agendadas.");
+  /* A mensagem conta o que ACONTECEU, não quantas revisões a sessão tem — e diz
+     o que existe de verdade para os conteúdos dela: conteúdo em andamento tem a
+     próxima RETOMADA; concluído tem a escada de REVISÕES. Antes chamava tudo de
+     "revisão" e mostrava o horizonte ("até dd/mm"), o que num conteúdo em
+     andamento dava a impressão de uma escada que não existe. */
+  const semAuto = !agendaAutomatica() ? " — o agendamento automático está desligado." : ".";
+  toast(!anterior ? "Sessão registrada" + (resumo ? " · " + resumo + "." : semAuto)
+      : !planoMudou ? "Alterações salvas — a agenda continua a mesma."
+      : "Alterações salvas · agenda atualizada" + (resumo ? ": " + resumo + "." : semAuto));
+}
+/** o que a agenda tem para os conteúdos da sessão: a próxima retomada e as revisões */
+function resumoDaAgenda(reg){
+  const fichas = conteudosDoAlvo(reg);
+  const pend = db.revisoes.filter(r => !r.feita && fichas.some(f => falaDe(r, chaveDaFicha(f)))).sort(porData);
+  const voltas = pend.filter(ehRetomada), revs = pend.filter(r => !ehRetomada(r));
+  const quando = dt => D.semana(dt) + ", " + D.br(dt);
+  const partes = [];
+  if (voltas.length) partes.push("próxima retomada " + quando(voltas[0].data));
+  if (revs.length) partes.push(revs.length + (revs.length === 1 ? " revisão na agenda" : " revisões na agenda") +
+                               ", a próxima " + quando(revs[0].data));
+  return partes.join(" · ");
 }
 
 function abrirModal(titulo, html, apos, grande){
@@ -5567,7 +5909,7 @@ function registrarRevisao(rev){
      descrição, em vez de você reescrever ou perder o combinado. */
   ui.prefill = { data: D.hoje(), tipo: ehRetomada(rev) ? "estudo" : "revisao", revisaoId: rev.id,
                  disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
-                 dificuldade: 2, anotacoes: (rev.nota || "").trim() };
+                 dificuldade: null, anotacoes: (rev.nota || "").trim() };
   ui.aba = "registros"; ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
   redesenharTelaForm();
 }
@@ -5612,7 +5954,7 @@ function modalPosProva(){
           (vest
             ? '<p class="sub">Os novos dias se marcam nos ajustes — eles abrem ao confirmar.</p>'
             : campo("Data da nova prova", '<input type="date" name="novaProva" id="campoNovaProva" ' +
-                'min="' + D.soma(D.hoje(), 1) + '" max="' + D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS) + '">', true)) +
+                'min="' + D.soma(D.hoje(), 1) + '">', true)) +
         '</div></div>' +
       '</div>' +
     '</div>' +
@@ -5635,7 +5977,7 @@ function salvarPosProva(){
   /* Vestibular com outra prova: os dias novos (nome e data de cada um) se
      marcam nos ajustes. A pergunta segue pendente até lá — se os ajustes forem
      fechados sem data nova, ela volta, e é o certo: o ciclo não recomeçou. */
-  if (escolha === "outra" && objetivo() === "vestibular"){ fecharModal(); modalAjuda(); return; }
+  if (escolha === "outra" && objetivo() === "vestibular"){ fecharModal(); modalAjustes(); return; }
   if (escolha === "outra" && !nova){
     toast("Informe a data da nova prova."); return;
   }
@@ -5670,7 +6012,7 @@ function itensQueFicaramEmSilencio(){
    voltar a estudar com calma. Aqui elas são espalhadas: no máximo
    CONFIG.RETORNO_POR_DIA por dia, as mais difíceis primeiro. Quem anda leva a
    escada inteira junto, então os intervalos entre as revisões não mudam.
-   As retomadas não entram: já se espalham pela dificuldade (1, 2 ou 4 dias). */
+   As retomadas não entram: já se espalham pela dificuldade (diasDaVolta). */
 function espalharRetorno(guardados){
   const hoje = D.hoje(), limite = ultimoDiaRevisao();
   const porSessao = new Map();
@@ -5839,7 +6181,7 @@ function resolverLembrete(reg){
    caminhos que ninguém percebe — a última volta foi excluída à mão, um backup
    antigo veio com tudo feito, a fila esvaziou num replanejamento. Esta função
    varre os conteúdos abertos e devolve a volta que falta, com a mesma cadência
-   de sempre (1, 2 ou 4 dias conforme a dificuldade e a taxa), contada de hoje.
+   de sempre (diasDaVolta: dificuldade e tempo até a prova, ou o que você escolheu), contada de hoje.
    Não mexe em quem pediu para não ser lembrado: sessão marcada "sem revisão"
    ou com plano manual é escolha sua, e continua valendo.                     */
 /* UM CONTEÚDO ABERTO, UMA VOLTA SÓ. Esta é a invariante da agenda de conteúdo
@@ -6188,8 +6530,7 @@ function modalNovosConteudos(disc){
 function linhaDiaProva(d){
   return '<div class="linha dia-prova" data-id="' + esc(d.id) + '">' +
     '<input type="text" name="diaNome" maxlength="40" placeholder="Nome (ex.: 1º dia, 2ª fase)" value="' + esc(d.nome || "") + '">' +
-    '<input type="date" name="diaData" value="' + esc(d.data || "") + '" ' +
-      'max="' + D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS) + '">' +
+    '<input type="date" name="diaData" value="' + esc(d.data || "") + '">' +
     '<button type="button" class="act excluir" data-acao="tirar-dia-prova" title="Tirar este dia">✕</button></div>';
 }
 function camposObjetivo(){
@@ -6201,8 +6542,7 @@ function camposObjetivo(){
     '</div></div>' +
     '<div class="campo largo painel-questao' + (atual === "concurso" ? " aberto" : "") + '" id="painelConcurso">' +
       '<div class="interno"><div class="campos">' +
-        campo("Data da prova", '<input type="date" name="dataProva" id="campoDataProva" value="' + esc(db.dataProva || "") + '" ' +
-              'max="' + D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS) + '">', true,
+        campo("Data da prova", '<input type="date" name="dataProva" id="campoDataProva" value="' + esc(db.dataProva || "") + '">', true,
               "Sem data, o concurso fica como “data a definir” e a agenda segue sem prazo até ela entrar.") +
       '</div></div></div>' +
     '<div class="campo largo painel-questao' + (atual === "vestibular" ? " aberto" : "") + '" id="painelVestibular">' +
@@ -6226,14 +6566,13 @@ function ligarCamposObjetivo(){
 /* Lê e valida. Data nova precisa ser futura; a que já estava gravada pode ter
    passado (entre dois dias de prova, o primeiro já foi) e não trava o salvar. */
 function lerObjetivo(raiz){
-  const hoje = D.hoje(), maximo = D.soma(hoje, CONFIG.HORIZONTE_MAX_DIAS);
+  const hoje = D.hoje();
   const escolhido = (raiz.querySelector('[name="objetivo"]:checked') || {}).value || "livre";
   const saida = { objetivo: escolhido, dataProva: db.dataProva || "", dias: vestibular().dias, erro: "" };
   const nova = (data, antiga) => data && data !== antiga;
   if (escolhido === "concurso"){
     const d = (raiz.querySelector('[name="dataProva"]') || {}).value || "";
     if (nova(d, db.dataProva) && d <= hoje) saida.erro = "A data da prova precisa ser depois de hoje.";
-    else if (d > maximo) saida.erro = "A data da prova pode ser até um ano à frente.";
     saida.dataProva = d;
   }
   if (escolhido === "vestibular"){
@@ -6247,7 +6586,6 @@ function lerObjetivo(raiz){
       if (!data){ saida.erro = saida.erro || "Informe a data de “" + rotulo + "”."; return; }
       if (nova(data, antigo && antigo.data) && data <= hoje)
         saida.erro = saida.erro || "“" + rotulo + "” precisa ser depois de hoje.";
-      if (data > maximo) saida.erro = saida.erro || "“" + rotulo + "” pode ser até um ano à frente.";
       dias.push({ id: linha.dataset.id || uid(), nome: nome, data: data });
     });
     dias.sort((a,b) => a.data.localeCompare(b.data));
@@ -6307,42 +6645,232 @@ function modalObjetivo(){
     });
 }
 
-function modalAjuda(){
-  abrirModal("Ajuda e ajustes",
-    '<form id="formAjustes"><div class="campos">' +
+/* DESLIGAR O AUTOMÁTICO. O que o sistema tinha marcado e ainda está pendente
+   vira seu (manual: o replanejamento não reescreve) ou sai, conforme você
+   escolher. O que já foi feito é história e fica. */
+function desligarAgendaAutomatica(apagar){
+  if (apagar) db.revisoes = db.revisoes.filter(r => r.feita || r.manual);
+  else db.revisoes.forEach(r => { if (!r.feita && !r.manual) r.manual = true; });
+}
+/* AJUSTES E AJUDA SÃO DUAS TELAS. A engrenagem abre os ajustes (o que se muda);
+   o "?" abre a ajuda (como o cronograma é montado e por quê). */
+function modalAjustes(){
+  abrirModal("Ajustes",
+    '<form id="formAjustes"><div class="campos uma-coluna">' +
       camposObjetivo() +
+      campo("Meta diária (min)", '<input type="number" name="meta" min="15" max="960" value="'+db.metaDiariaMin+'">') +
       campo("Revisar até (opcional)",
             '<input type="date" name="revisarAte" value="'+esc(db.revisarAte||"")+'" ' +
-            'min="'+D.soma(D.hoje(), 1)+'" max="'+D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS)+'">',
-            false, "O teto do cronograma: o sistema agenda até esse dia e não passa dele. Até um ano à frente.") +
-      campo("Meta diária (min)", '<input type="number" name="meta" min="15" max="960" value="'+db.metaDiariaMin+'">') +
-      (agendamentoAtivo() ? "" : campoOpcoes("Agendamento", [{ nome:"religar", marcado:false,
-        texto:"Voltar a agendar revisões (está desligado desde a prova)" }])) +
-    '</div><p class="sub" style="margin-top:10px">' +
-      '<b>Horizonte atual:</b> ' + D.brFull(ultimoDiaRevisao()) + ' — o horizonte anda junto com o dia de hoje.<br>' +
-      '<b>Repetição espaçada</b> a partir do dia em que o conteúdo é concluído: D+' +
-      degrausDa(2).slice(1, 6).join(', D+') + '… (médio). Fácil: D+' + degrausDa(1).slice(1, 5).join(', D+') +
-      '… · Difícil: D+' + degrausDa(3).slice(1, 6).join(', D+') + '…<br>' +
-      'A prova não corta a escada: as revisões seguem depois dela.</p>' +
+            'min="'+D.soma(D.hoje(), 1)+'">',
+            true, "O teto do cronograma: o sistema agenda até esse dia e não passa dele. Sem limite; em branco, " +
+                  "ele anda " + CONFIG.HORIZONTE_LIVRE + " dias à frente de hoje.") +
+      campo("Tempo de estudo previsto (opcional)",
+            '<input type="date" name="estudoAte" id="campoEstudoAte" value="'+esc(db.estudoAte||"")+'" ' +
+              'min="'+D.soma(D.hoje(), 1)+'">' +
+            '<div class="linha" style="gap:7px;flex-wrap:wrap;margin-top:6px">' +
+              [[1,"+1 mês"],[3,"+3 meses"],[6,"+6 meses"],[12,"+1 ano"]].map(([m,rot]) =>
+                '<button class="act atalho" type="button" data-acao="estudo-previsto" data-meses="'+m+'">'+rot+'</button>').join("") +
+            '</div>',
+            true, "Até quando você pretende estudar. Ele decide o intervalo até voltar a cada conteúdo em " +
+                  "andamento. Em branco: vale a data da prova, se houver.") +
+      /* RETOMADA: quantos dias até voltar a um conteúdo em andamento, por
+         dificuldade. Em branco = o padrão, que muda com o tempo até a prova. */
+      '<div class="campo largo"><span>Retomada de conteúdo em andamento — dias até voltar</span>' +
+        '<div style="display:flex;flex-direction:column;gap:6px">' +
+        [3,2,1].map(n => '<div class="dias-volta"><span id="rotVolta' + n + '">' + esc(CONFIG.DIFICULDADES[n].nome) + '</span>' +
+          '<input type="number" name="volta' + n + '" aria-labelledby="rotVolta' + n + '" min="1" max="' + CONFIG.VOLTA_MAX_ESCOLHA + '" ' +
+          'value="' + esc(String((db.diasRetomada || {})[n] || "")) + '" placeholder="' + diasDaVoltaPadrao(n) + '">' +
+          '<span class="ajuda-campo" style="margin:0">dia(s)</span></div>').join("") +
+        '</div></div>' +
+      campoOpcoes("Agendamento", [{ nome:"automatico", marcado: agendaAutomatica(),
+        texto:"Criar os agendamentos automaticamente (revisões e retomadas)" }]
+        .concat(db.posProva === "encerrei" ? [{ nome:"religar", marcado:false,
+        texto:"Voltar a agendar revisões (está desligado desde a prova)" }] : [])) +
+      /* Desligando: o que já está na agenda. Manter é o padrão — nada some sem
+         você pedir; o que era automático passa a ser seu e não é mais mexido. */
+      (agendaAutomatica()
+        ? '<div class="campo largo painel-questao" id="painelAutomatico"><div class="interno">' +
+            '<span>O que já está na agenda</span><div class="opcoes">' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="manter" checked>' +
+              '<span>Manter — as revisões e retomadas automáticas passam a ser suas</span></label>' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="apagar">' +
+              '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+          '</div></div></div>'
+        : '') +
+    '</div>' +
     '<div class="linha" style="margin-top:12px"><button class="btn" type="submit">Salvar ajustes</button>' +
     '<span class="erro-form" id="erroAjustes"></span>' +
     '<button class="btn ghost" type="button" data-acao="abrir-conteudos">Ir para a aba Disciplinas</button>' +
-    '<span class="hl-tema">mudar o prazo reagenda todas as revisões pendentes</span></div></form>' +
-    '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
-    '<h3 style="font-size:14px;margin-bottom:6px">Metodologias aplicadas</h3>' +
-    '<ul style="font-size:13px;color:var(--text-2);padding-left:18px;line-height:1.7;margin:0">' +
-      '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes (D+' +
-        degrausDa(2).slice(1, 5).join(', D+') + '…); atraso ou revisão extra empurram as seguintes.</li>' +
-      '<li><b>Curva do esquecimento (Ebbinghaus)</b> — a primeira revisão vem cedo, quando o esquecimento é mais rápido.</li>' +
-      '<li><b>Recordação ativa</b> — toda revisão pede questões feitas e acertos; reler não conta.</li>' +
-      '<li><b>Sistema Leitner</b> — dificuldade alta = revisar antes e mais vezes; fácil = mais espaço entre as revisões.</li>' +
-      '<li><b>Prática intercalada</b> — a aba Progresso sugere alternar disciplinas em vez de blocos longos.</li>' +
-    '</ul>' +
-    '<p class="sub" style="margin-top:14px">Onde os dados são gravados: veja os dois chips no cabeçalho ' +
-    '(conta na nuvem e arquivo .json). Sem nenhum dos dois, eles ficam só neste navegador — e somem se ' +
-    'você limpar os dados de navegação.</p>',
-    () => {
+    '<span class="hl-tema"><a href="#" data-acao="abrir-ajuda">como o cronograma funciona</a></span></div></form>',
+    ligarAjustes);
+}
+/* AJUDA — o tutorial da plataforma (pedido do Pedro, 24/09): como usar, o que
+   cada aba faz e como elas se ligam. Seções que abrem e fecham, com um índice
+   no topo; a primeira já vem aberta. Os números que dependem dos seus ajustes
+   (dias da retomada, degraus da escada, horizonte) saem do cálculo de verdade,
+   então a ajuda nunca diz uma coisa e a agenda faz outra. */
+function modalAjuda(){
+  const dias = n => { const d = diasDaVolta(n); return d + (d === 1 ? " dia" : " dias"); };
+  const escada = n => "D+" + degrausDa(n).slice(1, 6).join(", D+") + "…";
+  const aba = nome => '<b class="aj-aba">' + esc(nome) + '</b>';
+  const sec = (id, n, titulo, corpo, aberta) =>
+    '<details class="tutorial" id="aj-' + id + '"' + (aberta ? " open" : "") + '>' +
+      '<summary><span class="aj-num">' + n + '</span>' + titulo + '</summary>' +
+      '<div class="aj-corpo">' + corpo + '</div></details>';
+  const secoes = [
+    ["comeco", "Comece por aqui",
+      '<p>A plataforma organiza o que você estuda e diz <b>quando voltar</b> a cada conteúdo. O caminho de um dia comum:</p>' +
+      '<ol class="aj-passos">' +
+        '<li><b>Diga para que estuda.</b> Na <b>engrenagem</b> do topo: objetivo (sem objetivo, concurso ou vestibular), ' +
+          'data da prova, meta diária e até quando pretende estudar.</li>' +
+        '<li><b>Cadastre o que vai estudar.</b> Na aba ' + aba("Disciplinas") + ': as disciplinas e os conteúdos de cada uma ' +
+          '(dá para colar a lista do edital, um por linha).</li>' +
+        '<li><b>Monte o mural.</b> Na aba ' + aba("Hoje") + ', o card <b>Falta estudar</b>: escolha os conteúdos que não ' +
+          'podem ser esquecidos e arraste para pôr em ordem.</li>' +
+        '<li><b>Estude.</b> Ligue o <b>cronômetro</b> (aba ' + aba("Hoje") + ') ou use <b>▶ estudar</b> no mural; ao terminar, ' +
+          'a sessão é registrada em ' + aba("Sessões") + ' — com a <b>dificuldade</b> do assunto, que é obrigatória.</li>' +
+        '<li><b>Siga a agenda.</b> A aba ' + aba("Agenda") + ' diz quando voltar a cada conteúdo. Terminou de ver um conteúdo? ' +
+          'Marque <b>✓ terminei este conteúdo</b>: aí começam as revisões.</li>' +
+      '</ol>'],
+    ["abas", "As abas, uma a uma",
+      '<dl class="aj-abas">' +
+        '<div class="aj-item"><dt>' + aba("Hoje") + '</dt><dd>O painel do dia: o <b>cronômetro</b>, o que está marcado para hoje e o que atrasou, os ' +
+          '<b>próximos 7 dias</b>, o que já foi <b>registrado hoje</b> e o mural <b>Falta estudar</b>.</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Sessões") + '</dt><dd>Tudo o que você estudou. <b>+ Registrar sessão</b> abre o formulário (data, disciplina, ' +
+          'conteúdos, tempo, questões, dificuldade e descrição). Clique numa linha para editar; <b>▶ continuar</b> abre uma ' +
+          'sessão nova do mesmo conteúdo.</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Agenda") + '</dt><dd>O que fazer e quando: <b>retomadas</b> (conteúdo em andamento) e <b>revisões</b> ' +
+          '(conteúdo concluído). Três visões — <b>por dia</b>, <b>por assunto</b> e <b>mês</b> —, filtros de disciplina e ' +
+          'conteúdo, e <b>+ Adicionar revisão</b> para marcar datas à mão, uma ou várias de uma vez.</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Disciplinas") + '</dt><dd>O cadastro: criar e renomear disciplinas e conteúdos, <b>✓ concluir</b> e ' +
+          '<b>↩ reabrir</b> um conteúdo (ou a disciplina inteira). Renomear aqui muda o nome em todo o sistema.</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Anotações") + '</dt><dd>O que você aprendeu, por disciplina ou por conteúdo: texto com cores e formatação, ' +
+          '★ para o que é importante, e a ordem que você quiser (arrastando).</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Questões") + '</dt><dd>O desempenho nas questões: acertos, erros e taxa por disciplina ou conteúdo, e o ' +
+          'gráfico dia a dia. <b>+ Lançar questões feitas</b> registra uma bateria feita depois da sessão.</dd></div>' +
+        '<div class="aj-item"><dt>' + aba("Progresso") + '</dt><dd>A visão de longe: meta diária, estudo e questões da semana, o calendário de horas ' +
+          'e o tempo por disciplina. Clique num dia ou numa disciplina para filtrar.</dd></div>' +
+      '</dl>'],
+    ["ligacoes", "Como as abas se ligam",
+      '<div class="aj-fluxo">' +
+        '<span>' + aba("Disciplinas") + '<small>o cadastro</small></span><i aria-hidden="true">→</i>' +
+        '<span>' + aba("Sessões") + '<small>o que você estudou</small></span><i aria-hidden="true">→</i>' +
+        '<span>' + aba("Agenda") + '<small>quando voltar</small></span><i aria-hidden="true">→</i>' +
+        '<span>' + aba("Progresso") + '<small>como está indo</small></span></div>' +
+      '<ul class="aj-lista">' +
+        '<li><b>O conteúdo é um só no sistema todo.</b> O mesmo "LAI" do cadastro aparece nas sessões, na agenda, nas anotações ' +
+          'e nas questões. Por isso ele se <b>escolhe</b> numa lista, em vez de ser digitado.</li>' +
+        '<li><b>Registrar uma sessão mexe na agenda sozinho:</b> cumpre o item vencido daquele conteúdo e marca o próximo — ' +
+          'você não registra a mesma coisa duas vezes.</li>' +
+        '<li><b>A fase mora no conteúdo.</b> Em andamento, a agenda chama para <b>retomar</b>; concluído, para <b>revisar</b>. ' +
+          'Concluir em ' + aba("Disciplinas") + ', no card da ' + aba("Agenda") + ' ou no formulário da sessão dá no mesmo.</li>' +
+        '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') usa o cadastro: o conteúdo sai dele na primeira sessão.</li>' +
+        '<li><b>Questões e tempo</b> entram pela sessão e aparecem em ' + aba("Questões") + ' e ' + aba("Progresso") + '. ' +
+          'As <b>anotações</b> não mexem no cronograma: são conhecimento à parte.</li>' +
+      '</ul>'],
+    ["agenda", "Retomadas e revisões",
+      '<p><b>Conteúdo em andamento</b> — você ainda está vendo aquilo pela primeira vez. A agenda marca <b>uma retomada de ' +
+        'cada vez</b>: hoje, ' + [3,2,1].map(n => dias(n) + " se " + CONFIG.DIFICULDADES[n].nome.toLowerCase()).join(", ") +
+        '. O padrão depende da dificuldade e do <b>tempo de estudo previsto</b> (com a prova perto, as voltas ficam mais ' +
+        'juntas); nos ajustes você escolhe os seus números.</p>' +
+      '<p><b>Conteúdo concluído</b> — entra na <b>repetição espaçada</b>, contada do dia em que você concluiu: ' +
+        escada(2) + ' (médio). Fácil espera mais (' + escada(1) + '); difícil volta antes e mais vezes (' + escada(3) + ').</p>' +
+      '<ul class="aj-lista">' +
+        '<li><b>Atrasou ou revisou a mais?</b> As revisões seguintes <b>andam junto</b>, cada uma mantendo a distância que ' +
+          'tinha da anterior (15, 17 e 22 marcadas; uma extra no dia 20 → a de 22 vai para 25).</li>' +
+        '<li><b>A dificuldade da sessão mais recente manda:</b> revisar e marcar "difícil" aproxima o que vem.</li>' +
+        '<li><b>A prova não corta nada:</b> as revisões seguem depois dela; só o dia da prova é pulado.</li>' +
+        '<li>Na agenda aparecem, por padrão, as <b>2 próximas revisões</b> e a <b>próxima retomada</b> de cada conteúdo — ' +
+          '"Todas as agendadas" mostra a escada inteira.</li>' +
+        '<li>Horizonte atual: <b>' + D.brFull(ultimoDiaRevisao()) + '</b> — o sistema agenda até aí, e ele anda com o dia.</li>' +
+      '</ul>'],
+    ["crono", "Cronômetro",
+      '<ul class="aj-lista">' +
+        '<li>Na aba ' + aba("Hoje") + ', escolha <b>para onde vai o tempo</b> (uma sessão de hoje ou uma nova) e clique em ' +
+          '<b>▶ Iniciar</b>. Ele segue contando em qualquer aba — o chip no topo mostra o tempo — e sobrevive a fechar a página.</li>' +
+        '<li><b>Encerrar</b> soma o tempo na sessão escolhida ou abre o formulário de uma sessão nova já preenchido.</li>' +
+        '<li><b>Passou da meia-noite?</b> Ele pergunta: tudo no dia em que você começou, ou <b>dividir</b> — o resto vai para ' +
+          'uma sessão nova do dia seguinte, igual à original.</li>' +
+      '</ul>'],
+    ["rotina", "Sua própria rotina",
+      '<p>Já tem uma rotina — sua ou trazida de fora? Nos ajustes, desmarque <b>Criar os agendamentos automaticamente</b>: ' +
+        'a agenda passa a ser só o que você marca, e o sistema não cria nem move nada. Dá para manter ou apagar o que ele já ' +
+        'tinha marcado.</p>' +
+      '<p>Para marcar rápido, o <b>+ Adicionar revisão</b> (aba ' + aba("Agenda") + ') aceita <b>várias datas de uma vez</b>: ' +
+        'adicione uma a uma, ou gere "a cada N dias, K vezes" ou a escada padrão. Cada data vira um card.</p>'],
+    ["ajustes", "Ajustes",
+      '<dl class="aj-abas">' +
+        '<div class="aj-item"><dt>Objetivo</dt><dd>Sem objetivo, concurso (uma prova) ou vestibular (vários dias de prova).</dd></div>' +
+        '<div class="aj-item"><dt>Meta diária</dt><dd>Os minutos por dia que contam para a meta e para a sequência de dias.</dd></div>' +
+        '<div class="aj-item"><dt>Revisar até</dt><dd>Um teto para o cronograma, sem limite. Em branco, ele anda ' + CONFIG.HORIZONTE_LIVRE +
+          ' dias à frente de hoje.</dd></div>' +
+        '<div class="aj-item"><dt>Tempo de estudo previsto</dt><dd>Até quando você pretende estudar — decide o intervalo das retomadas.</dd></div>' +
+        '<div class="aj-item"><dt>Retomada — dias até voltar</dt><dd>Os seus números para difícil, médio e fácil; em branco, vale o padrão ' +
+          '(o número apagado).</dd></div>' +
+        '<div class="aj-item"><dt>Agendamento</dt><dd>Ligar ou desligar a criação automática de revisões e retomadas.</dd></div>' +
+      '</dl>' +
+      '<div class="linha" style="margin-top:10px"><button class="btn ghost" type="button" data-acao="abrir-ajustes">' +
+        'Abrir os ajustes</button></div>'],
+    ["dados", "Seus dados",
+      '<ul class="aj-lista">' +
+        '<li>Os dois chips do topo dizem onde os dados estão sendo gravados: a <b>conta na nuvem</b> e o <b>arquivo .json</b>. ' +
+          'Sem nenhum dos dois, eles ficam só neste navegador — e somem se você limpar os dados de navegação.</li>' +
+        '<li><b>↓</b> exporta um backup e <b>↑</b> importa um. Exporte antes de mudanças grandes.</li>' +
+        '<li><b>◐</b> alterna o tema claro e escuro.</li>' +
+      '</ul>'],
+    ["metodo", "Metodologias",
+      '<ul class="aj-lista">' +
+        '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes; atraso ou revisão extra empurram as seguintes.</li>' +
+        '<li><b>Curva do esquecimento (Ebbinghaus)</b> — a primeira revisão vem cedo, quando o esquecimento é mais rápido.</li>' +
+        '<li><b>Recordação ativa</b> — revisar é resolver questões, não reler: por isso a sessão pede questões e acertos.</li>' +
+        '<li><b>Sistema Leitner</b> — dificuldade alta = revisar antes e mais vezes; fácil = mais espaço entre as revisões.</li>' +
+        '<li><b>Prática intercalada</b> — alternar disciplinas no mesmo dia ajuda mais do que blocos longos de uma só.</li>' +
+      '</ul>']
+  ];
+  /* O sumário fica numa coluna à esquerda, parado enquanto o texto rola (como
+     numa página de documentação); no celular, onde não cabe coluna, ele vira
+     uma caixa "Ir para…". Os dois levam ao mesmo lugar (irParaAjuda). */
+  abrirModal("Ajuda",
+    '<div class="aj-layout">' +
+      '<nav class="aj-sumario" aria-label="Neste guia"><span class="aj-sumario-tit">Neste guia</span>' +
+        secoes.map(([id, titulo], i) => '<a href="#aj-' + id + '" data-acao="ajuda-ir" data-alvo="aj-' + id + '"' +
+          (i === 0 ? ' aria-current="true"' : '') + '><span class="aj-num">' + (i + 1) + '</span>' + esc(titulo) + '</a>').join("") +
+      '</nav>' +
+      '<div class="aj-conteudo">' +
+        '<p class="sub" style="margin-top:0">Um guia rápido da plataforma. Abra só a parte que interessa.</p>' +
+        '<select id="ajudaIr" class="aj-ir" aria-label="Ir para a seção"><option value="">Ir para…</option>' +
+          secoes.map(([id, titulo], i) => '<option value="aj-' + id + '">' + (i + 1) + '. ' + esc(titulo) + '</option>').join("") +
+        '</select>' +
+        secoes.map(([id, titulo, corpo], i) => sec(id, i + 1, esc(titulo), corpo, i === 0)).join("") +
+      '</div>' +
+    '</div>',
+    null, true);
+}
+/** abre a seção da ajuda, leva até ela e marca no sumário */
+function irParaAjuda(id){
+  const sec = document.getElementById(id); if (!sec) return;
+  sec.open = true;
+  if (sec.scrollIntoView) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelectorAll(".aj-sumario a").forEach(a =>
+    a.dataset.alvo === id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"));
+}
+/* As caixas da retomada mostram, apagado, o número que está VALENDO. Ele muda
+   com o tempo de estudo previsto e o "revisar até" — então a tela recalcula na
+   hora em que um deles muda, antes de salvar. */
+function atualizarDiasPadraoAjustes(){
+  const f = document.getElementById("formAjustes"); if (!f) return;
+  const val = n => (f.querySelector('[name="'+n+'"]') || {}).value || "";
+  const fim = fimDoEstudoPrevisto(val("estudoAte"), val("revisarAte"));
+  [1,2,3].forEach(n => { const cx = f.querySelector('[name="volta'+n+'"]'); if (cx) cx.placeholder = diasDaVoltaPadrao(n, fim); });
+}
+function ligarAjustes(){
       ligarCamposObjetivo();
+      ["estudoAte","revisarAte"].forEach(n => {
+        const el = document.querySelector('#formAjustes [name="'+n+'"]');
+        if (el){ el.addEventListener("input", atualizarDiasPadraoAjustes); el.addEventListener("change", atualizarDiasPadraoAjustes); }
+      });
+      const auto = document.querySelector('#formAjustes [name="automatico"]'), painel = $("#painelAutomatico");
+      if (auto && painel) auto.addEventListener("change", () => painel.classList.toggle("aberto", !auto.checked));
       $("#formAjustes").addEventListener("submit", ev => {
         ev.preventDefault();
         const d = Object.fromEntries(new FormData(ev.target).entries());
@@ -6350,20 +6878,30 @@ function modalAjuda(){
         if (novo.erro){ $("#erroAjustes").textContent = novo.erro; return; }
         const tetoAntes = db.revisarAte;
         const mudouObjetivo = aplicarObjetivo(novo);
-        // o teto nunca passa de um ano: o resto do sistema confia nisso
-        const limiteMax = D.soma(D.hoje(), CONFIG.HORIZONTE_MAX_DIAS);
-        db.revisarAte = (d.revisarAte || "") > limiteMax ? limiteMax : (d.revisarAte || "");
+        db.revisarAte = d.revisarAte || "";                   // sem teto de um ano (saiu em 23/09)
         if (db.revisarAte && db.revisarAte <= D.hoje()) db.revisarAte = "";
         if (d.religar) db.posProva = "continuo";
         db.metaDiariaMin = Math.max(15, Number(d.meta) || CONFIG.META_DIARIA_MIN);
+        // até quando você pretende estudar: qualquer data à frente
+        const ate = d.estudoAte || "";
+        db.estudoAte = ate > D.hoje() ? ate : "";
+        db.diasRetomada = {};
+        [1,2,3].forEach(n => {
+          const v = Math.round(Number(d["volta" + n]) || 0);
+          if (v >= 1) db.diasRetomada[n] = Math.min(CONFIG.VOLTA_MAX_ESCOLHA, v);
+        });
+        const automaticoAntes = agendaAutomatica(), automatico = !!d.automatico;
+        if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda === "apagar");
+        db.agendaAutomatica = automatico;
         replanejarTudo();
         persistir(); fecharModal(); render();
-        toast(d.religar ? "Agendamento religado — cronograma refeito."
+        toast(automaticoAntes && !automatico ? "Agendamento automático desligado — a agenda é a sua rotina."
+             : !automaticoAntes && automatico ? "Agendamento automático ligado — cronograma refeito."
+             : d.religar ? "Agendamento religado — cronograma refeito."
              : db.revisarAte && db.revisarAte !== tetoAntes ? "Revisões agendadas até " + D.brFull(db.revisarAte) + "."
              : mudouObjetivo ? fraseObjetivo()
              : "Ajustes salvos — cronograma recalculado.");
       });
-    });
 }
 
 function atualizarCrono(){
@@ -6843,7 +7381,9 @@ document.addEventListener("click", ev => {
   if (!alvo) return;
   const id = alvo.dataset.id;
   switch (alvo.dataset.acao){
-    case "abrir-ajustes": modalAjuda(); break;
+    case "abrir-ajustes": ev.preventDefault(); modalAjustes(); break;
+    case "abrir-ajuda": ev.preventDefault(); modalAjuda(); break;
+    case "ajuda-ir": ev.preventDefault(); irParaAjuda(alvo.dataset.alvo); break;   // sumário da ajuda
     case "minimizar-assunto": alternarMinimizado(alvo.dataset.chave); render(); break;
     /* dias do vestibular: a lista cresce e encolhe no lugar, sem redesenhar —
        redesenhar apagaria o que já foi digitado nos outros campos */
@@ -6888,7 +7428,7 @@ document.addEventListener("click", ev => {
       } else {
         ui.prefill = { data: D.hoje(), tipo: "estudo", disciplina: r.disciplina,
                        assuntos: assuntosDe(r).slice(), minutos: "", questoes: "", acertos: "",
-                       dificuldade: dificuldadeDe(r), anotacoes: "" };
+                       dificuldade: null, anotacoes: "" };     // continuar também pede a dificuldade de hoje
         ui.editandoRegistro = null; ui.formAberto = true;
       }
       ui.aba = "registros"; ui.foco = null; redesenharTelaForm(); break; }
@@ -6940,11 +7480,18 @@ document.addEventListener("click", ev => {
       ui.eAssunto = chaveAssunto(alvo.dataset.disc, alvo.dataset.ass);
       ui.eSoImportantes = false; ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null;
       render(); break;
-    case "outra-dica": ui.dicaIdx = (ui.dicaIdx + 1) % CONFIG.DICAS.length; render(); break;
+    case "toggle-mural": ui.verTodoMural = !ui.verTodoMural; render(); break;
+    case "estudar-afazer": {                      // do mural direto para a sessão, conteúdo já escolhido
+      const c = fichaPorChave(alvo.dataset.chave); if (!c) break;
+      ui.prefill = { data: D.hoje(), tipo: "estudo", disciplina: c.disciplina, assuntos: [c.nome],
+                     minutos: "", questoes: "", acertos: "", dificuldade: null, anotacoes: "" };
+      ui.editandoRegistro = null; ui.formAberto = true;
+      ui.aba = "registros"; ui.foco = null; redesenharTelaForm(); break; }
     case "toggle-proximas": ui.verTodasProximas = !ui.verTodasProximas; render(); break;
     case "toggle-assuntos": ui.verTodosAssuntos = !ui.verTodosAssuntos; render(); break;
     case "toggle-agenda":   ui.verTodaAgenda = !ui.verTodaAgenda; render(); break;
     case "agenda-completa": ui.agendaCompleta = alvo.dataset.valor === "true"; render(); break;
+    case "limpar-filtros-agenda": ui.aDisciplina = ""; ui.aAssunto = ""; render(); break;
     case "visao-agenda":    ui.visaoAgenda = alvo.dataset.visao; render(); break;
     case "dia-agenda":      ui.diaAgenda = ui.diaAgenda === alvo.dataset.dia ? "" : alvo.dataset.dia; render(); break;
     case "mes-agenda": {
@@ -6955,6 +7502,15 @@ document.addEventListener("click", ev => {
         ui.mesAgenda = D.soma(base + "-01", delta * 32).slice(0,7);
       render(); break; }
     case "add-assunto": adicionarAssuntoForm(); return;      // sem redesenhar: preserva o que já foi digitado
+    case "estudo-previsto": {                                // atalho: hoje + N meses, na caixa dos ajustes
+      const cx = document.getElementById("campoEstudoAte"); if (!cx) return;
+      const dt = new Date(D.hoje() + "T12:00"); dt.setMonth(dt.getMonth() + Number(alvo.dataset.meses || 0));
+      cx.value = D.iso(dt); atualizarDiasPadraoAjustes(); return; }
+    // datas em cadeia (formulário de revisão): também sem redesenhar
+    case "add-data-rev": adicionarDataCadeia((document.getElementById("dataRevisao") || {}).value); return;
+    case "tirar-data-rev": { const t = alvo.closest(".tag"); if (t) t.remove(); return; }
+    case "gerar-datas-rev": gerarDatasCadeia(false); return;
+    case "escada-datas-rev": gerarDatasCadeia(true); return;
     case "painel-nuvem": painelNuvem(); break;
     case "nuvem-sincronizar": subirParaNuvem().then(() => toast("Sincronizado.")); break;
     case "nuvem-baixar":
@@ -6977,9 +7533,14 @@ document.addEventListener("click", ev => {
     /* Criar a disciplina aqui cria SÓ a disciplina; os conteúdos vêm pelo
        + Novo conteúdo (filtrado nela) ou pelo formulário da sessão. Uma
        disciplina vazia é legítima — é o começo de tudo. */
-    case "novo-conteudo":
+    case "novo-conteudo":                                    // aba Disciplinas: só com a disciplina escolhida
       if (alvo.dataset.disc) modalNovosConteudos(alvo.dataset.disc);
       break;
+    case "novo-afazer": modalMural(); break;                 // mural Falta estudar: escolher entre os cadastrados
+    case "tirar-afazer": {
+      const c = fichaPorChave(alvo.dataset.chave); if (!c) break;
+      c.mural = false; delete c.prioridade;
+      persistir(); render(); toast("“" + c.nome + "” saiu do mural — continua cadastrado."); break; }
     case "nova-disciplina": {
       const nome = (prompt("Nome da nova disciplina:") || "").trim();
       if (!nome) break;
@@ -7021,7 +7582,7 @@ document.addEventListener("click", ev => {
       ui.faseAgenda = "abertos";
       ui.visaoAgenda = "assunto";
       ui.verTodosAssuntos = true;
-      ui.aAssunto = "";                 // o filtro de assunto poderia esconder o alvo
+      ui.aAssunto = ""; ui.aDisciplina = "";   // os filtros poderiam esconder o alvo
       ui.focoRevisao = r.id;
       render(); break; }
     case "concluir-disciplina": {
@@ -7232,6 +7793,9 @@ document.addEventListener("change", ev => {
   }
   // filtro de assunto da Agenda
   if (ev.target.id === "aAssunto"){ ui.aAssunto = ev.target.value; render(); return; }
+  if (ev.target.id === "ajudaIr"){ if (ev.target.value) irParaAjuda(ev.target.value); ev.target.value = ""; return; }
+  // trocar a disciplina recomeça o conteúdo: o escolhido pode não ser dela
+  if (ev.target.id === "aDisciplina"){ ui.aDisciplina = ev.target.value; ui.aAssunto = ""; render(); return; }
   // filtros da aba Aprendizados: disciplina manda no conteúdo, e vice-versa
   if (ev.target.id === "eDisciplina"){
     ui.eDisciplina = ev.target.value;
@@ -7285,9 +7849,26 @@ $("#arquivo").onchange = ev => { const f = ev.target.files[0]; if (f) importar(f
    - o id do item viaja numa variável, não no dataTransfer: o dataTransfer não
      dá para ler durante o dragover em vários navegadores, e é justo aí que
      precisamos saber quem está sendo arrastado.                              */
-let anotArrastada = null;
+/* O MESMO ARRASTAR SERVE A DUAS LISTAS: as anotações de um card e o mural
+   "Falta estudar" da aba Hoje. Cada uma diz qual é o item, a alça, a lista em
+   que ele pode andar e como gravar a ordem. */
+const ARRASTAVEIS = [
+  { item: "data-anotacao", alca: "mover-anotacao", lista: el => el.closest("article.apr"),
+    gravar: lista => gravarOrdemDoCard(lista), aviso: "Ordem das anotações salva." },
+  { item: "data-afazer", alca: "mover-afazer", lista: el => el.closest(".mural-lista"),
+    gravar: lista => gravarOrdemMural(lista), aviso: "Prioridade salva." }
+];
+let arrasto = null;                               // { el, tipo } enquanto algo está sendo arrastado
 
-function cardDaAnotacao(el){ return el && el.closest ? el.closest("article.apr") : null; }
+/** de que lista arrastável este elemento faz parte (pelo item ou pela alça) */
+function tipoArrastavel(el, pela){
+  if (!el || !el.closest) return null;
+  for (const t of ARRASTAVEIS){
+    const achado = pela === "alca" ? el.closest('[data-acao="' + t.alca + '"]') : el.closest("[" + t.item + "]");
+    if (achado) return { t, achado };
+  }
+  return null;
+}
 
 /** grava a ordem que ficou na tela, para o card inteiro */
 function gravarOrdemDoCard(card){
@@ -7302,55 +7883,55 @@ function gravarOrdemDoCard(card){
   return mudou;
 }
 
-/** move a anotação uma posição para cima (-1) ou para baixo (+1), pelo teclado */
-function moverAnotacao(id, passo){
-  const item = document.querySelector('[data-anotacao="'+CSS.escape(id)+'"]');
-  const card = cardDaAnotacao(item);
-  if (!item || !card) return false;
-  const irmaos = [...card.querySelectorAll("[data-anotacao]")];
+/** move o item uma posição para cima (-1) ou para baixo (+1), pelo teclado */
+function moverItem(t, id, passo){
+  const item = document.querySelector("[" + t.item + '="' + CSS.escape(id) + '"]');
+  const lista = item && t.lista(item);
+  if (!item || !lista) return false;
+  const irmaos = [...lista.querySelectorAll("[" + t.item + "]")];
   const i = irmaos.indexOf(item), j = i + passo;
   if (j < 0 || j >= irmaos.length) return false;
-  if (passo < 0) card.insertBefore(item, irmaos[j]);
-  else           card.insertBefore(item, irmaos[j].nextSibling);
-  gravarOrdemDoCard(card);
-  const alca = item.querySelector('[data-acao="mover-anotacao"]');
+  if (passo < 0) lista.insertBefore(item, irmaos[j]);
+  else           lista.insertBefore(item, irmaos[j].nextSibling);
+  t.gravar(lista);
+  const alca = item.querySelector('[data-acao="' + t.alca + '"]');
   if (alca) alca.focus();                        // o foco acompanha quem se moveu
   return true;
 }
 
 /* A alça só liga o "draggable" quando o ponteiro desce nela: com o item sempre
-   arrastável, selecionar o texto da anotação virava arrasto. */
+   arrastável, selecionar o texto (da anotação) virava arrasto. */
 document.addEventListener("mousedown", ev => {
-  const alca = ev.target.closest && ev.target.closest('[data-acao="mover-anotacao"]');
-  const item = alca && alca.closest("[data-anotacao]");
+  const a = tipoArrastavel(ev.target, "alca");
+  const item = a && a.achado.closest("[" + a.t.item + "]");
   if (item) item.setAttribute("draggable", "true");
 });
 document.addEventListener("dragstart", ev => {
-  const item = ev.target.closest && ev.target.closest("[data-anotacao]");
-  if (!item || item.getAttribute("draggable") !== "true"){ return; }
-  anotArrastada = item;
-  item.classList.add("arrastando");
+  const a = tipoArrastavel(ev.target, "item");
+  if (!a || a.achado.getAttribute("draggable") !== "true") return;
+  arrasto = { el: a.achado, t: a.t };
+  a.achado.classList.add("arrastando");
   if (ev.dataTransfer){ ev.dataTransfer.effectAllowed = "move";
-    try { ev.dataTransfer.setData("text/plain", item.dataset.anotacao); } catch(e){} }
+    try { ev.dataTransfer.setData("text/plain", a.achado.getAttribute(a.t.item)); } catch(e){} }
 });
 document.addEventListener("dragover", ev => {
-  if (!anotArrastada) return;
-  const alvo = ev.target.closest && ev.target.closest("[data-anotacao]");
-  const card = cardDaAnotacao(anotArrastada);
-  if (!alvo || alvo === anotArrastada || !card || cardDaAnotacao(alvo) !== card) return;
+  if (!arrasto) return;
+  const alvo = ev.target.closest && ev.target.closest("[" + arrasto.t.item + "]");
+  const lista = arrasto.t.lista(arrasto.el);
+  if (!alvo || alvo === arrasto.el || !lista || arrasto.t.lista(alvo) !== lista) return;
   ev.preventDefault();                           // sem isto o navegador recusa o drop
   const r = alvo.getBoundingClientRect();
   const depois = (ev.clientY - r.top) > r.height / 2;
-  card.insertBefore(anotArrastada, depois ? alvo.nextSibling : alvo);
+  lista.insertBefore(arrasto.el, depois ? alvo.nextSibling : alvo);
 });
-document.addEventListener("drop", ev => { if (anotArrastada) ev.preventDefault(); });
+document.addEventListener("drop", ev => { if (arrasto) ev.preventDefault(); });
 document.addEventListener("dragend", () => {
-  if (!anotArrastada) return;
-  const card = cardDaAnotacao(anotArrastada);
-  anotArrastada.classList.remove("arrastando");
-  anotArrastada.removeAttribute("draggable");
-  if (gravarOrdemDoCard(card)) toast("Ordem das anotações salva.");
-  anotArrastada = null;
+  if (!arrasto) return;
+  const { el, t } = arrasto;
+  el.classList.remove("arrastando");
+  el.removeAttribute("draggable");
+  if (t.gravar(t.lista(el))) toast(t.aviso);
+  arrasto = null;
 });
 
 /* O corpo do item de hoje é um link (role="link", tabindex="0"): quem navega
@@ -7403,10 +7984,10 @@ document.addEventListener("mouseout", ev => {
    funciona no celular, onde o arrastar do HTML não existe. */
 document.addEventListener("keydown", ev => {
   if (ev.key !== "ArrowUp" && ev.key !== "ArrowDown") return;
-  const alca = ev.target.closest && ev.target.closest('[data-acao="mover-anotacao"]');
-  if (!alca) return;
+  const a = tipoArrastavel(ev.target, "alca");
+  if (!a) return;
   ev.preventDefault();
-  moverAnotacao(alca.dataset.id, ev.key === "ArrowUp" ? -1 : 1);
+  moverItem(a.t, a.achado.dataset.id, ev.key === "ArrowUp" ? -1 : 1);
 });
 
 $("#overlay").addEventListener("click", ev => { if (ev.target.id === "overlay") fecharModal(); });

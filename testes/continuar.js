@@ -86,8 +86,10 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   ok("e o conteúdo também",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto).join()==="LAI",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
-  ok("a dificuldade é herdada", $('#modalCaixa [name="dificuldade"]').value==="3",
+  // continuar também pede a dificuldade de HOJE: ela é obrigatória e sem padrão (decisão do Pedro, 23/09)
+  ok("a dificuldade não vem preenchida: você escolhe a de hoje", $('#modalCaixa [name="dificuldade"]').value==="",
      $('#modalCaixa [name="dificuldade"]').value);
+  $('#modalCaixa [name="dificuldade"]').value="3";
   ok("o tempo começa vazio, é sessão nova", !$('#modalCaixa [name="minutos"]').value,
      $('#modalCaixa [name="minutos"]').value);
   ok("e a descrição também, que é o que separa uma sessão da outra",
@@ -130,6 +132,7 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
     .querySelector('[data-acao="continuar-sessao"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(450);
   $('#modalCaixa [name="minutos"]').value="60";
+  $('#modalCaixa [name="dificuldade"]').value="3";
   $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(500);
   d=db(w);
   ok("continuar dá por cumprido o lembrete que estava atrasado",

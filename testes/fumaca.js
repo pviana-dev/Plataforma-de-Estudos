@@ -47,6 +47,7 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   $('#modalCaixa [name="minutos"]').value="60";
   $('#modalCaixa [name="questoes"]').value="10";
   $('#modalCaixa [name="acertos"]').value="7";
+  $('#modalCaixa [name="dificuldade"]').value="2";      // obrigatória, sem padrão
   $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(450);
   const regs=db().registros||[];
   ok("a sessão é gravada", regs.length===1 && regs[0].minutos===60, regs.map(r=>[r.disciplina,r.minutos]));

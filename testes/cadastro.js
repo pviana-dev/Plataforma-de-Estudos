@@ -73,6 +73,7 @@ const opcoesConteudo=()=>[...doc.querySelectorAll("#campoAssunto option")].map(o
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));
   ok("e já nasce no cadastro", !!ficha("Legislação","Improbidade"), db().conteudos.map(c=>c.nome));
   $('#modalCaixa [name="minutos"]').value="30";
+  { const _d=$("#formRegistro [name=dificuldade]"); if (_d && !_d.value) _d.value="2"; }   // obrigatória, sem padrão
   $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(450);
   ok("a sessão é salva com o conteúdo escolhido",
      db().registros.some(r=>r.assuntos.join()==="Improbidade"), db().registros.map(r=>r.assuntos));
@@ -83,6 +84,7 @@ const opcoesConteudo=()=>[...doc.querySelectorAll("#campoAssunto option")].map(o
     click($('[data-aba="registros"]')); await espera(250);
     click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id===id).querySelector("td"));
     await espera(300);
+    { const _d=$("#formRegistro [name=dificuldade]"); if (_d && !_d.value) _d.value="2"; }   // obrigatória, sem padrão
     $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(400);
   }
   click($('[data-aba="revisoes"]')); await espera(350);

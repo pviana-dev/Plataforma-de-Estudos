@@ -8,14 +8,15 @@ Abra o arquivo no navegador e use. Todos os dados ficam no **`localStorage`** do
 
 ## Como usar
 
-O cabeçalho diz **que dia é hoje** (*Hoje é quarta-feira, 23/09/2026*), embaixo do nome da
-plataforma, em todas as abas: é a referência de "hoje", "atrasado" e "amanhã" que a agenda usa.
+O botão da prova, no cabeçalho, diz também **que dia é hoje**: embaixo de *Prova 11/10/2026* vem
+*Hoje 23/09/2026* (o rótulo igual ao da prova; a data na cor da identidade), com as datas alinhadas (o dia da semana aparece ao passar o
+mouse). Fica em todas as abas: é a referência de "hoje", "atrasado" e "amanhã" que a agenda usa.
 
 | Aba | Para quê |
 |---|---|
-| **Hoje** | **Cronômetro de estudo** logo no topo, em card próprio com moldura verde — é a ação mais usada do dia; revisões de hoje, atrasadas e dos próximos 7 dias (estas **agrupadas por dia**, mostrando **3 por vez** com **+ ver todas as N**); **Registrado hoje**, um resumo só de leitura das sessões do dia; meta diária e sequência de dias nos números do topo. |
+| **Hoje** | **Cronômetro de estudo** logo no topo, em card próprio com moldura verde — é a ação mais usada do dia; revisões de hoje, atrasadas e dos próximos 7 dias (estas **agrupadas por dia**, mostrando **3 por vez** com **+ ver todas as N**); **Registrado hoje**, um resumo só de leitura das sessões do dia; **Falta estudar** (ver abaixo); meta diária e sequência de dias nos números do topo. |
 | **Sessões** | Formulário da sessão de estudo (data, disciplina, **um ou vários assuntos**, tempo, questões, acertos, **dificuldade do assunto**, e **um único campo de descrição** para a sessão) e a lista **Todas as sessões**: resumo do que está filtrado (sessões, conteúdos estudados, pendentes na agenda e conteúdos concluídos — **nenhuma soma de horas**, ver abaixo), separadores por dia com o total do dia, e por sessão o tempo (com o nº de medições do cronômetro, quando há mais de uma), e a dificuldade; *sem revisão* aparece como etiqueta ao lado do conteúdo. **Questões não aparecem aqui** — elas têm aba própria, porque nem toda sessão tem questões (num assunto novo é normal só estudar). Os campos de questões continuam no formulário, opcionais. Registrar e editar acontecem numa **tela sobreposta** (ver abaixo) — a lista nunca é empurrada para baixo. **Clique em qualquer lugar da linha** para abrir a sessão: a tela de edição traz, além dos campos, um bloco **Esta sessão** com os intervalos do cronômetro, quando foi registrada e a situação das revisões. |
-| **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. **Revisões:** por padrão, **só as 2 próximas** — de cada conteúdo, as **2 próximas revisões** e a **próxima retomada** (cumprida uma, a seguinte aparece); **Todas as agendadas** mostra a escada inteira, e a escolha fica lembrada. Vale também para os próximos 7 dias da aba **Hoje**. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
+| **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. **Filtros** de **Disciplina** e, embaixo, de **Conteúdo** (só os da disciplina escolhida; sem ela, todos, com a disciplina ao lado), valendo nas três visões, com um **✕ limpar** que tira os dois — o card *Agenda de hoje* não obedece a eles. **Revisões:** por padrão, **só as 2 próximas** — de cada conteúdo, as **2 próximas revisões** e a **próxima retomada** (cumprida uma, a seguinte aparece); **Todas as agendadas** mostra a escada inteira, e a escolha fica lembrada. Vale também para os próximos 7 dias da aba **Hoje**. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
 | **Disciplinas** | O **cadastro** de disciplinas e conteúdos, agrupado por disciplina. Cada conteúdo mostra **em quantas sessões ele aparece** e a fase (*em andamento* ou *concluído em DD/MM*), com **✎ renomear** — que muda o nome **em todo o sistema** — e **✓ concluir / ↩ reabrir**. No cabeçalho de cada disciplina, **✓ concluir disciplina** fecha de uma vez todos os conteúdos abertos dela (e **↩ reabrir disciplina**, quando já está tudo fechado). Fechar um conteúdo fecha **todas as sessões que falam dele** e começa a escada de revisões daquele dia. Aqui não se cria disciplina nem conteúdo: eles nascem no formulário da aba **Sessões**. |
 | **Anotações** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
 | **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; os conteúdos ainda sem questões são listados à parte. Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
@@ -162,6 +163,13 @@ decide o ritmo é a **dificuldade**, e ela é sua.
 viraram **difícil** (`db.dificuldadesMigradas`). A conversão acontece no dado cru, antes da
 normalização — convertê-lo depois leria um "3" novo (difícil) como o "3" velho (médio) e rebaixaria
 tudo a cada abertura.
+
+### Dificuldade é obrigatória
+
+Toda sessão nova — inclusive a que vem do cronômetro, do *continuar* ou de um item da agenda — começa
+com a dificuldade em **Escolha a dificuldade…** e **não salva** sem ela (Difícil, Médio ou Fácil). Não
+há padrão de propósito: é dela que saem a retomada e a escada, e um "médio" por inércia faria o plano
+mentir. Sessões antigas mantêm a que tinham.
 
 ### Dificuldade e quantas revisões cada assunto recebe
 
@@ -823,7 +831,12 @@ nesse caso um aviso laranja aparece no topo; use Chrome/Firefox ou sirva a pasta
 4. **Sistema Leitner** — dificuldade alta = mais revisões, mais próximas; fácil = mais espaço entre elas.
 5. **Prática intercalada** — o painel sugere alternar disciplinas em vez de blocos longos.
 
-O botão **?** no topo abre essa explicação e os ajustes (objetivo, datas de prova e meta diária).
+**Ajustes e ajuda são dois botões no topo.** A **engrenagem** (no mesmo estilo do livro da marca) abre
+os **Ajustes**: objetivo, datas de prova, revisar até, meta diária, tempo de estudo previsto, dias da
+retomada e a chave do agendamento automático. O **?** abre a **Ajuda**, um **tutorial** em seções que
+abrem e fecham, com um **sumário lateral** (no celular, uma caixa "Ir para…") e um fio separando cada subtópico: *Comece por aqui*, *As abas, uma a uma*, *Como as abas se ligam*,
+*Retomadas e revisões*, *Cronômetro*, *Sua própria rotina*, *Ajustes*, *Seus dados* e *Metodologias*. Os
+números que dependem dos ajustes (dias da retomada, degraus, horizonte) saem do cálculo de verdade. Um leva ao outro, e o botão da prova também abre os ajustes.
 
 ## Parâmetros configuráveis
 
@@ -838,14 +851,13 @@ TAXA_ATENCAO: 75                   // idem
 INTERVALOS_LIVRES: [1,3,7,16,35,70,140,240,365]   // a escada: dias após o fechamento
 FATOR_DIFICULDADE: {1:1.5, 2:1, 3:0.7}            // fácil estica a escada, difícil encurta
 HORIZONTE_LIVRE: 180               // sem teto escolhido: até onde o plano se estica
-HORIZONTE_MAX_DIAS: 365            // teto de planejamento: no máximo um ano
 MAX_REVISOES: 9                    // nenhum assunto passa disso
 FOLGA_POR_DIFICULDADE: 4           // quão fundo na escada a dificuldade deixa ir
 CATEGORIAS_ERRO: [conteudo, interpretacao, bobo, chute, acertei]  // opcionais, editáveis
 ```
 
-Data da prova, **revisar até** (o teto, até um ano) e meta diária são mudadas pela interface
-(botão **?**); alterar qualquer uma delas **replaneja todas as revisões pendentes** — ver
+Data da prova, **revisar até** (o teto, sem limite) e meta diária são mudadas pela interface
+(engrenagem no topo); alterar qualquer uma delas **replaneja todas as revisões pendentes** — ver
 *Até quando o sistema agenda*.
 
 ## Estrutura dos dados
@@ -1015,7 +1027,7 @@ você quiser. Toda sessão que já existia antes desta versão foi marcada como 
 
 ## O objetivo de estudo: Sem objetivo, Concurso ou Vestibular/ENEM
 
-No **?** do cabeçalho (Ajuda e ajustes), o primeiro campo é o **Objetivo**. São três modos, e dá para
+Na **engrenagem** do cabeçalho (Ajustes), o primeiro campo é o **Objetivo**. São três modos, e dá para
 trocar a qualquer momento: trocar muda só o modo — **a data do concurso e os dias do vestibular ficam
 guardados**, e voltar a um modo encontra tudo como estava. Trocar de modo reagenda as revisões
 pendentes; as feitas e as marcadas à mão ficam como estão.
@@ -1334,8 +1346,22 @@ cuidado, duas sessões do mesmo conteúdo marcariam duas voltas idênticas no me
 volta em aberto do mesmo conteúdo, ela **anda para a frente** e passa a pertencer à sessão nova, que
 é a que tem o contexto mais recente. Conteúdos **diferentes** continuam com voltas próprias.
 
-**De quanto em quanto tempo:** 1 dia se o conteúdo é difícil ou a taxa está abaixo de 60%, 4 dias se
-é tranquilo e você vai bem, 2 dias no resto — nunca mais que 7.
+**De quanto em quanto tempo** (dias até a próxima volta). O padrão sai da **dificuldade** e do **tempo
+de estudo previsto** — até quando você pretende estudar. Ele vale **com ou sem objetivo**: nos ajustes,
+*Tempo de estudo previsto* recebe uma data (com atalhos **+1 mês, +3 meses, +6 meses, +1 ano**). Em
+branco, vale a data da prova, se houver; depois, o *revisar até*; sem nenhum deles, não há prazo.
+Preenchido, ele manda até sobre a prova (quem vai continuar estudando depois dela não precisa do ritmo
+de reta final).
+
+| Estudo previsto | Difícil | Médio | Fácil |
+|---|---|---|---|
+| até 30 dias | 1 | 1 | 2 |
+| de 31 a 90 dias | 1 | 2 | 3 |
+| mais de 90, ou sem prazo | 1 | 2 | 4 |
+
+Nos **ajustes** (engrenagem no topo), *Retomada de conteúdo em andamento — dias até voltar* tem um campo
+por dificuldade (de 1 a 30 dias). Em branco vale o padrão, que aparece apagado dentro do campo;
+preenchido, vale o seu número, em qualquer prazo.
 
 **Fechar o conteúdo** se faz em três lugares: no **card da agenda** (**✓ terminei este conteúdo**, com
 aviso de quantas sessões serão afetadas), no **formulário da sessão** (que mostra a fase de cada
@@ -1380,11 +1406,48 @@ andamento"** e a fila automática de cada um foi reduzida à **volta mais próxi
 **feitas** e as criadas **à mão** ficaram intactas. A plataforma avisa uma vez, e a migração roda
 uma vez só (`db.fasesMigradas`).
 
+## Falta estudar — o mural da aba Hoje
+
+No lugar do antigo card *Para lembrar*, a aba **Hoje** tem o mural **Falta estudar**: uma lista que
+**você monta** com os conteúdos que não podem ser esquecidos. Nada se digita nele — os conteúdos são
+**escolhidos** entre os do cadastro, os mesmos que aparecem nas sessões.
+
+- **+ Adicionar conteúdos a estudar** — abre os conteúdos cadastrados que ainda **não têm sessão** e
+  não estão no mural, por disciplina; marque os que falta estudar. Conteúdo novo se cria onde sempre
+  se criou: aba **Disciplinas** ou o formulário da sessão.
+- **✕** tira do mural sem apagar o conteúdo.
+- **Arraste pela alça ⠿** (ou use ↑ ↓ no teclado, que é o caminho do celular) para priorizar. A ordem
+  fica gravada; o que nunca foi arrumado vai para o fim, na ordem em que foi cadastrado.
+- **▶ estudar** abre a sessão já com a disciplina e o conteúdo (a dificuldade continua para você
+  escolher). Registrada a primeira sessão, o conteúdo **sai do mural sozinho**.
+- Com muitos conteúdos, aparecem os 8 primeiros e um **+ ver todos**.
+
+## A sua própria rotina
+
+Nos ajustes (engrenagem no topo), **Criar os agendamentos automaticamente (revisões e retomadas)** vem
+marcado. Quem já tem uma rotina — montada por conta própria ou trazida de fora — desmarca, e a agenda
+passa a ser **só o que você marca**: nada é criado, empurrado ou refeito pelo sistema (nem escada,
+nem retomada, nem garantia). Ao desmarcar, os ajustes perguntam o que fazer com o que já está lá:
+
+- **Manter** (padrão) — as revisões e retomadas automáticas pendentes passam a ser suas (`manual`);
+- **Apagar as automáticas pendentes** — fica só o que você marcou à mão.
+
+O que já foi feito nunca sai. Religar a chave refaz a agenda automática, e as suas continuam onde
+estão. Registrar uma sessão continua cumprindo o item vencido daquele conteúdo.
+
+**Várias datas de uma vez.** No **+ Adicionar revisão**, a data virou uma lista: escolha uma data e
+**+ adicionar esta data** (quantas quiser), ou gere a partir da data da caixa — **a cada N dias, K
+vezes**, ou a **escada D+1, 3, 7, 16, 35**. Cada etiqueta vira um card com o mesmo conteúdo, nome e
+detalhes; o ✕ tira uma data. Sem etiqueta nenhuma, a caixa sozinha cria um card, como sempre foi.
+Trocar a disciplina nesse formulário atualiza a lista de conteúdos na hora (antes ela ficava vazia
+até reabrir o formulário).
+
 ## Até quando o sistema agenda
 
 Tudo o que é automático para num dia só: o **horizonte**.
 
-1. **Revisar até** — o teto que você escolhe em *Ajustes*, **até um ano à frente**.
+1. **Revisar até** — o teto que você escolhe em *Ajustes*, **sem limite** (o teto de um ano saiu em
+   23/09). A escada termina sozinha no último degrau, então nada cresce sem fim.
 2. **180 dias** a partir de hoje, quando não há teto. O horizonte anda com o dia: o que não coube
    hoje nasce quando ele chegar.
 

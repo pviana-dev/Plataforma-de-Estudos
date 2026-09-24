@@ -44,7 +44,7 @@ async function editarESalvar(w, mexer){
   await editarESalvar(w, null);
   ok("salvar sem mexer não toca no cronograma", plano(w)===antes, {antes, depois:plano(w)});
   ok("e a mensagem diz isso",
-     /cronograma continua o mesmo/.test(w.document.querySelector("#toast").textContent),
+     /agenda continua a mesma/.test(w.document.querySelector("#toast").textContent),
      w.document.querySelector("#toast").textContent);
 
   /* ---- 2. mexer só na descrição, no tempo e nas questões ---- */
@@ -76,7 +76,7 @@ async function editarESalvar(w, mexer){
   const mudou3 = plano(w)!==antes;
   ok("mudar a dificuldade refaz o cronograma", mudou3, {antes, depois:plano(w)});
   ok("e a mensagem avisa que refez",
-     !mudou3 || /cronograma refeito/.test(w.document.querySelector("#toast").textContent),
+     !mudou3 || /agenda atualizada/.test(w.document.querySelector("#toast").textContent),
      w.document.querySelector("#toast").textContent);
 
   /* ---- 4. mexer na DATA refaz ---- */
@@ -92,6 +92,12 @@ async function editarESalvar(w, mexer){
   await editarESalvar(w, null);
   ok("salvar devolve o cronograma a quem não tinha", db(w).revisoes.length>0,
      db(w).revisoes.map(r=>r.data));
+
+  /* ---- 5b. conteúdo em andamento: a mensagem fala da RETOMADA, não de revisões ---- */
+  w=abrir([], "andamento"); await espera(600);
+  await editarESalvar(w, doc => { const sel=doc.querySelector('#modalCaixa [name="dificuldade"]'); sel.value="3"; });
+  const msg5=w.document.querySelector("#toast").textContent;
+  ok("em andamento, mudar a dificuldade diz a próxima retomada", /próxima retomada/.test(msg5) && !/revis/.test(msg5), msg5);
 
   /* ---- 6. o que foi remarcado à mão nunca é refeito — mas anda junto ----
      A revisão à mão não é apagada nem recriada; se um contato empurra a

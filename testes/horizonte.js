@@ -30,7 +30,7 @@ async function salvarSessao(w){                 // regrava a sessão para dispar
 }
 async function ajustes(w, fn){
   const doc=w.document;
-  doc.getElementById("btnAjuda").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  doc.getElementById("btnAjustes").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(250);
   fn(doc);
   doc.querySelector("#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
@@ -130,12 +130,13 @@ async function ajustes(w, fn){
   ok("religando, o agendamento volta", db(w).posProva==="continuo", db(w).posProva);
   ok("e o cronograma é refeito", db(w).revisoes.length>1, db(w).revisoes.length);
 
-  /* ---- 9. o teto não passa de um ano, mesmo forçando ---- */
+  /* ---- 9. o teto não tem limite (decisão do Pedro, 23/09: saiu o teto de um ano) ---- */
   w=abrir(base()); await espera(350);
   await ajustes(w, d2=>{ d2.querySelector('[name="revisarAte"]').value=dia(900); });
-  ok("um teto absurdo é aparado em um ano", db(w).revisarAte<=dia(365), db(w).revisarAte);
-  ok("o campo já avisa o limite no próprio HTML",
-     /name="revisarAte"[^>]*max="/.test(html));
+  ok("um teto de 900 dias é aceito como está", db(w).revisarAte===dia(900), db(w).revisarAte);
+  ok("e o campo não traz limite no HTML", !/name="revisarAte"[^>]*max="/.test(html));
+  ok("a escada termina sozinha: nada é agendado além do último degrau",
+     db(w).revisoes.filter(r=>!r.feita).every(r=>r.data<=dia(400)), db(w).revisoes.map(r=>r.data));
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nhorizonte, teto e pós-prova funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

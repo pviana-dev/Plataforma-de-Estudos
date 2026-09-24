@@ -60,6 +60,9 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const w5=d5.window;
   d5.window.document.querySelector('[data-acao="crono-encerrar"]').dispatchEvent(new w5.MouseEvent("click",{bubbles:true}));
   await espera(300);
+  // rodando logo depois da meia-noite, o cronômetro "de 30 min atrás" cruza o dia e o app pergunta: tudo no dia em que começou
+  { const tudo=d5.window.document.querySelector('#modalCorpo [data-acao="crono-virada"][data-dividir="0"]');
+    if (tudo){ tudo.dispatchEvent(new w5.MouseEvent("click",{bubbles:true})); await espera(300); } }
   const reg=JSON.parse(w5.localStorage.getItem("plataforma-estudos:v1")).registros[0];
   ok("encerrar grava a terceira medição", reg.blocos.length===3, reg.blocos.map(b=>b.inicio+"–"+b.fim));
   ok("e o total sobe", reg.minutos===330, reg.minutos);

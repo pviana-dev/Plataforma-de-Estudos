@@ -21,6 +21,9 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const antes=lerDb();
   console.log("  antes:  sessão "+antes.registros[0].minutos+"min · revisão "+(antes.revisoes[0].minutos||0)+"min");
   click(doc.querySelector('[data-acao="crono-encerrar"]')); await espera(400);
+  // rodando logo depois da meia-noite, o cronômetro "de 30 min atrás" cruza o dia e o app pergunta: tudo no dia em que começou
+  { const tudo=doc.querySelector('#modalCorpo [data-acao="crono-virada"][data-dividir="0"]');
+    if (tudo){ click(tudo); await espera(400); } }
   const d=lerDb(), reg=d.registros[0], rev=d.revisoes[0];
   console.log("  depois: sessão "+reg.minutos+"min · revisão "+rev.minutos+"min");
 

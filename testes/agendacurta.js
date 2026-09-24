@@ -33,13 +33,16 @@ const aparece=(w,id)=>idsNaTela(w).includes(id);
 
 (async()=>{try{
   let w=abrir(); await espera(400);
-  const topo=w.document.querySelector("#hojeTopo");
+  // hoje fica no botão da prova, embaixo dela (pedido do Pedro, 23/09)
+  const chip=w.document.querySelector("#chipData");
   const [a,m,d]=hoje.split("-");
-  ok("o topo diz que dia é hoje", !!topo && topo.textContent.includes(d+"/"+m+"/"+a) && /Hoje é/.test(topo.textContent),
-     topo && topo.textContent);
-  ok("com o dia da semana", /(domingo|segunda|terça|quarta|quinta|sexta|sábado)/.test(topo.textContent), topo.textContent);
+  ok("o botão da prova diz que dia é hoje", /Hoje/.test(chip.querySelector(".hoje-rot").textContent) &&
+     chip.querySelector(".hoje-data").textContent===d+"/"+m+"/"+a, chip.textContent);
+  ok("com o dia da semana ao passar o mouse", /(domingo|segunda|terça|quarta|quinta|sexta|sábado)/.test(chip.querySelector(".hoje-data").title),
+     chip.querySelector(".hoje-data").title);
+  ok("e não fica mais embaixo do nome da plataforma", !w.document.querySelector("#hojeTopo"));
   click(w, w.document.querySelector('[data-aba="registros"]')); await espera(200);
-  ok("e continua lá em outra aba", /Hoje é/.test(w.document.querySelector("#hojeTopo").textContent));
+  ok("e continua lá em outra aba", /Hoje/.test(w.document.querySelector("#chipData").textContent));
   click(w, w.document.querySelector('[data-aba="revisoes"]')); await espera(250);
 
   ok("por padrão, 'Só as próximas' vem marcado",

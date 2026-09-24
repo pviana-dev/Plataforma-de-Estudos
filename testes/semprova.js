@@ -82,7 +82,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
      $("#erroRevisao") && $("#erroRevisao").textContent);
 
   /* ---- 4. alternar entre os dois modos pelos ajustes ---- */
-  doc.getElementById("btnAjuda").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  doc.getElementById("btnAjustes").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(200);
   const radio=v=>$('#formAjustes [name=objetivo][value="'+v+'"]');
   ok("os ajustes trazem o seletor de objetivo", !!radio("livre") && !!radio("concurso") && !!radio("vestibular"));

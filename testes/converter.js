@@ -50,7 +50,7 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
 
   const d=lerDb(), conv=d.registros.find(r=>r.id==="rHoje");
   ok("avisou que as revisões agendadas seriam apagadas",
-     perguntas.some(p=>/apaga as \d+ revisão/.test(p)), perguntas);
+     perguntas.some(p=>/apaga os \d+ item\(ns\) que esta sessão tinha na agenda/.test(p)), perguntas);
   ok("a sessão virou revisão", conv.tipo==="revisao", conv.tipo);
   ok("o conteúdo passou a ser o da revisão", conv.assuntos.join()==="LAI", conv.assuntos);
   ok("o tempo dela continua", conv.minutos===50, conv.minutos);

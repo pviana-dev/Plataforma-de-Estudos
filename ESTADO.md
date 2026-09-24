@@ -10,6 +10,7 @@ O **README.md** explica *como a plataforma funciona*; este arquivo diz *onde par
 | **`main`** | a versão em uso no dia a dia. Recebeu o ramo `fases-do-conteudo` por fast-forward em 23/09 (até `0cb2287`). |
 | **`fases-do-conteudo`** | já mergeado na `main`; não recebe mais trabalho. |
 | **`escada-por-conteudo`** | itens 32 e 33; **mergeado na `main`** (fast-forward) em 23/09. |
+| **`rotina-propria`** | itens 34 a 39, **commitados em 24/09; ainda não mergeados na `main`**. |
 | tag **`v1-antes-das-fases`** | marca o estado anterior a esse trabalho todo. |
 
 ```
@@ -319,7 +320,8 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    03/10, 16/10…; Análise Combinatória continua depois da revisão à mão de hoje; nada cai em 11/10.
 
 33. **Hoje no topo, madrugada dividida e agenda curta** (23/09, mesmo ramo). Pedidos do Pedro:
-   - **Que dia é hoje**: embaixo do nome da plataforma, em todas as abas (`#hojeTopo`, desenhado no `render`).
+   - **Que dia é hoje**: no botão da prova (`#chipData`), numa segunda linha *Hoje dd/mm/aaaa* (rótulo igual ao "Prova") com as datas
+     alinhadas em grade. Primeiro ficou embaixo do nome da plataforma; o Pedro não gostou e pediu no botão.
    - **Cronômetro que passa da meia-noite**: ao encerrar, pergunta *tudo na sessão do dia em que começou*
      (o comportamento do item 9) ou *dividir por dia* — a parte até a meia-noite fica na sessão de origem e
      o resto vai para uma sessão nova do dia seguinte, criada sozinha, igual à original (`fatiasPorDia`,
@@ -333,6 +335,77 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
      Pedro); o seletor de Assunto ficou um pouco maior. Vale também para os próximos 7 dias da aba Hoje. O card
      *Agenda de hoje* não é cortado (hoje é hoje), nem os números do topo (contam a agenda inteira). Suíte
      nova `agendacurta.js`; `nomerev`, `proximos`, `v2` e `visoes` abrem em *Todas* porque contam itens.
+
+34. **Rotina própria e datas em cadeia** (23/09, ramo `rotina-propria`). Pedido do Pedro: deixar o usuário montar a
+   própria rotina (ou trazer uma de fora) e facilitar a criação dos agendamentos.
+   - **Chave nos ajustes** `db.agendaAutomatica` (padrão ligada). Desligada, `agendamentoAtivo()` é falso: nada
+     automático é criado, empurrado ou refeito. Ao desligar, *manter* (padrão; pendentes automáticas viram `manual`)
+     ou *apagar as automáticas pendentes* (`desligarAgendaAutomatica`). Aviso na aba Agenda e no formulário de sessão.
+   - **Várias datas de uma vez** no *+ Adicionar revisão* (só ao criar; editar continua com uma data): etiquetas
+     `datas`, *+ adicionar esta data*, *a cada N dias, K vezes* e *escada D+1, 3, 7, 16, 35*. Cada data vira um
+     card (`salvarRevisaoManual`, extraída de `enviarRevisao`).
+   - **Defeito antigo corrigido de passagem**: no formulário de revisão, trocar a disciplina não atualizava a lista de
+     conteúdos (ficava vazia). Agora `opcoesDeConteudo` refaz as opções sem redesenhar o formulário.
+   - Suíte nova `rotinapropria.js`.
+
+35. **Dias da retomada e dificuldade obrigatória** (23/09, ramo `rotina-propria`). Pedido do Pedro.
+   - **Dificuldade obrigatória e sem padrão** em toda sessão nova (formulário, cronômetro, *continuar*, item da
+     agenda): o seletor começa em *Escolha a dificuldade…* e o registro é recusado sem ela. Ordem Difícil, Médio,
+     Fácil. **Defeito corrigido de passagem**: `guardarRascunhoRegistro` trocava a dificuldade vazia por 3
+     (*Difícil*) sempre que o formulário era redesenhado (ex.: ao trocar a disciplina).
+   - **Retomada**: `diasDaVolta` = o que a pessoa escolheu nos ajustes (`db.diasRetomada`, 1 a 30 dias por
+     dificuldade) ou `diasDaVoltaPadrao` — dificuldade × dias até a prova (ou o *revisar até*): até 30 dias
+     1/1/2, até 90 dias 1/2/3, mais ou sem prazo 1/2/4 (difícil/médio/fácil; o último é o ritmo de antes).
+     **Tempo de estudo previsto** (esclarecido pelo Pedro: não é só a prova, vale também sem objetivo): campo
+     próprio nos ajustes, `db.estudoAte` (data, com atalhos +1/+3/+6 meses e +1 ano). `fimDoEstudoPrevisto`:
+     esse campo → a prova à frente → o *revisar até* → sem prazo. Preenchido, manda sobre a prova.
+   - Suíte nova `diasretomada.js`; 10 suítes passaram a escolher a dificuldade antes de registrar.
+
+36. **Ajustes e ajuda separados** (23/09, ramo `rotina-propria`). A **engrenagem** (`#btnAjustes`, `.btn-ajustes`: o
+   mesmo bloco cheio na cor da identidade do livro da marca) abre `modalAjustes` — só o formulário; o **?** abre
+   `modalAjuda` — como o cronograma é montado (com os dias de hoje) e as metodologias. Um leva ao outro; o botão
+   da prova (`abrir-ajustes`) e o pós-prova do vestibular abrem os ajustes. Suíte nova `ajustesajuda.js`.
+   Depois, a pedido do Pedro: a **engrenagem** e os botões de ícone do cabeçalho (?, ↓, ↑, ◐) ganharam o mesmo
+   hover (verde fechado, sobe 2px, brilho); nos ajustes, **Meta diária** veio para antes de *Revisar até*; as
+   caixas da retomada mostram apagado o número que **está valendo** e o recalculam na hora quando o tempo previsto
+   ou o *revisar até* mudam (`atualizarDiasPadraoAjustes`); as opções de marcar (`.opcao`) têm hover visível
+   mesmo marcadas; os atalhos *+1 mês…* ganharam fundo de botão (`.act.atalho`). Os ajustes ficaram em **uma
+   coluna** (`.campos.uma-coluna`: nada lado a lado — nem as caixas da retomada, nem as opções de objetivo, nem
+   nome e data de cada dia de prova). **Saiu o teto de um ano** (`HORIZONTE_MAX_DIAS`): "revisar até", datas de
+   prova e estudo previsto aceitam qualquer data futura; sem "revisar até", o horizonte segue 180 dias à frente.
+   **Campo não é mais `<label>`** (`campo()` gera `<div>` + `aria-labelledby`): o label ocupava a linha toda, e
+   clicar no branco ao lado de "Data da prova" abria o calendário. Só o controle responde ao clique, no app todo
+   (também os quatro campos montados à mão e as linhas Difícil/Médio/Fácil). Caixas de número não ocupam mais a
+   largura toda (`max-width:130px`; as da retomada, 72px).
+   **Mensagem ao salvar sessão** (reportado pelo Pedro: mudar a dificuldade de um conteúdo em andamento dizia
+   "cronograma refeito: N revisão(ões) até dd/mm"). Era texto do tempo em que toda sessão tinha escada: contava a
+   retomada como revisão, pela sessão, e mostrava o horizonte. Agora `resumoDaAgenda` fala por conteúdo:
+   "próxima retomada qua, 26/09" e/ou "N revisões na agenda, a próxima …". Mesma varredura: a dica do calendário
+   do Progresso e a confirmação de transformar sessão em revisão dizem "item(ns) da agenda".
+
+37. **Mural "Falta estudar" na aba Hoje** (23/09, ramo `rotina-propria`), no lugar do card *Para lembrar* (saíram
+   `CONFIG.DICAS`, `ui.dicaIdx` e *outra dica*). Ideia do Pedro: um mural de lembrete dos conteúdos a estudar, que
+   some com a primeira sessão. **Lista montada pela pessoa, sem digitar** (esclarecido pelo Pedro): `ficha.mural`
+   marca quem está nele, e `filaAEstudar` = `mural && aEstudar`, ordenada por `ficha.prioridade`. **+ Adicionar**
+   (`modalMural`) oferece, em caixas de marcar por disciplina, os conteúdos do cadastro sem sessão e fora do mural;
+   **✕** (`tirar-afazer`) tira do mural sem apagar. Arrastar pela alça ⠿ ou ↑↓ grava a prioridade
+   (`gravarOrdemMural`). **▶ estudar** abre a sessão com disciplina e conteúdo. O arrastar das anotações foi **generalizado** (`ARRASTAVEIS`, `moverItem`) e serve às duas
+   listas. Suíte nova `mural.js`.
+
+38. **Filtros da Agenda: disciplina e conteúdo** (24/09, ramo `rotina-propria`). Pedido do Pedro: disciplina
+   primeiro, conteúdo depois, e um botão pequeno para limpar. `ui.aDisciplina` (novo) e `ui.aAssunto` (agora uma
+   `chaveAssunto` de conteúdo, não mais a chave do card) valem nas **três visões** (antes o de assunto era só da
+   visão por assunto); o conteúdo lista só os da disciplina escolhida, e trocar a disciplina limpa o conteúdo.
+   **✕ limpar** aparece quando há filtro. O card *Agenda de hoje* segue sem filtro; saltar dele limpa os dois.
+
+39. **Ajuda virou tutorial** (24/09, ramo `rotina-propria`). Pedido do Pedro: a ajuda deve explicar como usar o
+   sistema, as abas e as relações entre elas. `modalAjuda` (tela larga) tem um índice e nove seções em
+   `details.tutorial` (a primeira aberta): começo, abas, ligações, retomadas e revisões, cronômetro, rotina própria,
+   ajustes, dados, metodologias. Números vêm de `diasDaVolta`, `degrausDa` e `ultimoDiaRevisao`. Estilo próprio
+   (`.aj-*`) com os tokens do projeto. **Ao mudar uma regra ou um rótulo de botão, atualizar a ajuda junto.**
+   Depois, a pedido do Pedro: o índice em botões virou um **sumário lateral** fixo (`.aj-sumario`, marca a seção
+   escolhida; no celular, a caixa `#ajudaIr`), e cada subtópico ganhou um **fio separador** (`.aj-item`, itens de
+   lista; tracejado entre blocos de texto).
 
 ## O que falta (sinalizado em 23/09)
 
@@ -349,6 +422,8 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
   é tirar `itemEmSilencio`/`sessaoEmSilencio` e o seletor de dia por conteúdo na aba Disciplinas.
 - **Cronômetro parado esperando a escolha**: se a pessoa nunca responder, ele fica assim (o chip avisa). Não há
   prazo para escolher sozinho — de propósito, para não decidir por ela.
+
+- ~~**Fundo do sumário da Ajuda mais claro**~~ — **aprovado** pelo Pedro em 24/09 (`#f6f9f7`, só no tema claro).
 
 ## Pendências
 
@@ -396,11 +471,11 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
 ## Testes
 
 ```
-cd testes && ./rodar.sh          # todas (93 suítes)
+cd testes && ./rodar.sh          # todas (97 suítes)
 cd testes && ./rodar.sh fases    # só as que casam com "fases"
 ```
 
-Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **93 suítes verdes** na `main`.
+Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **97 suítes verdes** no ramo `rotina-propria`.
 
 **Duas armadilhas já conhecidas do banco de testes:**
 - data: usar sempre a data **local** (`iso()` local), nunca `toISOString()`, que vira o dia em UTC e
@@ -408,4 +483,6 @@ Elas abrem o `index.html` de verdade num DOM (jsdom) e clicam nos botões. **93 
 - seeds que já usam as escalas novas precisam declarar `fasesMigradas`, `conteudosMigrados` e
   `dificuldadesMigradas`, senão as migrações de carga os convertem de novo;
 - conteúdo **concluído** no seed ganha a escada inteira já na carga (garantia de revisão). Suíte que testa
-  tela e conta itens precisa de um `revisarAte` curto para ficar só com o que o seed trouxe.
+  tela e conta itens precisa de um `revisarAte` curto para ficar só com o que o seed trouxe;
+- **rodar logo depois da meia-noite**: cronômetro de seed "iniciado há 30 min" cruza o dia e abre a pergunta da
+  madrugada. `cronofaixas` e `temporev` respondem "tudo no dia em que começou" quando ela aparece.

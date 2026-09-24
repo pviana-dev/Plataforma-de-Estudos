@@ -27,14 +27,24 @@ const volta=w=>db(w).revisoes.filter(r=>!r.feita).map(r=>Math.round(
 (async()=>{try{
   /* ---- o seletor tem três opções ---- */
   let w=abrir(base({registros:[sess("r1")]})); await espera(450);
-  const doc=w.document;
+  const doc=w.document; let $0;
   doc.querySelector('[data-acao="toggle-form-registro"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(350);
-  const ops=[...doc.querySelectorAll('#modalCaixa [name="dificuldade"] option')];
+  // OBRIGATÓRIA e sem padrão (decisão do Pedro, 23/09): a sessão nova começa em "Escolha…"
+  const ops=[...doc.querySelectorAll('#modalCaixa [name="dificuldade"] option')].filter(o=>o.value);
   ok("são três níveis", ops.length===3, ops.map(o=>o.value+":"+o.textContent));
-  ok("chamados fácil, médio e difícil",
-     ops.map(o=>o.textContent).join("|")==="Fácil|Médio|Difícil", ops.map(o=>o.textContent));
-  ok("o padrão é médio", ops.find(o=>o.selected).value==="2", ops.find(o=>o.selected).value);
+  ok("chamados difícil, médio e fácil",
+     ops.map(o=>o.textContent).join("|")==="Difícil|Médio|Fácil", ops.map(o=>o.textContent));
+  ok("não há padrão: a sessão nova começa sem dificuldade escolhida",
+     doc.querySelector('#modalCaixa [name="dificuldade"]').value==="", doc.querySelector('#modalCaixa [name="dificuldade"]').value);
+  $0=doc.querySelector("#formRegistro");
+  const sd=$0.querySelector("select.sel-disciplina"); sd.value="Legislação"; sd.dispatchEvent(new w.Event("change",{bubbles:true}));
+  await espera(300); $0=doc.querySelector("#formRegistro");
+  const ca=doc.querySelector("#campoAssunto"); ca.value=[...ca.options].find(o=>o.value==="LAI").value;
+  doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  $0.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+  ok("e salvar sem escolher é recusado, com o aviso", /Escolha a dificuldade/.test(doc.querySelector("#erroForm").textContent),
+     doc.querySelector("#erroForm").textContent);
 
   /* ---- a taxa de acerto não entra no cálculo ---- */
   const comTaxa=abrir(base({registros:[sess("r1",{dificuldade:1,questoes:10,acertos:3})],   // 30% de acerto
