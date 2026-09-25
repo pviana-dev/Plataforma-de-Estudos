@@ -57,4 +57,6 @@ margens do iPhone com entalhe (`env(safe-area-inset-*)`), que só importam no mo
 1. **Primeiro:** 1, 4 e 6 — CSS, pequeno. **FEITO em 24/09** (item 55 do ESTADO.md): 1 era falso alarme; 4 e 6
    corrigidos; de brinde, o aviso do rodapé (toast), que no celular virava uma coluna estreita, usa a tela toda.
 2. **Depois:** 3, 5 e 7 — adaptar ao toque (↑↓ visíveis, sessões em cartões, abas embaixo); 8, 9 e 10 junto.
+   **FEITO em 24/09** (item 56 do ESTADO.md). Das explicações em `title` (9), só a pista da agenda foi tratada.
+   As abas foram primeiro para o pé da tela; em 25/09 o Pedro as quis **no alto**, numa faixa presa ao topo.
 3. **Com a hospedagem e o banco de dados:** 2, o PWA e o ícone no Safari.

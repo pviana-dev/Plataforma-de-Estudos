@@ -538,6 +538,46 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
      lançar questões já cabiam. Ficou só uma precaução no CSS (caixa e campos podem encolher). Corrigido no
      levantamento, com o aviso para quem medir de novo.
 
+56. **Celular, segunda leva** (24/09; itens 3, 5, 7, 8, 9 e 10 do `LEVANTAMENTO-CELULAR.md`). Conferido no Chrome
+   com emulação de celular (390px), tablet (820px) e computador (1280px — igual a antes). Suíte nova `celular.js`.
+   - **Reordenar no toque** (3): em tela de toque (`pointer:coarse`) a alça ⠿ some e aparecem botões **↑ ↓**
+     (`setasDeToque`, ação `mover-toque`, o mesmo `moverItem` das setas do teclado), no mural e nas anotações.
+   - **Sessões em cartões** (5): até 620px, cada sessão é um bloco — conteúdo e descrição em cima; data ·
+     disciplina · tempo, etiquetas e ▶ continuar embaixo. Só CSS, sobre as marcas `s-data`, `s-cont`… das células.
+   - **Abas numa linha só** (7): até 620px, uma faixa que rola para o lado (esmaecida na ponta para dizer que há
+     mais); a aba aberta é trazida para a vista. Cabeçalho mais baixo. **Em 25/09, depois de abrir no celular, o
+     Pedro pediu as abas no ALTO** (tinham ido para o pé da tela, como num app): a faixa fica logo abaixo do
+     cabeçalho e presa no topo ao rolar (`position:sticky`). No tablet, como estava (ele aprovou).
+   - **Gráfico de questões** (8): no celular nasce com metade da largura, letras do tamanho de verdade e menos datas.
+   - **"ver no cronograma ↓"** (9) fica visível no toque. **Tablet** (10): o cabeçalho empilha até 900px.
+
+57. **Celular, terceira leva** (25/09, pedido do Pedro: "1 e 2 da maneira que você achar melhor").
+   - **Filtros da aba Sessões recolhíveis**: até 620px ficam atrás do botão **Filtros** (`toggle-filtros-reg`,
+     `ui.filtrosRegAbertos`), que diz quantos estão valendo ("1 ativo"). No computador o botão não existe
+     (`.so-celular`) e os campos ficam à vista, como antes.
+   - **"Registrado hoje" e "Desempenho por disciplina/conteúdo" em cartões** (`.tab-cartao`): nome em cima; os
+     números embaixo com o rótulo junto (`data-rot`, porque o cabeçalho da coluna some); a barra de acerto inteira.
+   - Conferido no Chrome com emulação de celular e no computador (igual a antes). Testes em `celular.js`.
+   - **Não feito, a pedido:** o teste num iPhone de verdade (barra do Safari, teclado, cronômetro bloqueado).
+
+58. **O mesmo filtro em todas as abas** (25/09, pedido do Pedro: "como o filtro das Anotações"). Uma peça só,
+   `filtroDiscCont(pre, …)` + `FILTROS_DC`: caixa de **Disciplina** e caixa de **Conteúdo** em cascata (a disciplina
+   manda no conteúdo; escolher um conteúdo escolhe a disciplina dele), valor do conteúdo = `chaveAssunto`, escolha
+   velha que não está mais nas opções vale como "todos". **Decisões do Pedro:** vale em **todas as telas** (não só no
+   celular); a aba **Questões mantém as várias disciplinas** em botões e ganhou só a caixa de Conteúdo.
+   - **Sessões**: + Conteúdo (`fAssunto`). **Agenda**: as duas caixas que já havia, no visual novo. **Disciplinas**:
+     os botões viraram as caixas (`cAssunto` mostra só aquele conteúdo; o cabeçalho da disciplina segue falando dela
+     inteira). **Progresso**: os botões viraram as caixas (`pAssunto`; clicar numa barra continua filtrando a
+     disciplina). **Questões**: `qAssunto` recorta números, gráfico, listas e desempenho; o card de filtro só aparece
+     quando há o que escolher.
+   - Renomear disciplina ou conteúdo leva a escolha dos filtros junto. Suíte nova `filtrosdc.js`; `subagenda`,
+     `mural` e `novoconteudo` passaram a usar as caixas.
+   - **Ajustes pedidos no mesmo dia:** na aba **Questões** a fileira de botões de disciplina também virou caixa — a
+     caixa de **Disciplinas** abre uma lista de caixinhas de marcar (uma, várias ou todas; fecha ao clicar fora),
+     então as várias disciplinas ao mesmo tempo continuam valendo. Saiu o CSS da fileira (`chips-rolagem`).
+     `grafquestoes.js` atualizada. Na **Agenda**, o quadro de Disciplina/Conteúdo ganhou respiro da linha
+     **Revisões** (que só aparece em "A fazer") e da linha Organizar.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

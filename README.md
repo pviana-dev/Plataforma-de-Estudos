@@ -20,7 +20,7 @@ mouse). Fica em todas as abas: é a referência de "hoje", "atrasado" e "amanhã
 | **Disciplinas** | O **cadastro** de disciplinas e conteúdos, agrupado por disciplina. Cada conteúdo mostra **em quantas sessões ele aparece** e a fase (*em andamento* ou *concluído em DD/MM*), com **✎ renomear** — que muda o nome **em todo o sistema** — e **✓ concluir / ↩ reabrir**. No cabeçalho de cada disciplina, **✓ concluir disciplina** fecha de uma vez todos os conteúdos abertos dela (e **↩ reabrir disciplina**, quando já está tudo fechado). Fechar um conteúdo fecha **todas as sessões que falam dele** e começa a escada de revisões daquele dia. Aqui se criam disciplinas (**+ Nova disciplina**, que abre uma tela própria; **✕ excluir** aparece enquanto nada usa a disciplina) e conteúdos (**+ Novo conteúdo**, um por linha ou numerados — `1. Crase 2. Regência`); eles também nascem no formulário da aba **Sessões**. Renomear abre uma pergunta do próprio app, por cima da tela. |
 | **Anotações** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
 | **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. O card **Questões das sessões** lista as sessões com questões e deixa **editar** os números ali mesmo — é o mesmo dado da sessão, então a aba Sessões já mostra o valor novo. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
-| **Progresso** | Meta diária, **estudo na semana** e **questões da semana**, calendário de horas por dia, % de acerto por disciplina, tempo por disciplina e situação das revisões. **Clique numa disciplina** (no filtro ou na própria barra) para restringir os gráficos a ela; **clique num dia do calendário** para ver o que foi feito naquele dia e filtrar a aba (ver abaixo). |
+| **Progresso** | Meta diária, **estudo na semana** e **questões da semana**, calendário de horas por dia, % de acerto por disciplina, tempo por disciplina e situação das revisões. **Filtre por disciplina e por conteúdo** (as mesmas duas caixas das outras abas) — ou clique na própria barra de uma disciplina — para restringir os gráficos; **clique num dia do calendário** para ver o que foi feito naquele dia e filtrar a aba (ver abaixo). |
 
 ### Salvar uma sessão só replaneja quando o plano mudou
 
@@ -507,6 +507,13 @@ e tem **editar** e **✕** próprios. Excluir a sessão leva junto os lançament
 2. **+ Lançar questões feitas** — a ação;
 3. **os filtros** — encostados no primeiro bloco que eles recortam;
 4. o **gráfico dia a dia**, o **desempenho por disciplina/conteúdo** e as **baterias avulsas**.
+
+### O mesmo filtro em todas as abas: Disciplina e Conteúdo (25/09)
+
+Sessões, Agenda, Disciplinas, Anotações, Questões e Progresso filtram do mesmo jeito: uma caixa de
+**Disciplina** e, ao lado, uma de **Conteúdo**, em cascata — escolhida a disciplina, o conteúdo só mostra os dela;
+escolhido um conteúdo, a disciplina acompanha. A exceção é a aba **Questões**, que mantém os botões para
+marcar **várias disciplinas ao mesmo tempo** (decisão do Pedro) e ganhou só a caixa de Conteúdo.
 
 ### Filtrar as questões por disciplina — várias ao mesmo tempo
 

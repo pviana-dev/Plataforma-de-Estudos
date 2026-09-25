@@ -115,27 +115,34 @@ const lim=s=>s.replace(/\s+/g," ").trim();
   /* ---- 7. o filtro da aba Disciplinas ---- */
   w=abrir(seed,{aba:"conteudos"}); await espera(400);
   doc=w.document; $=s=>doc.querySelector(s);
-  const botoes=[...doc.querySelectorAll('[data-acao="filtrar-conteudos"]')];
-  ok("a aba Disciplinas lista as disciplinas para filtrar", botoes.length===4,
-     botoes.map(b=>lim(b.textContent)));
-  ok("abre em 'Todas'", botoes[0].getAttribute("aria-selected")==="true");
+  // desde 25/09 o filtro é o mesmo das Anotações: caixa de Disciplina e caixa de Conteúdo
+  const opcoes=id=>[...doc.querySelectorAll(id+" option")].map(o=>o.textContent);
+  ok("a aba Disciplinas lista as disciplinas para filtrar, numa caixa", opcoes("#cDisciplina").length===4,
+     opcoes("#cDisciplina"));
+  ok("abre em 'Todas as disciplinas'", $("#cDisciplina").value==="");
   ok("e mostra as três disciplinas",
      [...doc.querySelectorAll("#view .grupo-rev .cab strong")].length===3,
      [...doc.querySelectorAll("#view .grupo-rev .cab strong")].map(e=>e.textContent));
-  const alvoDisc=botoes.find(b=>b.dataset.disc==="Português");
-  alvoDisc.dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(350);
+  const muda=(id,v)=>{ const s=$(id); s.value=v; s.dispatchEvent(new w.Event("change",{bubbles:true})); };
+  muda("#cDisciplina","Português"); await espera(350);
   const grupos=[...doc.querySelectorAll("#view .grupo-rev .cab strong")].map(e=>e.textContent);
   ok("escolher uma deixa só ela na lista", grupos.join()==="Português", grupos);
-  ok("mas o filtro continua listando todas, para dar o caminho de volta",
-     [...doc.querySelectorAll('[data-acao="filtrar-conteudos"]')].some(b=>b.dataset.disc==="Legislação"));
+  ok("mas a caixa continua listando todas, para dar o caminho de volta", opcoes("#cDisciplina").includes("Legislação"));
+  ok("e o conteúdo passa a listar só os dela", opcoes("#cAssunto").slice(1).every(t=>!/·/.test(t)) && opcoes("#cAssunto").length>1,
+     opcoes("#cAssunto"));
   ok("e o resumo do topo fala do filtrado (1 disciplina)",
      /1 disciplina/.test($("#view").textContent), lim($("#view").textContent).slice(0,220));
-  const limpar=[...doc.querySelectorAll('[data-acao="filtrar-conteudos"]')]
-    .find(b=>/limpar/.test(b.textContent));
+  const limpar=$('[data-acao="limpar-filtro-conteudos"]');
   ok("há um jeito de limpar o filtro", !!limpar);
   limpar.dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(350);
   ok("limpar devolve as três", [...doc.querySelectorAll("#view .grupo-rev .cab strong")].length===3,
      [...doc.querySelectorAll("#view .grupo-rev .cab strong")].map(e=>e.textContent));
+  // escolher um conteúdo sem disciplina: a disciplina acompanha, e a lista mostra só ele
+  const umConteudo=[...doc.querySelectorAll("#cAssunto option")].find(o=>o.value);
+  muda("#cAssunto", umConteudo.value); await espera(350);
+  ok("escolher um conteúdo escolhe a disciplina dele e mostra só ele",
+     !!$("#cDisciplina").value && doc.querySelectorAll("#view .item-conteudo").length===1,
+     [$("#cDisciplina").value, doc.querySelectorAll("#view .item-conteudo").length]);
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nsub-abas da agenda, salto e filtro de disciplinas ok");
   process.exit(falhas?1:0);

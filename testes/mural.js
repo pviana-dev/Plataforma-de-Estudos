@@ -75,7 +75,7 @@ function abrir(s){
 
   /* ---- conteúdo novo no cadastro aparece sozinho, no fim ---- */
   doc.querySelector('[data-aba="conteudos"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(250);
-  doc.querySelector('[data-acao="filtrar-conteudos"][data-disc="Legislação"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(250);
+  { const _s=doc.querySelector("#cDisciplina"); _s.value="Legislação"; _s.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(250); }   // a disciplina se escolhe na caixa (filtro igual ao das Anotações)
   doc.querySelector('[data-acao="novo-conteudo"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(250);
   doc.querySelector("#formNovosConteudos textarea").value="Licitações";
   doc.querySelector("#formNovosConteudos").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);

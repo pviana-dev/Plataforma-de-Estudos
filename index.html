@@ -671,6 +671,7 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 .leva-a{color:var(--accent-ink);font-weight:600;white-space:nowrap}
 .corpo.saltavel .leva-a{opacity:0;transition:opacity .12s ease}
 .corpo.saltavel:hover .leva-a,.corpo.saltavel:focus-visible .leva-a{opacity:1}
+@media (hover:none){.corpo.saltavel .leva-a{opacity:1}}   /* no toque não há hover: a pista fica à vista */
 /* e, ao chegar, o item pisca para dizer "é este aqui" */
 @keyframes acende{0%,100%{box-shadow:0 0 0 0 transparent}
   15%,70%{box-shadow:0 0 0 3px var(--accent)}}
@@ -680,21 +681,6 @@ html[data-tema="escuro"] .btn-add .mais{color:#1b2224}
 @keyframes acendeLinha{0%,100%{background:transparent}15%,70%{background:var(--accent-soft)}}
 tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
 @media (prefers-reduced-motion:reduce){tbody tr.realce td{animation:none;background:var(--accent-soft)}}
-
-/* --- linha de chips que rola para o lado em vez de quebrar ---
-   Com muitas disciplinas a linha quebrava em duas, três, e empurrava a aba
-   inteira para baixo. Agora ela rola: o rótulo e o "limpar" ficam fixos nas
-   pontas (são os que precisam estar sempre à mão) e só os chips deslizam. */
-.filtro-chips{flex-wrap:nowrap;gap:9px;align-items:center}
-.filtro-chips .fixo{flex:0 0 auto}
-.chips-rolagem{flex:1 1 auto;min-width:0;display:flex;gap:7px;align-items:center;
-  overflow-x:auto;overflow-y:hidden;padding-bottom:3px;
-  scrollbar-width:thin;scrollbar-color:var(--eixo) transparent;
-  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-.chips-rolagem > *{flex:0 0 auto}          /* o chip não encolhe: ele sai da vista */
-.chips-rolagem::-webkit-scrollbar{height:6px}
-.chips-rolagem::-webkit-scrollbar-thumb{background:var(--eixo);border-radius:999px}
-.chips-rolagem::-webkit-scrollbar-track{background:transparent}
 
 /* --- gráfico das questões dia a dia --- */
 .grafico-q{position:relative;margin:2px 0 4px}
@@ -760,6 +746,15 @@ tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
 .apr-item[draggable="true"]{cursor:grabbing}
 .apr-item.arrastando{opacity:.45;background:var(--accent-soft)}
 @media (hover:none){.apr-item .arrasta{opacity:1}}   /* no toque não há hover */
+/* ↑ ↓ de reordenar: só em tela de toque, no lugar da alça de arrastar */
+.setas-toque{display:none;flex:none;gap:2px}
+.so-celular{display:none}                  /* botões que só existem no celular (ver @media 620px) */
+@media (max-width:620px){ .so-celular{display:inline-flex} }
+.setas-toque .act{font-size:16px;line-height:1;padding:6px 9px;border:1px solid var(--border);background:var(--surface)}
+@media (pointer:coarse){
+  .setas-toque{display:inline-flex}
+  .apr-item .arrasta,.mural-item .arrasta{display:none}
+}
 /* mural "Falta estudar" (aba Hoje): uma linha por conteúdo, alça sempre visível */
 .mural-lista{display:flex;flex-direction:column}
 .mural-item{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--border)}
@@ -819,6 +814,26 @@ tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
    identidade; o cinza-areia ficou só para o que é inerte de verdade */
 .filtros{display:flex;flex-direction:column;gap:11px;margin-bottom:14px;
   background:var(--chrome);border:1px solid var(--chrome-borda);border-radius:10px;padding:12px 13px}
+.filtros.filtros-dentro{margin:2px 0 0}
+/* caixa de VÁRIAS disciplinas (aba Questões): parece a caixa de escolha, e abre
+   uma lista de caixinhas de marcar por cima do que vem embaixo */
+.multi-disc{position:relative}
+.multi-caixa{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;
+  border:1px solid var(--campo-borda);background:var(--campo-fundo);border-radius:8px;padding:8px 10px;color:var(--text)}
+.multi-caixa span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.multi-disc.aberto .multi-caixa{border-color:var(--accent);box-shadow:0 0 0 3px var(--foco)}
+.multi-lista{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:5px;
+  max-height:280px;overflow-y:auto}
+.multi-disc.aberto .multi-lista{display:block}
+.multi-op{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border-radius:7px;text-align:left;
+  color:var(--text);font-size:13.5px}
+.multi-op:hover{background:var(--accent-soft)}
+.multi-op .caixinha{flex:none;width:16px;height:16px;border-radius:4px;border:1.5px solid var(--campo-borda);
+  background:var(--campo-fundo);display:grid;place-items:center;font-size:11px;line-height:1;color:#fff}
+.multi-op[aria-pressed="true"] .caixinha{background:var(--accent-forte);border-color:var(--accent-forte)}
+.multi-op[aria-pressed="true"] .caixinha::after{content:"✓"}
+@media (pointer:coarse){ .multi-caixa,.multi-op{font-size:16px} }      /* dentro de um card de filtros (Agenda, Progresso, Questões) */
 .filtros-campos{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));align-items:end}
 .filtros .campo{min-width:0}
 .filtros .campo > span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.45px;color:var(--text-2)}
@@ -839,6 +854,10 @@ mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px
 .hl-tema{font-size:12.5px;color:var(--muted)}
 /* filtros da Agenda: Situação, Organizar e Assunto, um abaixo do outro */
 .filtros-agenda .linha + .linha{margin-top:8px}
+/* o quadro de Disciplina/Conteúdo tem respiro dos dois lados: acima, da linha
+   Organizar; abaixo, da linha Revisões (que só existe em "A fazer") */
+.filtros-agenda .filtros-dentro{margin:10px 0 0}
+.filtros-agenda .filtros-dentro + .linha{margin-top:12px}
 .filtros-agenda .hl-tema{min-width:72px}
 .filtros-agenda select{border:1px solid var(--campo-borda);background:var(--campo-fundo);border-radius:8px;
   padding:9px 12px;font-size:14px;flex:1;min-width:0;max-width:520px}
@@ -916,7 +935,9 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
   background:var(--accent-soft);border:1px solid var(--filtro-borda)}
 .aj-fluxo small{font-size:11.5px;color:var(--text-2)}
 .aj-fluxo i{font-style:normal;color:var(--muted)}
-@media (max-width:780px){
+/* até 900px (tablet em pé incluído) o cabeçalho empilha: em três colunas, a
+   contagem regressiva ia por cima do nome "Plataforma de Estudos" */
+@media (max-width:900px){
   header.top{grid-template-columns:1fr;justify-items:center;text-align:center}
   .top .dir{justify-content:center}
 }
@@ -928,6 +949,62 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
      nome era espremido a uma palavra por linha e o "renomear" ia por cima dele */
   .item-conteudo .rev-topo{flex-wrap:wrap;row-gap:4px}
   .item-conteudo .rev-topo .corpo{flex:1 1 100%}
+
+  /* SESSÕES EM CARTÕES. A tabela de 7 colunas rolava para o lado e o conteúdo
+     ficava numa coluna estreita. Aqui cada sessão vira um bloco: o conteúdo (e a
+     descrição) em cima, com a linha inteira; embaixo, data · disciplina · tempo,
+     as etiquetas e o ▶ continuar. As faixas de dia continuam separando. */
+  .tab-sessoes,.tab-sessoes tbody{display:block;width:100%}
+  .tab-sessoes thead{display:none}
+  .tab-sessoes tr.sep-dia,.tab-sessoes tr.sep-dia td{display:block}
+  .tab-sessoes tr.linha-clicavel{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;
+    padding:10px 9px;border-bottom:1px solid var(--grade)}
+  .tab-sessoes tr.linha-clicavel td{display:block;padding:0;border:0;width:auto;min-width:0}
+  .tab-sessoes td.s-cont{order:-1;flex:1 1 100%;font-weight:550}
+  .tab-sessoes td.s-cont .pe{font-weight:400;margin-top:2px}
+  .tab-sessoes td.s-data,.tab-sessoes td.s-disc,.tab-sessoes td.s-tempo{font-size:12.5px;color:var(--text-2);
+    white-space:nowrap}
+  .tab-sessoes td.s-disc::before,.tab-sessoes td.s-tempo::before{content:"· ";color:var(--muted)}
+  .tab-sessoes td.s-tempo div{display:inline;margin-left:4px}
+  .tab-sessoes td.s-acao{margin-left:auto}
+
+  /* FILTROS DA ABA SESSÕES atrás do botão (ver telaHistorico) */
+  .filtros.recolhivel:not(.aberto) .filtros-campos{display:none}
+  .filtros.recolhivel .botao-filtros{align-self:flex-start}
+
+  /* AS OUTRAS TABELAS EM CARTÕES (Registrado hoje; Desempenho da aba Questões):
+     o nome em cima, com a linha inteira; os números embaixo, cada um com o seu
+     rótulo (o cabeçalho da coluna some); a barra de acerto, inteira, por último. */
+  .tab-cartao,.tab-cartao tbody{display:block;width:100%}
+  .tab-cartao thead{display:none}
+  .tab-cartao tr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 4px;
+    border-bottom:1px solid var(--grade)}
+  .tab-cartao tr:last-child{border-bottom:0}
+  .tab-cartao td{display:block;padding:0;border:0;min-width:0 !important}
+  .tab-cartao td.c-nome{flex:1 1 100%;font-weight:550}
+  .tab-cartao td.c-nome .meta{font-weight:400}
+  .tab-cartao td.c-info{font-size:12.5px;color:var(--text-2)}
+  .tab-cartao td.c-info[data-rot]::after{content:" " attr(data-rot)}
+  .tab-cartao td.c-fim{margin-left:auto;font-weight:550}
+  .tab-cartao td.c-barra{flex:1 1 100%}
+
+  /* ABAS NUMA LINHA SÓ, NO ALTO (celular). Soltas, elas quebravam em três linhas.
+     Aqui ficam numa faixa que rola para o lado (esmaecida na ponta para dizer que
+     há mais) e fica PRESA no topo ao rolar a página — sempre à mão. A aba aberta
+     é trazida para a vista (ver posRender). Até 25/09 a faixa ficava no pé da
+     tela, como num app; o Pedro preferiu no alto. */
+  nav.abas{position:sticky;top:0;z-index:40;flex-wrap:nowrap;overflow-x:auto;gap:5px;
+    margin:0 -13px 14px;padding:8px 13px;padding-right:30px;background:var(--bg);
+    border-bottom:1px solid var(--border);
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);
+            mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}   /* "tem mais para o lado" */
+  nav.abas::-webkit-scrollbar{display:none}
+  nav.abas .aba{flex:none;padding:8px 13px;font-size:13.5px}
+  header.top{gap:9px;margin-bottom:14px}
+  .regressiva{padding:7px 16px}
+  .regressiva b{font-size:23px}
+  .brand h1{font-size:22px}
 }
 /* TELA DE TOQUE: campo com letra menor que 16px faz o iPhone dar zoom na página
    inteira ao tocar nele (e ela fica ampliada depois). Com 16px, não há zoom. */
@@ -2407,8 +2484,13 @@ function renomearDisciplina(antigo, novo){
   const lig = vestibular().disciplinas;
   Object.keys(lig).forEach(k => { if (bate(k) && k !== novo){ lig[novo] = lig[k]; delete lig[k]; } });
   // os filtros de tela apontam para o nome: acompanham, senão a lista fica vazia
-  ["fDisciplina","eDisciplina","pDisciplina","cDisciplina"].forEach(k => {
+  ["fDisciplina","eDisciplina","pDisciplina","cDisciplina","aDisciplina"].forEach(k => {
     if (bate(ui[k])) ui[k] = novo;
+  });
+  // o conteúdo escolhido nos filtros é guardado pela chave (disciplina|nome): a disciplina da chave acompanha
+  ["fAssunto","aAssunto","cAssunto","pAssunto","qAssunto"].forEach(k => {
+    if (ui[k] && ui[k].split("|")[0] === (antigo || "").trim().toLowerCase())
+      ui[k] = chaveAssunto(novo, ui[k].split("|").slice(1).join("|"));
   });
   if (Array.isArray(ui.qDiscs)) ui.qDiscs = ui.qDiscs.map(d => bate(d) ? novo : d);
   if (ui.eAssunto && ui.eAssunto.split("|")[0] === (antigo || "").trim().toLowerCase())
@@ -2505,6 +2587,7 @@ const ui = {
   faseAgenda: "abertos",            // sub-aba da Agenda: o que falta fazer ou o que já passou
   aDisciplina: "",                  // filtros da Agenda: disciplina, e depois conteúdo (chaveAssunto)
   aAssunto: "",
+  fAssunto: "", cAssunto: "", pAssunto: "", qAssunto: "",   // o conteúdo escolhido no filtro de cada aba (chaveAssunto)
   focoRevisao: "",                  // salto do card de hoje para o lugar dele na lista (não é estado de tela)
   focoSessao: "",                   // salto do cronômetro para a linha da sessão na aba Sessões (idem)
   cDisciplina: "",                  // filtro da aba Disciplinas
@@ -2553,12 +2636,12 @@ function alternarMinimizado(chave){
 }
 const CHAVE_ABA  = "plataforma-estudos:aba";      // formato antigo: só a aba
 const CAMPOS_TELA = ["aba",
-  "fDisciplina","fPeriodo","fOrdem","fBusca","fTipo",           // filtros de Registros
+  "fDisciplina","fAssunto","fPeriodo","fOrdem","fBusca","fTipo",   // filtros de Registros
   "eDisciplina","eAssunto","eSoImportantes","eJuntarTudo",      // filtros das Anotações
-  "qVisao","qPeriodo","qDiscs","pDisciplina","diaSel","mesCal",        // Questões e Painel
+  "qVisao","qPeriodo","qDiscs","qAssunto","pDisciplina","pAssunto","diaSel","mesCal",   // Questões e Painel
   "verTodasProximas","verTodosAssuntos","verTodoMural",         // listas abertas/fechadas
   "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aDisciplina","aAssunto","agendaCompleta",   // como a Agenda está sendo vista
-  "cDisciplina",                                                // filtro da aba Disciplinas
+  "cDisciplina","cAssunto",                                     // filtro da aba Disciplinas
   "compondo","rascunhoAnot"];                                   // e o que está sendo escrito
 function abaSalva(){
   try { const a = localStorage.getItem(CHAVE_ABA); return ABAS.some(x => x.id === a) ? a : ""; }
@@ -2673,6 +2756,12 @@ function posRender(){
       alvo.classList.add("realce");
       setTimeout(() => alvo.classList.remove("realce"), 2200);
     }
+  }
+  // barra de abas que rola (celular): a aba aberta fica à vista
+  const barra = document.getElementById("abas");
+  if (barra && barra.scrollWidth > barra.clientWidth){
+    const aberta = barra.querySelector('[aria-selected="true"]');
+    if (aberta) barra.scrollLeft = aberta.offsetLeft - (barra.clientWidth - aberta.offsetWidth) / 2;
   }
   // veio do cronômetro: rola até a linha da sessão e a acende (uso único, como o de cima)
   if (ui.focoSessao){
@@ -3013,18 +3102,28 @@ function filaAEstudar(){
     ((a.prioridade ?? Infinity) - (b.prioridade ?? Infinity)) || ((a.criadoEm || 0) - (b.criadoEm || 0)) ||
     a.disciplina.localeCompare(b.disciplina, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
 }
+/* ↑ ↓ PARA QUEM TOCA. Arrastar (HTML) e as setas do teclado não existem no
+   celular: estes dois botões fazem o mesmo movimento, um passo por toque. Só
+   aparecem em tela de toque (CSS: pointer:coarse); no computador, a alça. */
+const setasDeToque = (tipo, id) =>
+  '<span class="setas-toque">' +
+    '<button class="act" type="button" data-acao="mover-toque" data-tipo="' + tipo + '" data-id="' + esc(id) + '" ' +
+      'data-passo="-1" aria-label="Subir">↑</button>' +
+    '<button class="act" type="button" data-acao="mover-toque" data-tipo="' + tipo + '" data-id="' + esc(id) + '" ' +
+      'data-passo="1" aria-label="Descer">↓</button></span>';
 const fichaPorChave = k => conteudosCad().find(c => chaveDaFicha(c) === k) || null;
 function cardFaltaEstudar(){
   const fila = filaAEstudar();
   const vis = ui.verTodoMural ? fila : fila.slice(0, CONFIG.MURAL_VISIVEIS);
   return '<div class="card"><h2>Falta estudar' +
       (fila.length ? '<span class="dica">' + fila.length + (fila.length === 1 ? " conteúdo" : " conteúdos") +
-                     ' · arraste para priorizar</span>' : '') + '</h2>' +
+                     ' · arraste ou use ↑ ↓ para priorizar</span>' : '') + '</h2>' +
     (fila.length
       ? '<div class="mural-lista">' + vis.map(c =>
           '<div class="mural-item" data-afazer="' + esc(chaveDaFicha(c)) + '">' +
             '<button class="act arrasta" data-acao="mover-afazer" data-id="' + esc(chaveDaFicha(c)) + '" ' +
               'title="Arraste para mudar a prioridade — ou use as setas ↑ ↓" aria-label="Mover ' + esc(c.nome) + ' na fila">⠿</button>' +
+            setasDeToque("afazer", chaveDaFicha(c)) +
             '<span class="mural-nome"><b>' + esc(c.nome) + '</b><span class="badge">' + esc(c.disciplina) + '</span></span>' +
             '<span class="spacer"></span>' +
             '<button class="act atalho" data-acao="estudar-afazer" data-chave="' + esc(chaveDaFicha(c)) + '" ' +
@@ -3061,11 +3160,11 @@ function blocoRegistrosDeHoje(){
   const total = doDia.reduce((t,r) => t + (r.minutos||0), 0);
   return '<div class="card"><h2>Registrado hoje ' +
     '<span class="dica">'+doDia.length+(doDia.length===1?" sessão":" sessões")+' · '+hhmm(total)+'</span></h2>' +
-    '<div class="tab-rolagem"><table><thead><tr><th>Conteúdo</th><th>Disciplina</th>' +
+    '<div class="tab-rolagem"><table class="tab-cartao tab-hoje"><thead><tr><th>Conteúdo</th><th>Disciplina</th>' +
     '<th>Tipo</th><th class="num">Tempo</th></tr></thead><tbody>' +
-    doDia.map(r => '<tr><td>'+esc(rotuloAssuntos(r))+'</td><td>'+esc(r.disciplina)+'</td>' +
-      '<td>'+badgeTipoSessao(r)+'</td>' +
-      '<td class="num">'+(r.minutos ? hhmm(r.minutos) : "—")+'</td></tr>').join("") +
+    doDia.map(r => '<tr><td class="c-nome">'+esc(rotuloAssuntos(r))+'</td><td class="c-info">'+esc(r.disciplina)+'</td>' +
+      '<td class="c-etq">'+badgeTipoSessao(r)+'</td>' +
+      '<td class="num c-fim">'+(r.minutos ? hhmm(r.minutos) : "—")+'</td></tr>').join("") +
     '</tbody></table></div></div>';
 }
 
@@ -3529,14 +3628,74 @@ function formRegistroHtml(){
   return h;
 }
 
+/* O FILTRO DE DISCIPLINA E CONTEÚDO, igual em todas as abas (pedido do Pedro,
+   25/09 — o modelo é o da aba Anotações). Duas caixas em cascata: escolhida a
+   disciplina, o Conteúdo só mostra os dela; escolhido um conteúdo sem
+   disciplina, a disciplina acompanha. Cada aba diz de onde vêm as opções
+   (`itens`: [{disciplina, nome}]) e guarda a escolha no seu par de campos de
+   `ui` — ver FILTROS_DC. O valor do conteúdo é a chaveAssunto (disciplina|nome).
+   Devolve o HTML e a escolha JÁ VALIDADA: um nome que não está mais nas opções
+   vale como "todos", em vez de deixar a lista vazia sem explicação. */
+const FILTROS_DC = {
+  f: { disc: "fDisciplina", cont: "fAssunto" },     // Sessões
+  a: { disc: "aDisciplina", cont: "aAssunto" },     // Agenda
+  c: { disc: "cDisciplina", cont: "cAssunto" },     // Disciplinas
+  p: { disc: "pDisciplina", cont: "pAssunto" },     // Progresso
+  q: { disc: null,          cont: "qAssunto" }      // Questões (as disciplinas são os botões, várias de uma vez)
+};
+function filtroDiscCont(pre, o){
+  const campos = FILTROS_DC[pre];
+  const discs = o.discs || [];
+  const disc = campos.disc && discs.indexOf(ui[campos.disc]) >= 0 ? ui[campos.disc] : "";
+  const noEscopo = o.discsEscopo || (disc ? [disc] : null);         // Questões: as disciplinas marcadas
+  const mapa = new Map();
+  (o.itens || []).forEach(x => {
+    if (!x || !x.disciplina || !x.nome) return;
+    if (noEscopo && noEscopo.indexOf(x.disciplina) < 0) return;
+    const k = chaveAssunto(x.disciplina, x.nome);
+    if (!mapa.has(k)) mapa.set(k, x);
+  });
+  const opcoes = [...mapa.entries()]
+    .sort((a,b) => a[1].nome.localeCompare(b[1].nome, "pt-BR", { sensitivity: "base" }));
+  const cont = mapa.has(ui[campos.cont]) ? ui[campos.cont] : "";
+  const umaSo = !!disc || (noEscopo && noEscopo.length === 1);
+  const html =
+    (campos.disc
+      ? campo("Disciplina", '<select id="' + campos.disc + '" data-filtro-dc="' + pre + '" data-parte="disc">' +
+          '<option value="">Todas as disciplinas</option>' +
+          discs.map(d => '<option value="' + esc(d) + '"' + (d === disc ? " selected" : "") + '>' + esc(d) + '</option>').join("") +
+          '</select>')
+      : '') +
+    campo("Conteúdo", '<select id="' + campos.cont + '" data-filtro-dc="' + pre + '" data-parte="cont">' +
+      '<option value="">Todos os conteúdos</option>' +
+      opcoes.map(([k, x]) => '<option value="' + esc(k) + '"' + (k === cont ? " selected" : "") + '>' +
+        esc(x.nome + (umaSo ? "" : " · " + x.disciplina)) + '</option>').join("") +
+      '</select>');
+  return { html, disc, cont, n: opcoes.length };
+}
+/** a disciplina (com o nome como está escrito) de uma chave de conteúdo */
+function discDaChave(k){
+  const d = (k || "").split("|")[0];
+  return disciplinas().find(x => x.toLowerCase() === d) || "";
+}
 function telaHistorico(){
   const total = db.registros.length;
   let h = '<div class="card"><h2>Todas as sessões <span class="dica">'+total+(total===1?" sessão":" sessões")+' cadastrada(s)</span></h2>';
-  const filtrando = !!(ui.fDisciplina || ui.fPeriodo !== "todos" || ui.fOrdem !== "data-desc" ||
+  const fdc = filtroDiscCont("f", { discs: disciplinas(),
+    itens: db.registros.flatMap(r => assuntosDe(r).map(a => ({ disciplina: r.disciplina, nome: a }))) });
+  const filtrando = !!(fdc.disc || fdc.cont || ui.fPeriodo !== "todos" || ui.fOrdem !== "data-desc" ||
                        ui.fBusca || ui.fTipo !== "todos");
-  h += '<div class="filtros"><div class="filtros-campos">' +
-    campo("Disciplina", '<select id="fDisciplina"><option value="">Todas</option>' +
-      disciplinas().map(d => '<option'+(ui.fDisciplina===d?" selected":"")+'>'+esc(d)+'</option>').join("") + '</select>') +
+  /* No celular os cinco filtros, um embaixo do outro, tomavam quase uma tela
+     antes da lista. Lá eles ficam atrás do botão "Filtros" (que diz quantos
+     estão valendo); no computador o botão nem aparece e os campos ficam à vista. */
+  const nFiltros = [fdc.disc, fdc.cont, ui.fPeriodo !== "todos", ui.fTipo !== "todos", ui.fOrdem !== "data-desc", ui.fBusca]
+    .filter(Boolean).length;
+  h += '<div class="filtros recolhivel'+(ui.filtrosRegAbertos ? " aberto" : "")+'">' +
+    '<button class="btn mini ghost so-celular botao-filtros" type="button" data-acao="toggle-filtros-reg" ' +
+      'aria-expanded="'+(!!ui.filtrosRegAbertos)+'">' + (ui.filtrosRegAbertos ? "▴ " : "▾ ") + 'Filtros' +
+      (nFiltros ? ' <span class="badge">' + nFiltros + (nFiltros === 1 ? " ativo" : " ativos") + '</span>' : '') +
+    '</button>' +
+    '<div class="filtros-campos">' + fdc.html +
     campo("Período", '<select id="fPeriodo">' +
       [["todos","Tudo"],["7","Últimos 7 dias"],["30","Últimos 30 dias"],["futuro","A partir de hoje"]]
         .map(([k,n]) => '<option value="'+k+'"'+(ui.fPeriodo===k?" selected":"")+'>'+n+'</option>').join("") + '</select>') +
@@ -3627,23 +3786,23 @@ function telaHistorico(){
     }
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
       ' data-acao="editar-registro" data-id="'+r.id+'" title="Clique para abrir esta sessão">' +
-      '<td class="num col-curta col-nowrap">'+D.br(r.data)+'</td><td class="col-curta">'+esc(r.disciplina)+'</td>' +
+      '<td class="num col-curta col-nowrap s-data">'+D.br(r.data)+'</td><td class="col-curta s-disc">'+esc(r.disciplina)+'</td>' +
       /* Tempo vem antes do conteúdo: assim a Dificuldade encosta na coluna larga
          e sobra folga para o rótulo dela caber numa linha só. */
-      '<td class="num col-curta col-nowrap">'+(r.minutos ? hhmm(r.minutos) : "—") +
+      '<td class="num col-curta col-nowrap s-tempo">'+(r.minutos ? hhmm(r.minutos) : "—") +
         (intervalosDe(r).length > 1
           ? '<div style="font-size:11px;color:var(--muted)">'+intervalosDe(r).length+' medições</div>' : '') +
         '</td>' +
-      '<td class="col-larga">'+esc(rotuloAssuntos(r)) + marcaPlano +
+      '<td class="col-larga s-cont">'+esc(rotuloAssuntos(r)) + marcaPlano +
         (r.anotacoes ? '<div class="pe" style="font-size:12px;color:var(--text-2)">' +
           esc(r.anotacoes.slice(0,160))+(r.anotacoes.length>160?"…":"")+'</div>' : '') + '</td>' +
-      '<td class="col-curta col-nowrap">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
-      '<td class="col-tipo col-curta col-nowrap">'+badgeTipoSessao(r)+'</td>' +
+      '<td class="col-curta col-nowrap s-dif">'+badgeDificuldade(dificuldadeDe(r))+'</td>' +
+      '<td class="col-tipo col-curta col-nowrap s-tipo">'+badgeTipoSessao(r)+'</td>' +
       /* Continuar o conteúdo dali: abre uma sessão de hoje com a mesma
          disciplina e os mesmos conteúdos. É o impulso que nasce olhando a
          sessão de terça — antes ele custava escolher tudo de novo. */
       // sessão de hoje não precisa de "continuar": continuar nela é somar horas ali
-      '<td class="col-acao">' + (r.data < D.hoje()
+      '<td class="col-acao s-acao">' + (r.data < D.hoje()
         ? '<button class="act" data-acao="continuar-sessao" data-id="'+r.id+'" ' +
           'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ continuar</button>'
         : '') + '</td></tr>';
@@ -3977,6 +4136,9 @@ function registrosFiltrados(){
   const hoje = D.hoje();
   let lista = db.registros.slice();
   if (ui.fDisciplina) lista = lista.filter(r => r.disciplina === ui.fDisciplina);
+  // conteúdo: só vale se alguma sessão ainda fala dele (escolha velha não esvazia a lista sem explicação)
+  if (ui.fAssunto && db.registros.some(r => temAssunto(r, ui.fAssunto)))
+    lista = lista.filter(r => temAssunto(r, ui.fAssunto));
   if (ui.fTipo === "estudo")   lista = lista.filter(r => !ehRevisaoSessao(r));
   if (ui.fTipo === "revisao")  lista = lista.filter(r => r.tipo === "revisao");
   if (ui.fTipo === "misto")    lista = lista.filter(r => r.tipo === "misto");
@@ -4047,7 +4209,13 @@ function telaQuestoes(){
   const discsQ = [...new Set(todos.map(x => x.disciplina).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "pt-BR"));
   const selQ = (Array.isArray(ui.qDiscs) ? ui.qDiscs : []).filter(d => discsQ.indexOf(d) >= 0);
-  const itens = selQ.length ? todos.filter(x => selQ.indexOf(x.disciplina) >= 0) : todos;
+  /* E o CONTEÚDO (25/09), o mesmo filtro das outras abas: uma caixa, que lista
+     os conteúdos das disciplinas marcadas (ou de todas). Um lote de questões
+     conta no conteúdo se a sessão dele fala daquele conteúdo. */
+  const qdc = filtroDiscCont("q", { discsEscopo: selQ.length ? selQ : null,
+    itens: todos.flatMap(x => (x.assuntos || []).map(a => ({ disciplina: x.disciplina, nome: a }))) });
+  const fala = x => !qdc.cont || (x.assuntos || []).some(a => chaveAssunto(x.disciplina, a) === qdc.cont);
+  const itens = (selQ.length ? todos.filter(x => selQ.indexOf(x.disciplina) >= 0) : todos).filter(fala);
   const geral = totalQuestoes(itens);
   const inicioSemana = D.soma(D.hoje(), -6);
   const semana = totalQuestoes(itens.filter(x => x.data >= inicioSemana && x.data <= D.hoje()));
@@ -4065,28 +4233,45 @@ function telaQuestoes(){
 
   /* O filtro vem depois da ação e antes de tudo o que ele recorta — assim a
      linha de chips fica encostada no primeiro bloco que muda com ela. */
-  if (discsQ.length > 1)
-    h += '<div class="card barra-filtro" style="padding:11px 13px;margin-bottom:14px">' +
-      '<div class="linha filtro-chips">' +
-        '<span class="hl-tema fixo">Filtrar:</span>' +
-        '<div class="chips-rolagem">' +
-          /* aria-pressed, não aria-selected: aqui o chip é um interruptor que
-             liga e desliga, não uma escolha única entre várias. */
-          '<button class="aba" data-acao="filtrar-questoes" data-disc="" ' +
-            'aria-pressed="'+(!selQ.length)+'">Todas</button>' +
-          discsQ.map(d => '<button class="aba" data-acao="filtrar-questoes" data-disc="'+esc(d)+'" ' +
-            'aria-pressed="'+(selQ.indexOf(d) >= 0)+'">'+esc(d)+'</button>').join("") +
-        '</div>' +
-        (selQ.length ? '<span class="hl-tema fixo">' + selQ.length + ' de ' + discsQ.length + '</span>' +
-                       '<button class="act fixo" data-acao="filtrar-questoes" data-disc="">limpar ✕</button>' : '') +
-      '</div></div>';
+  /* O FILTRO, igual ao das outras abas (quadro com Disciplina e Conteúdo), com
+     uma diferença combinada com o Pedro: a caixa de Disciplinas deixa marcar
+     VÁRIAS ao mesmo tempo — ela abre uma lista de caixinhas de marcar. Só há o
+     que filtrar com mais de uma disciplina ou mais de um conteúdo. */
+  if (discsQ.length > 1 || qdc.n > 1 || qdc.cont){
+    const rotDiscs = !selQ.length ? "Todas as disciplinas"
+                   : selQ.length === 1 ? selQ[0]
+                   : selQ.length + " disciplinas: " + selQ.join(", ");
+    const caixaDiscs = discsQ.length > 1
+      ? campo("Disciplinas",
+          '<div class="multi-disc' + (ui.qDiscsAberto ? " aberto" : "") + '">' +
+            '<button class="multi-caixa" type="button" data-acao="abrir-qdiscs" aria-haspopup="true" ' +
+              'aria-expanded="' + (!!ui.qDiscsAberto) + '"><span>' + esc(rotDiscs) + '</span><span aria-hidden="true">▾</span></button>' +
+            '<div class="multi-lista" role="group" aria-label="Disciplinas — marque uma ou várias">' +
+              // aria-pressed, não aria-selected: cada linha é um interruptor que liga e desliga
+              '<button class="multi-op" type="button" data-acao="filtrar-questoes" data-disc="" aria-pressed="' + (!selQ.length) + '">' +
+                '<span class="caixinha" aria-hidden="true"></span>Todas as disciplinas</button>' +
+              discsQ.map(d => '<button class="multi-op" type="button" data-acao="filtrar-questoes" data-disc="' + esc(d) + '" ' +
+                'aria-pressed="' + (selQ.indexOf(d) >= 0) + '"><span class="caixinha" aria-hidden="true"></span>' + esc(d) + '</button>').join("") +
+            '</div></div>', false)
+      : '';
+    h += '<div class="filtros"><div class="filtros-campos">' + caixaDiscs + qdc.html + '</div>' +
+      (selQ.length || qdc.cont
+        ? '<div class="filtros-acoes"><span class="marca-filtro">filtro ativo</span>' +
+          (selQ.length > 1 ? '<span class="hl-tema">' + selQ.length + ' de ' + discsQ.length + ' disciplinas</span>' : '') +
+          '<span class="spacer"></span>' +
+          (selQ.length ? '<button class="act fixo" type="button" data-acao="filtrar-questoes" data-disc="">limpar ✕</button>' : '') +
+          (qdc.cont ? '<button class="act atalho" type="button" data-acao="limpar-conteudo-questoes">✕ limpar conteúdo</button>' : '') +
+          '</div>'
+        : '') +
+      '</div>';
+  }
 
   /* O gráfico vem antes das tabelas: é o retrato do esforço recente, e é o que
      se quer ver ao abrir a aba. O desempenho por disciplina é consulta, e
      consulta fica no fim. */
   h += graficoQuestoes(itens);
-  h += listaAvulsos(selQ);
-  h += listaQuestoesDasSessoes(selQ);
+  h += listaAvulsos(selQ, qdc.cont);
+  h += listaQuestoesDasSessoes(selQ, qdc.cont);
 
   // ----- agrupamento por conteúdo ou por disciplina
   const porConteudo = ui.qVisao === "conteudo";
@@ -4097,21 +4282,25 @@ function telaQuestoes(){
       '<button class="aba" data-acao="q-visao" data-visao="conteudo" aria-selected="'+porConteudo+'">Conteúdo</button>' +
     '</div>';
 
-  const linhas = porConteudo ? linhasPorConteudo(selQ) : linhasPorDisciplina(selQ);
+  // com um conteúdo escolhido: por conteúdo, só a linha dele; por disciplina, só a disciplina dele
+  const linhas = (porConteudo ? linhasPorConteudo(selQ) : linhasPorDisciplina(selQ))
+    .filter(l => !qdc.cont || (porConteudo ? chaveAssunto(l.sub, l.nome) === qdc.cont : l.nome === discDaChave(qdc.cont)));
   const comQuestoes = linhas.filter(l => l.questoes > 0)
     .sort((a,b) => (a.taxa ?? 101) - (b.taxa ?? 101));
 
   if (!comQuestoes.length){
     h += '<div class="vazio">Ainda não há questões registradas neste agrupamento.</div>';
   } else {
-    h += '<div class="tab-rolagem"><table><thead><tr>' +
+    h += '<div class="tab-rolagem"><table class="tab-cartao tab-desempenho"><thead><tr>' +
       '<th>'+(porConteudo ? "Conteúdo" : "Disciplina")+'</th><th class="num">Questões</th>' +
       '<th class="num">Acertos</th><th class="num">Erros</th><th>Taxa de acerto</th></tr></thead><tbody>' +
-      comQuestoes.map(l => '<tr><td><b style="font-weight:550">'+esc(l.nome)+'</b>' +
+      comQuestoes.map(l => '<tr><td class="c-nome"><b style="font-weight:550">'+esc(l.nome)+'</b>' +
         '<div class="meta">'+esc(l.sub)+'</div></td>' +
-        '<td class="num">'+l.questoes+'</td><td class="num">'+l.acertos+'</td>' +
-        '<td class="num">'+(l.questoes - l.acertos)+'</td>' +
-        '<td style="min-width:170px">'+barraAcerto(l.taxa)+'</td></tr>').join("") +
+        // no cartão (celular) o número perde o cabeçalho da coluna: o rótulo vai junto
+        '<td class="num c-info" data-rot="questões">'+l.questoes+'</td>' +
+        '<td class="num c-info" data-rot="acertos">'+l.acertos+'</td>' +
+        '<td class="num c-info" data-rot="erros">'+(l.questoes - l.acertos)+'</td>' +
+        '<td class="c-barra" style="min-width:170px">'+barraAcerto(l.taxa)+'</td></tr>').join("") +
       '</tbody></table></div>';
   }
   h += '</div>';
@@ -4135,10 +4324,11 @@ function barraSVG(x, y, w, h, r, cor){
    isso. Sem esta lista, uma bateria digitada errada ficaria errada para sempre.
    As questões que vieram de uma SESSÃO têm o card delas logo abaixo
    (listaQuestoesDasSessoes), e também se editam daqui. */
-function listaAvulsos(sel){
+function listaAvulsos(sel, cont){
   const avulsos = (db.lancamentos || [])
-    .filter(l => { if (!sel || !sel.length) return true;
-                   const r = acharRegistro(l.registroId);
+    .filter(l => { const r = acharRegistro(l.registroId);
+                   if (cont && !(r && temAssunto(r, cont))) return false;
+                   if (!sel || !sel.length) return true;
                    return !!r && sel.indexOf(r.disciplina) >= 0; })
     .sort((a,b) => b.data.localeCompare(a.data));
   if (!avulsos.length) return "";
@@ -4166,9 +4356,9 @@ function listaAvulsos(sel){
    mudar aqui já é mudar lá — a aba Sessões mostra o valor novo sem sincronizar
    nada. Questão não mexe no cronograma (planoRelevante não a olha). */
 const QSESSOES_VISIVEIS = 8;
-function listaQuestoesDasSessoes(sel){
+function listaQuestoesDasSessoes(sel, cont){
   const sessoes = db.registros
-    .filter(r => r.questoes > 0 && (!sel || !sel.length || sel.indexOf(r.disciplina) >= 0))
+    .filter(r => r.questoes > 0 && (!sel || !sel.length || sel.indexOf(r.disciplina) >= 0) && (!cont || temAssunto(r, cont)))
     .sort((a,b) => b.data.localeCompare(a.data) || (b.criadoEm || 0) - (a.criadoEm || 0));
   if (!sessoes.length) return "";
   const vis = ui.verTodasQSessoes ? sessoes : sessoes.slice(0, QSESSOES_VISIVEIS);
@@ -4257,7 +4447,11 @@ function graficoQuestoes(itens){
 
   /* O desenho. Barra fina, topo arredondado só na ponta de dados (a base fica
      reta, encostada no eixo) e 2px de respiro entre os dois pedaços da pilha. */
-  const L = 34, R = 10, T = 12, B = 24, W = 720, H = 210;
+  /* No celular o desenho de 720 de largura era reduzido a ~290 e as letras
+     sumiam (10 → 4px). Lá ele nasce com metade da largura: a letra fica do
+     tamanho de verdade, e há menos rótulos de data para caberem. */
+  const estreito = typeof matchMedia === "function" && matchMedia("(max-width:620px)").matches;
+  const L = 34, R = 10, T = 12, B = 24, W = estreito ? 360 : 720, H = estreito ? 190 : 210;
   const alt = H - T - B, larg = W - L - R;
   const topo = Math.max(...serie.map(x => x.questoes));
   const passo = topo <= 5 ? 1 : Math.ceil(topo / 4 / 5) * 5;
@@ -4272,7 +4466,7 @@ function graficoQuestoes(itens){
       '<text x="'+(L-6)+'" y="'+(y(v)+3.5)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+v+'</text>';
   }
   // rótulos de data só de vez em quando: um a cada N, para não colidirem
-  const cada = Math.max(1, Math.ceil(serie.length / 10));
+  const cada = Math.max(1, Math.ceil(serie.length / (estreito ? 5 : 10)));
   serie.forEach((x, i) => {
     const cx = L + banda * i + banda / 2;
     if (i % cada === 0 || i === serie.length - 1)
@@ -4387,16 +4581,9 @@ function telaRevisoes(){
   const visao = ["dia","assunto","mes"].indexOf(ui.visaoAgenda) >= 0 ? ui.visaoAgenda : "dia";
   // as opções saem da agenda inteira, não da sub-aba: trocar de "Situação" não apaga a escolha
   const discsAgenda = [...new Set(det.map(x => x.ctx.disciplina))].sort((a,b) => a.localeCompare(b, "pt-BR"));
-  const filtroDisc = discsAgenda.includes(ui.aDisciplina) ? ui.aDisciplina : "";
-  const opcoesConteudo = new Map();
-  det.forEach(x => {
-    if (filtroDisc && x.ctx.disciplina !== filtroDisc) return;
-    (x.ctx.assuntos || []).forEach(a => {
-      const k = chaveAssunto(x.ctx.disciplina, a);
-      if (!opcoesConteudo.has(k)) opcoesConteudo.set(k, { nome: a, disciplina: x.ctx.disciplina });
-    });
-  });
-  const filtroAssunto = opcoesConteudo.has(ui.aAssunto) ? ui.aAssunto : "";
+  const adc = filtroDiscCont("a", { discs: discsAgenda,
+    itens: det.flatMap(x => (x.ctx.assuntos || []).map(a => ({ disciplina: x.ctx.disciplina, nome: a }))) });
+  const filtroDisc = adc.disc, filtroAssunto = adc.cont;
   const passaFiltro = x => (!filtroDisc || x.ctx.disciplina === filtroDisc) &&
     (!filtroAssunto || (x.ctx.assuntos || []).some(a => chaveAssunto(x.ctx.disciplina, a) === filtroAssunto));
   const naFaseTudo = fatiaAgenda(det, fase).filter(passaFiltro);
@@ -4412,21 +4599,12 @@ function telaRevisoes(){
       '<button class="aba" data-acao="visao-agenda" data-visao="'+k+'" aria-selected="'+(visao===k)+'">' +
       rot + '</button>').join("") +
     '</div>' +
-    '<div class="linha"><span class="hl-tema" id="rotADisc">Disciplina:</span>' +
-      '<select id="aDisciplina" aria-labelledby="rotADisc"><option value="">Todas as disciplinas</option>' +
-      discsAgenda.map(d => '<option value="'+esc(d)+'"'+(filtroDisc === d ? " selected" : "")+'>'+esc(d)+'</option>').join("") +
-      '</select></div>' +
-    '<div class="linha"><span class="hl-tema" id="rotAAssunto">Conteúdo:</span>' +
-      '<select id="aAssunto" aria-labelledby="rotAAssunto"><option value="">Todos os conteúdos</option>' +
-      [...opcoesConteudo.entries()]
-        .sort((a,b) => a[1].nome.localeCompare(b[1].nome, "pt-BR", { sensitivity: "base" }))
-        .map(([k,o]) => '<option value="'+esc(k)+'"'+(filtroAssunto === k ? " selected" : "")+'>' +
-                        esc(o.nome + (filtroDisc ? "" : " · " + o.disciplina)) + '</option>').join("") +
-      '</select>' +
+    /* disciplina e conteúdo: o mesmo filtro das outras abas (filtroDiscCont) */
+    '<div class="filtros filtros-dentro"><div class="filtros-campos">' + adc.html + '</div>' +
       (filtroDisc || filtroAssunto
-        ? '<button class="act atalho" type="button" data-acao="limpar-filtros-agenda" title="Tirar os filtros de disciplina e conteúdo">✕ limpar</button>'
-        : '') +
-    '</div>' +
+        ? '<div class="filtros-acoes"><span class="spacer"></span><button class="act atalho" type="button" ' +
+          'data-acao="limpar-filtros-agenda" title="Tirar os filtros de disciplina e conteúdo">✕ limpar</button></div>'
+        : '') + '</div>' +
     (fase === "abertos"
       /* O rótulo diz "Revisões" porque é nelas que a escolha pesa: a retomada é
          sempre uma por conteúdo — a próxima —, então só a escada se expande. */
@@ -4927,18 +5105,19 @@ function lancamentosDeQuestoes(){
   db.registros.forEach(r => {
     if (!(r.questoes > 0)) return;
     itens.push({ data: r.data, disciplina: r.disciplina, rotulo: rotuloAssuntos(r), tipo: "sessão",
-                 questoes: r.questoes, acertos: r.acertos || 0 });
+                 questoes: r.questoes, acertos: r.acertos || 0, assuntos: assuntosDe(r) });
   });
   db.revisoes.forEach(rev => {
     if (!rev.feita || !(rev.questoes > 0)) return;
     const ctx = contextoRevisao(rev); if (!ctx) return;
     itens.push({ data: rev.feitaEm || rev.data, disciplina: ctx.disciplina, rotulo: ctx.rotulo,
-                 tipo: "revisão", questoes: rev.questoes, acertos: rev.acertos || 0 });
+                 tipo: "revisão", questoes: rev.questoes, acertos: rev.acertos || 0, assuntos: ctx.assuntos || [] });
   });
   (db.lancamentos || []).forEach(l => {
     const reg = acharRegistro(l.registroId); if (!reg) return;
     itens.push({ data: l.data, disciplina: reg.disciplina, rotulo: rotuloAssuntos(reg),
-                 tipo: "questões", questoes: l.questoes || 0, acertos: l.acertos || 0, lancamento: l });
+                 tipo: "questões", questoes: l.questoes || 0, acertos: l.acertos || 0, lancamento: l,
+                 assuntos: assuntosDe(reg) });
   });
   return itens.sort((a,b) => b.data.localeCompare(a.data));
 }
@@ -5187,11 +5366,11 @@ function linhaAprendizado(e, comData, editando){
   ].filter(Boolean).join("");
   /* A ALÇA. O item só vira arrastável quando o mouse desce NELA — com o item
      inteiro arrastável não dava para selecionar o texto da anotação. As setas
-     ↑↓ no teclado fazem o mesmo, e é o caminho que funciona no celular, onde
-     o arrastar do HTML não existe. */
+     ↑↓ do teclado fazem o mesmo. No TOQUE não há arrastar do HTML nem teclado
+     de setas: lá a alça some e aparecem os botões ↑ ↓ (setasDeToque). */
   const alca = '<button class="act arrasta" data-acao="mover-anotacao" data-id="'+esc(e.id)+'" ' +
     'title="Arraste para mudar a ordem — ou usa as setas ↑ ↓" ' +
-    'aria-label="Mover esta anotação na ordem do card">⠿</button>';
+    'aria-label="Mover esta anotação na ordem do card">⠿</button>' + setasDeToque("anotacao", e.id);
   return '<div class="apr-item'+(e.importante ? " marcado" : "")+(editando ? " em-edicao" : "")+'"' +
       (c ? ' style="border-left-color:'+c.cor+'"' : '') + ' data-anotacao="'+esc(e.id)+'"' +
       ' title="Anotada em '+D.brFull(D.iso(new Date(e.criadoEm)))+'">' +
@@ -5501,11 +5680,20 @@ function enviarEdicaoErro(ev){
    Clicar numa disciplina (no filtro ou na própria barra) restringe TODOS os
    gráficos a ela; nesse modo as barras passam a mostrar os assuntos dela.   */
 function telaPainel(){
-  const disc  = ui.pDisciplina;
-  const regs  = disc ? db.registros.filter(r => r.disciplina === disc) : db.registros;
+  /* Disciplina e, dentro dela, um conteúdo (filtroDiscCont, 25/09). Com o
+     conteúdo, entram as sessões que falam dele (e as revisões delas), e as
+     revisões avulsas que o citam. */
+  const pdc   = filtroDiscCont("p", { discs: disciplinas(),
+    itens: db.registros.flatMap(r => assuntosDe(r).map(a => ({ disciplina: r.disciplina, nome: a }))) });
+  const cont  = pdc.cont;
+  const disc  = pdc.disc || (cont ? discDaChave(cont) : "");
+  const nomeCont = cont ? (conteudosCad().find(c => chaveDaFicha(c) === cont) || {}).nome ||
+                          cont.split("|").slice(1).join("|") : "";
+  const regs  = disc ? db.registros.filter(r => r.disciplina === disc && (!cont || temAssunto(r, cont))) : db.registros;
   const ids   = new Set(regs.map(r => r.id));
   const revs  = disc ? db.revisoes.filter(r => (r.registroId && ids.has(r.registroId)) ||
-                                               (!r.registroId && r.disciplina === disc))
+                                               (!r.registroId && r.disciplina === disc &&
+                                                (!cont || (r.assuntos || []).some(a => chaveAssunto(disc, a) === cont))))
                      : db.revisoes;
   const feitas = revs.filter(r => r.feita);
 
@@ -5531,7 +5719,7 @@ function telaPainel(){
   const naAgenda = revs.filter(r => !itemEmSilencio(r));      // em silêncio não conta como pendente
   const nAtras  = naAgenda.filter(r => statusRevisao(r) === "atrasada").length;
   const nPend   = naAgenda.length - nFeitas;
-  const escopo  = disc ? "apenas " + disc : "todas as disciplinas";
+  const escopo  = cont ? "apenas " + nomeCont + " (" + disc + ")" : disc ? "apenas " + disc : "todas as disciplinas";
   /* Dia escolhido no calendário: filtra os gráficos e o card de revisões. Ficam
      de fora, de propósito, os números que só fazem sentido no acumulado —
      semana, sequência e acerto geral. */
@@ -5547,14 +5735,11 @@ function telaPainel(){
       '<span class="spacer"></span><button class="btn mini ghost" data-acao="sel-dia" data-dia="'+diaSel+'">ver tudo de novo</button></div>'
     : '';
 
-  // ----- filtro por disciplina (uma linha acima dos gráficos)
-  let h = '<div class="card barra-filtro" style="padding:11px 13px;margin-bottom:14px"><div class="linha">' +
-    '<span class="hl-tema">Filtrar:</span>' +
-    '<button class="aba" data-acao="filtrar-disc" data-disc="" aria-selected="'+(!disc)+'">Todas</button>' +
-    disciplinas().map(d => '<button class="aba" data-acao="filtrar-disc" data-disc="'+esc(d)+'" aria-selected="'+(disc===d)+'">' +
-      esc(d)+'</button>').join("") +
-    (disc ? '<span class="spacer"></span><button class="act" data-acao="filtrar-disc" data-disc="'+esc(disc)+'">limpar filtro ✕</button>' : '') +
-  '</div></div>';
+  // ----- filtro de disciplina e conteúdo, o mesmo das outras abas (acima dos gráficos)
+  let h = '<div class="filtros"><div class="filtros-campos">' + pdc.html + '</div>' +
+    (disc ? '<div class="filtros-acoes"><span class="marca-filtro">filtro ativo</span><span class="spacer"></span>' +
+            '<button class="btn mini ghost" data-acao="limpar-filtro-painel">limpar filtros</button></div>' : '') +
+  '</div>';
 
   h += '<div class="tiles" style="margin-bottom:16px">' +
     tile(diaSel ? D.br(diaSel) : "Hoje", hhmm(minDia),
@@ -6333,6 +6518,9 @@ function renomearConteudo(disc, antigo, novo){
     r.assuntos = r.assuntos.map(a => bate(a) ? novo : a);
   });
   db.erros.forEach(e => { if (e.disciplina === disc && bate(e.assunto)) e.assunto = novo; });
+  // e o conteúdo escolhido nos filtros das abas, que é guardado pela chave com o nome
+  const velha = chaveAssunto(disc, antigo), nova = chaveAssunto(disc, novo);
+  ["fAssunto","aAssunto","cAssunto","pAssunto","qAssunto","eAssunto"].forEach(k => { if (ui[k] === velha) ui[k] = nova; });
 }
 /* QUANTO UM RENOME ALCANÇA. Conta exatamente o que renomearConteudo() vai
    tocar — nem mais, nem menos —, para o aviso não prometer o que não faz. É
@@ -6616,12 +6804,15 @@ function telaConteudos(){
   /* O filtro é só uma lente: os números do resumo continuam falando do filtrado,
      e a lista de disciplinas do filtro é sempre a completa — senão, escolher uma
      apagaria o caminho de volta para as outras. */
-  const filtro = ui.cDisciplina && todas.indexOf(ui.cDisciplina) >= 0 ? ui.cDisciplina : "";
+  const cdc = filtroDiscCont("c", { discs: todas, itens: conteudosCad() });
+  const filtro = cdc.disc;
   const discs = filtro ? [filtro] : todas;
-  const fichas = discs.reduce((n, d) => n + conteudosDaDisciplina(d).length, 0);
+  // com um conteúdo escolhido, a disciplina mostra só ele
+  const daDisc = d => conteudosDaDisciplina(d).filter(c => !cdc.cont || chaveDaFicha(c) === cdc.cont);
+  const fichas = discs.reduce((n, d) => n + daDisc(d).length, 0);
   const emAndamento = discs.reduce((n, d) =>
-    n + conteudosDaDisciplina(d).filter(c => c.fase !== "concluido" && !aEstudar(c)).length, 0);
-  const nAEstudar = discs.reduce((n, d) => n + conteudosDaDisciplina(d).filter(aEstudar).length, 0);
+    n + daDisc(d).filter(c => c.fase !== "concluido" && !aEstudar(c)).length, 0);
+  const nAEstudar = discs.reduce((n, d) => n + daDisc(d).filter(aEstudar).length, 0);
 
   let h = '<div class="card"><h2>Disciplinas</h2>';
 
@@ -6635,18 +6826,12 @@ function telaConteudos(){
     '<span class="mais">+</span> Nova disciplina' +
     '</button>';
 
-  if (todas.length > 1)
-    h += '<div class="linha barra-filtro" style="margin-bottom:12px">' +
-      '<span class="hl-tema">Filtrar:</span>' +
-      '<button class="aba" data-acao="filtrar-conteudos" data-disc="" aria-selected="'+(!filtro)+'">Todas</button>' +
-      todas.map(d => {
-        const n = conteudosDaDisciplina(d).filter(c => c.fase !== "concluido").length;
-        return '<button class="aba" data-acao="filtrar-conteudos" data-disc="'+esc(d)+'" ' +
-          'aria-selected="'+(filtro === d)+'" title="'+(n ? n + " em andamento" : "tudo concluído")+'">' +
-          esc(d) + '</button>';
-      }).join("") +
-      (filtro ? '<span class="spacer"></span>' +
-                '<button class="act" data-acao="filtrar-conteudos" data-disc="">limpar filtro ✕</button>' : '') +
+  // o filtro de disciplina e conteúdo, igual ao das outras abas (filtroDiscCont)
+  if (todas.length)
+    h += '<div class="filtros"><div class="filtros-campos">' + cdc.html + '</div>' +
+      (filtro || cdc.cont
+        ? '<div class="filtros-acoes"><span class="marca-filtro">filtro ativo</span><span class="spacer"></span>' +
+          '<button class="btn mini ghost" data-acao="limpar-filtro-conteudos">limpar filtros</button></div>' : '') +
       '</div>';
 
   /* + NOVO CONTEÚDO. Obedece ao filtro: cria na disciplina escolhida nele. Em
@@ -6671,7 +6856,9 @@ function telaConteudos(){
 
   h += discs.length
     ? discs.map(d => {
-        const itens = conteudosDaDisciplina(d);
+        // o cabeçalho (contagens e concluir/reabrir a disciplina) fala da disciplina INTEIRA;
+        // a lista embaixo obedece ao filtro de conteúdo
+        const itens = conteudosDaDisciplina(d), lista = daDisc(d);
         const abertos = itens.filter(c => c.fase !== "concluido").length;
         const nov = itens.filter(aEstudar).length;
         const andando = abertos - nov;
@@ -6697,8 +6884,8 @@ function telaConteudos(){
               ? '<button class="act" data-acao="reabrir-disciplina" data-disc="'+esc(d)+'">↩ reabrir disciplina</button>'
               : '') +
           '</div>' +
-          (itens.length
-            ? itens.map(c => {
+          (lista.length
+            ? lista.map(c => {
                 const nSess = sessoesDoConteudo(d, [c.nome]).length;
                 return '<div class="item item-conteudo"><div class="rev-topo">' +
                   '<div class="corpo"><div class="titulo">'+esc(c.nome)+'</div>' +
@@ -7753,6 +7940,11 @@ function importar(arquivo){
 
 /* ---------- delegação de eventos ---------- */
 document.addEventListener("click", ev => {
+  // a lista de várias disciplinas (Questões) fecha ao clicar em qualquer lugar fora dela
+  if (ui.qDiscsAberto && !(ev.target.closest && ev.target.closest(".multi-disc"))){
+    ui.qDiscsAberto = false;
+    if (!ev.target.closest("[data-acao],[data-aba]")){ render(); return; }
+  }
   const aba = ev.target.closest("[data-aba]");
   if (aba){ ui.aba = aba.dataset.aba; ui.foco = null; ui.formAberto = false; render(); return; }
   const alvo = ev.target.closest("[data-acao]");
@@ -7843,7 +8035,11 @@ document.addEventListener("click", ev => {
       if (!d) ui.qDiscs = [];
       else if (ui.qDiscs.indexOf(d) >= 0) ui.qDiscs = ui.qDiscs.filter(x => x !== d);
       else ui.qDiscs = ui.qDiscs.concat([d]);
+      // o conteúdo escolhido sai se a disciplina dele deixou de estar marcada
+      if (ui.qAssunto && ui.qDiscs.length && ui.qDiscs.indexOf(discDaChave(ui.qAssunto)) < 0) ui.qAssunto = "";
       render(); break; }
+    case "limpar-conteudo-questoes": ui.qAssunto = ""; render(); break;
+    case "abrir-qdiscs": ui.qDiscsAberto = !ui.qDiscsAberto; render(); break;
     case "q-visao": ui.qVisao = alvo.dataset.visao; render(); break;
     case "sel-dia":
       ui.diaSel = (ui.diaSel === alvo.dataset.dia) ? null : alvo.dataset.dia;
@@ -7856,15 +8052,17 @@ document.addEventListener("click", ev => {
       render(); break;
     }
     case "cal-hoje": ui.mesCal = D.hoje().slice(0,7); render(); break;
-    case "filtrar-disc":
+    case "filtrar-disc":                            // clique numa barra do Progresso: só aquela disciplina
       ui.pDisciplina = (ui.pDisciplina === alvo.dataset.disc) ? "" : alvo.dataset.disc;
-      render(); break;
+      ui.pAssunto = ""; render(); break;
+    case "limpar-filtro-painel": ui.pDisciplina = ""; ui.pAssunto = ""; render(); break;
     case "erro-estrela": { const e = acharErro(id); if (e){ e.importante = !e.importante; persistir(); render(); } break; }
     case "erro-refeita": { const e = acharErro(id); if (e){ e.refeita = !e.refeita; persistir(); render(); } break; }
     case "toggle-importantes": ui.eSoImportantes = !ui.eSoImportantes; render(); break;
     case "toggle-juntar": ui.eJuntarTudo = !ui.eJuntarTudo; render(); break;
+    case "toggle-filtros-reg": ui.filtrosRegAbertos = !ui.filtrosRegAbertos; ui.foco = null; render(); break;
     case "limpar-filtros-reg":
-      ui.fDisciplina = ""; ui.fPeriodo = "todos"; ui.fOrdem = "data-desc"; ui.fBusca = ""; ui.fTipo = "todos";
+      ui.fDisciplina = ""; ui.fAssunto = ""; ui.fPeriodo = "todos"; ui.fOrdem = "data-desc"; ui.fBusca = ""; ui.fTipo = "todos";
       ui.foco = null; render(); break;
     case "limpar-filtros-fb":
       ui.eDisciplina = ""; ui.eAssunto = ""; ui.eSoImportantes = false;
@@ -7875,6 +8073,15 @@ document.addEventListener("click", ev => {
       ui.eSoImportantes = false; ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null;
       render(); break;
     case "toggle-mural": ui.verTodoMural = !ui.verTodoMural; render(); break;
+    case "mover-toque": {                          // ↑ ↓ no celular: o mesmo passo das setas do teclado
+      const t = ARRASTAVEIS.find(x => x.item === (alvo.dataset.tipo === "anotacao" ? "data-anotacao" : "data-afazer"));
+      if (t && moverItem(t, alvo.dataset.id, Number(alvo.dataset.passo) || 1)){
+        // o foco segue o botão tocado, no item que andou (não a alça, que no toque está escondida)
+        const b = document.querySelector('[data-acao="mover-toque"][data-id="' + CSS.escape(alvo.dataset.id) +
+                                          '"][data-passo="' + alvo.dataset.passo + '"]');
+        if (b) b.focus();
+      }
+      break; }
     case "estudar-afazer": {                      // do mural direto para a sessão, conteúdo já escolhido
       const c = fichaPorChave(alvo.dataset.chave); if (!c) break;
       ui.prefill = { data: D.hoje(), tipo: "estudo", disciplina: c.disciplina, assuntos: [c.nome],
@@ -7960,9 +8167,7 @@ document.addEventListener("click", ev => {
       excluirDisciplina(disc); persistir(); render();
       toast("Disciplina “" + disc + "” excluída.");
       break; }
-    case "filtrar-conteudos":
-      ui.cDisciplina = ui.cDisciplina === alvo.dataset.disc ? "" : alvo.dataset.disc;
-      render(); break;
+    case "limpar-filtro-conteudos": ui.cDisciplina = ""; ui.cAssunto = ""; render(); break;
     case "fase-agenda":
       if (ui.faseAgenda !== alvo.dataset.fase){ ui.faseAgenda = alvo.dataset.fase; ui.verTodaAgenda = false; }
       render(); break;
@@ -8080,7 +8285,7 @@ document.addEventListener("click", ev => {
       ui.aba = "registros"; ui.formAberto = false; ui.editandoRegistro = null; ui.foco = null;
       // um filtro que esconda a sessão faria o salto parar em lugar nenhum: sai da frente
       if (!registrosFiltrados().some(r => r.id === id)){
-        ui.fDisciplina = ""; ui.fPeriodo = "todos"; ui.fBusca = ""; ui.fTipo = "todos";
+        ui.fDisciplina = ""; ui.fAssunto = ""; ui.fPeriodo = "todos"; ui.fBusca = ""; ui.fTipo = "todos";
         toast("Filtros limpos para mostrar a sessão.");
       }
       ui.focoSessao = id;
@@ -8202,10 +8407,22 @@ document.addEventListener("change", ev => {
     return;
   }
   // filtro de assunto da Agenda
-  if (ev.target.id === "aAssunto"){ ui.aAssunto = ev.target.value; render(); return; }
+  // o par Disciplina / Conteúdo de qualquer aba (filtroDiscCont): a disciplina manda no conteúdo, e vice-versa
+  if (ev.target.dataset && ev.target.dataset.filtroDc){
+    const campos = FILTROS_DC[ev.target.dataset.filtroDc]; if (!campos) return;
+    const v = ev.target.value;
+    if (ev.target.dataset.parte === "disc"){
+      ui[campos.disc] = v;
+      if (ui[campos.cont] && discDaChave(ui[campos.cont]) !== v) ui[campos.cont] = "";
+    } else {
+      ui[campos.cont] = v;
+      if (v && campos.disc) ui[campos.disc] = discDaChave(v);
+    }
+    ui.foco = null; render(); return;
+  }
   if (ev.target.id === "ajudaIr"){ if (ev.target.value) irParaAjuda(ev.target.value); ev.target.value = ""; return; }
   // trocar a disciplina recomeça o conteúdo: o escolhido pode não ser dela
-  if (ev.target.id === "aDisciplina"){ ui.aDisciplina = ev.target.value; ui.aAssunto = ""; render(); return; }
+
   // filtros da aba Aprendizados: disciplina manda no conteúdo, e vice-versa
   if (ev.target.id === "eDisciplina"){
     ui.eDisciplina = ev.target.value;
@@ -8221,7 +8438,7 @@ document.addEventListener("change", ev => {
     ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null;
     render(); return;
   }
-  const mapa = { fDisciplina:"fDisciplina", fPeriodo:"fPeriodo", fOrdem:"fOrdem", fTipo:"fTipo",
+  const mapa = { fPeriodo:"fPeriodo", fOrdem:"fOrdem", fTipo:"fTipo",
                  cronoDestino:"cronoDestino" };
   if (mapa[ev.target.id]){ ui[mapa[ev.target.id]] = ev.target.value; ui.foco = null; render(); }
 });
@@ -8392,8 +8609,8 @@ document.addEventListener("mouseout", ev => {
   if (bolha) bolha.hidden = true;
 });
 
-/* A alça responde às setas: é o caminho de quem usa teclado — e o único que
-   funciona no celular, onde o arrastar do HTML não existe. */
+/* A alça responde às setas: é o caminho de quem usa teclado. No celular não há
+   setas nem arrastar do HTML — lá são os botões ↑ ↓ de setasDeToque. */
 document.addEventListener("keydown", ev => {
   if (ev.key !== "ArrowUp" && ev.key !== "ArrowDown") return;
   const a = tipoArrastavel(ev.target, "alca");

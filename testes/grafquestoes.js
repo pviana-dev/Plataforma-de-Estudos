@@ -54,18 +54,17 @@ const titulos=()=>[...doc.querySelectorAll("#view .card > h2, #view .btn-add")]
   ok("e o desempenho por disciplina foi para o fim",
      /^Desempenho por/.test(t[t.length-1]), t);
 
-  /* ---- 2b. a linha de filtros rola em vez de quebrar ---- */
-  const rol=doc.querySelector(".chips-rolagem");
-  ok("os chips ficam numa faixa que rola", !!rol, blocos[2].innerHTML.slice(0,120));
-  const cssRol=html.match(/\.chips-rolagem\{[^}]*\}/)[0];
-  ok("com rolagem horizontal", /overflow-x:auto/.test(cssRol), cssRol);
-  ok("e sem quebrar linha", /\.filtro-chips\{[^}]*flex-wrap:nowrap/.test(html),
-     (html.match(/\.filtro-chips\{[^}]*\}/)||[])[0]);
-  ok("os chips não encolhem — eles saem da vista",
-     /\.chips-rolagem > \*\{flex:0 0 auto\}/.test(html));
-  ok("o rótulo 'Filtrar' fica fixo, fora da rolagem",
-     !!blocos[2].querySelector(".hl-tema.fixo") && !rol.querySelector(".hl-tema"),
-     blocos[2].innerHTML.slice(0,90));
+  /* ---- 2b. as disciplinas numa CAIXA, como nas outras abas (25/09), que deixa marcar várias ---- */
+  const caixa=blocos[2].querySelector('.multi-caixa[data-acao="abrir-qdiscs"]');
+  ok("as disciplinas se escolhem numa caixa, no quadro de filtros (sem a fileira de botões)",
+     !!caixa && blocos[2].classList.contains("filtros") && !doc.querySelector(".chips-rolagem"), blocos[2].innerHTML.slice(0,120));
+  ok("a caixa vem fechada e diz 'Todas as disciplinas'", /Todas as disciplinas/.test(caixa.textContent) &&
+     caixa.getAttribute("aria-expanded")==="false");
+  click(caixa); await espera(250);
+  ok("tocar nela abre a lista de caixinhas de marcar",
+     doc.querySelector(".multi-disc").classList.contains("aberto") && doc.querySelectorAll(".multi-op").length>=3);
+  click(doc.querySelector(".grafico-q")); await espera(250);
+  ok("e clicar fora fecha a lista", !doc.querySelector(".multi-disc").classList.contains("aberto"));
 
   /* ---- 3. o gráfico ---- */
   const svg=$(".grafico-q svg");
@@ -147,8 +146,7 @@ const titulos=()=>[...doc.querySelectorAll("#view .card > h2, #view .btn-add")]
      JSON.parse(w.localStorage.getItem("plataforma-estudos:tela")).qDiscs);
   const limpar=[...doc.querySelectorAll('[data-acao="filtrar-questoes"]')].find(b=>/limpar/.test(b.textContent));
   ok("há como limpar o filtro", !!limpar);
-  ok("e o limpar fica fixo, sempre à mão", limpar.classList.contains("fixo") &&
-     !limpar.closest(".chips-rolagem"), limpar.className);
+  ok("e o limpar fica fora da lista, sempre à mão", !limpar.closest(".multi-lista"), limpar.className);
   click(limpar); await espera(400);
   ok("limpar devolve tudo", /Questões feitas/.test(tiles()[0]) && !/Questões feitas10\b/.test(tiles()[0]),
      tiles()[0]);
@@ -174,9 +172,10 @@ const titulos=()=>[...doc.querySelectorAll("#view .card > h2, #view .btn-add")]
      $(".grafico-q").closest(".card").querySelector("h2").textContent.replace(/\s+/g," "));
   const linhas2=[...doc.querySelectorAll("#view table tbody tr td:first-child")].map(t=>t.textContent);
   ok("a tabela mostra as duas disciplinas", linhas2.length===2, linhas2);
-  ok("a linha de filtros diz quantas estão escolhidas",
-     /2 de 2/.test(doc.querySelector(".filtro-chips").textContent),
-     doc.querySelector(".filtro-chips").textContent.replace(/\s+/g," "));
+  ok("o filtro diz quantas estão escolhidas (na caixa e embaixo)",
+     /2 disciplinas/.test(doc.querySelector(".multi-caixa").textContent) &&
+     /2 de 2 disciplinas/.test(doc.querySelector(".filtros").textContent),
+     doc.querySelector(".filtros").textContent.replace(/\s+/g," "));
   ok("as duas ficam guardadas",
      (JSON.parse(w.localStorage.getItem("plataforma-estudos:tela")).qDiscs||[]).sort().join()==="Legislação,Português",
      JSON.parse(w.localStorage.getItem("plataforma-estudos:tela")).qDiscs);

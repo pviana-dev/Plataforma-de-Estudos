@@ -39,16 +39,16 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   const btn=()=>$('[data-acao="novo-conteudo"]');
   ok("há o botão + Novo conteúdo", !!btn());
   ok("ele é o menor (btn-add menor)", btn().classList.contains("menor"));
-  // ordem: + Nova disciplina, Filtrar, + Novo conteúdo
-  const ordem=[...doc.querySelectorAll('#view [data-acao="nova-disciplina"], #view [data-acao="filtrar-conteudos"], #view [data-acao="novo-conteudo"]')]
-    .map(e=>e.dataset.acao);
+  // ordem: + Nova disciplina, o filtro (caixas de disciplina e conteúdo), + Novo conteúdo
+  const ordem=[...doc.querySelectorAll('#view [data-acao="nova-disciplina"], #view #cDisciplina, #view [data-acao="novo-conteudo"]')]
+    .map(e=>e.dataset.acao||e.id);
   ok("fica abaixo dos filtros de disciplina", ordem[0]==="nova-disciplina" && ordem[ordem.length-1]==="novo-conteudo", ordem);
   ok("em Todas, fica travado pedindo a disciplina", btn().disabled && /escolha uma disciplina/.test(btn().textContent),
      btn().textContent);
   click(w,btn()); await espera(200);
   ok("travado, não abre nada", $("#overlay").hidden);
 
-  click(w,$('[data-acao="filtrar-conteudos"][data-disc="Português"]')); await espera(300);
+  { const s=$("#cDisciplina"); s.value="Português"; s.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(300); }
   ok("filtrado, libera e diz onde cria", !btn().disabled && /em Português/.test(btn().textContent), btn().textContent);
   const revsAntes=db(w).revisoes.length;
   click(w,btn()); await espera(300);
