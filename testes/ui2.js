@@ -44,7 +44,7 @@ const seed = {
 let falhas = 0;
 const ok = (n,c,e) => { console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e))); if(!c) falhas++; };
 const dom = new JSDOM(html, { runScripts:"dangerously", url:"https://teste.local/", pretendToBeVisual:true,
-  beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1", JSON.stringify(seed)); } });
+  beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1", JSON.stringify(seed)); } });
 const w = dom.window, doc = w.document;
 const $ = s => doc.querySelector(s);
 const lerDb = () => JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

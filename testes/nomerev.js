@@ -25,7 +25,7 @@ const seed={versao:1,tema:"claro",dataProva:mais(60),metaDiariaMin:120,disciplin
 seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",agendaCompleta:true,gravadoEm:new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+"-"+String(new Date().getDate()).padStart(2,"0")}));w.confirm=()=>true;}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",agendaCompleta:true,gravadoEm:new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+"-"+String(new Date().getDate()).padStart(2,"0")}));w.confirm=()=>true;}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const espera=ms=>new Promise(r=>setTimeout(r,ms));

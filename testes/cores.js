@@ -15,7 +15,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
  revisoes:[{id:"v1",registroId:"rA",data:iso(new Date(Date.now()+3*864e5)),ordem:1,feita:false,manual:false,minutos:null,questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}],
  erros:[],cronometro:null};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const cor=el=>{const c=w.getComputedStyle(el);return c.backgroundColor+" / "+c.borderColor+" / "+c.color;};

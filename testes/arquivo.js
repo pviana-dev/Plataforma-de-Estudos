@@ -9,7 +9,7 @@ let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 
 /* ---- 1. navegador SEM a API (Firefox/Safari): a plataforma segue funcionando ---- */
 const semApi=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
 setTimeout(()=>{
   const doc=semApi.window.document, chip=doc.getElementById("chipArquivo");
   ok("sem a API o chip fica escondido", chip.hidden, {hidden:chip.hidden,txt:chip.textContent});
@@ -30,7 +30,7 @@ setTimeout(()=>{
       getFile:async()=>({ text:async()=>disco }),
       createWritable:async()=>({ write:async t=>{disco=t;escritas++;}, close:async()=>{} }) };
     const comApi=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-      beforeParse(w){
+      beforeParse(w){ w.__semLogin=true;
         w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
         w.showSaveFilePicker=async()=>handle;
         w.showOpenFilePicker=async()=>[handle];

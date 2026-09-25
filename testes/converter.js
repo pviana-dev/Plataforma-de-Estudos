@@ -18,7 +18,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
 seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0,perguntas=[]; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
    w.confirm=m=>{perguntas.push(m);return true;};}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

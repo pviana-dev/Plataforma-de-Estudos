@@ -22,7 +22,7 @@ const seed={versao:1,tema:"claro",objetivo:"livre",dataProva:"",revisarAte:dia(1
 /* sessao = o sessionStorage que a aba carrega: o mesmo no F5, vazio ao reabrir */
 function abrir(sessao){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",gravadoEm:hoje,visaoAgenda:"assunto"}));
      Object.entries(sessao||{}).forEach(([k,v])=>w.sessionStorage.setItem(k,v));
      w.confirm=()=>true; }});

@@ -17,7 +17,7 @@ const seed={versao:1,tema:"claro",dataProva:"",metaDiariaMin:120,
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+ beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
    w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"erros",gravadoEm:hoje}));
    w.confirm=()=>true; }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
@@ -76,7 +76,7 @@ const ops=id=>[...$(id).options].map(o=>o.textContent);
   seed2.registros.push({id:"r2",data:hoje,disciplina:"Tributário",assuntos:["Contratos"],assunto:"Contratos",
     minutos:45,questoes:0,acertos:0,dificuldade:2,anotacoes:"",tipo:"estudo",criadoEm:2});
   const dom2=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(x){ x.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed2));
+   beforeParse(x){ x.__semLogin=true; x.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed2));
      x.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"erros",
        eDisciplina:"Tributário",gravadoEm:hoje})); }});
   await espera(600);

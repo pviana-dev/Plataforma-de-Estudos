@@ -578,6 +578,51 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
      `grafquestoes.js` atualizada. Na **Agenda**, o quadro de Disciplina/Conteúdo ganhou respiro da linha
      **Revisões** (que só aparece em "A fazer") e da linha Organizar.
 
+59. **Estrutura do Supabase pronta para colar** (25/09, antes de hospedar). `supabase/estrutura.sql`: tabela `dados`
+   (uma linha por conta), RLS com uma política por operação (ler/criar/atualizar a própria linha; sem apagar; `anon`
+   sem acesso) e **histórico de versões** (`dados_historico` + gatilho: guarda a versão anterior no máximo a cada 6 h,
+   por 30 dias; receita de recuperar no fim do arquivo). Conferido num Postgres local (PGlite) com as peças do
+   Supabase simuladas — 16 verificações, incluindo rodar duas vezes. README (passo a passo) e o comentário do
+   `NUVEM` atualizados: **SMTP próprio** (sem ele o código só chega para a equipe do projeto), `{{ .Token }}` nos
+   modelos **Magic Link e Confirm signup**, e desligar novos cadastros depois de criar as contas.
+   **Revisão do mesmo dia**, simulando as permissões padrão do Supabase (que liberam tudo em tabela nova): o SQL
+   passou a **tirar** as sobras (a conta logada tinha DELETE e TRUNCATE — o TRUNCATE passa por cima do RLS) e a
+   fechar as funções internas; o histórico passou a guardar **sempre que os dados encolhem** (antes, dentro das 6 h,
+   uma gravação por cima com dado velho perdia a versão boa) e tem teto de 200 por conta. Suíte nova `supabase.js`
+   (PGlite, 22 verificações). No app: o dado sabe **de que conta é** (`db.contaNuvem`) — entrar com outra conta no
+   mesmo navegador subia os dados da primeira para a segunda; agora pergunta e troca (`nuvem.js`, 7 testes novos).
+   **Ainda não testado contra um Supabase real** — o primeiro login é o teste que falta.
+
+60. **Supabase criado e ligado** (25/09). O Pedro criou o projeto (`vosdzokcqnbxmrqqrpkv`, São Paulo), rodou o
+   `supabase/estrutura.sql` (as duas tabelas com RLS ligado — o aviso "sem RLS" do editor é alarme falso: o arquivo
+   liga logo depois do `create table`), configurou SMTP próprio (um Gmail criado para isso, com senha de app) e os
+   modelos Confirm signup e Magic Link com `{{ .Token }}`. `NUVEM` preenchido com a URL e a chave **publishable**.
+   Checagem só de leitura contra o projeto real: login por e-mail ligado; sem login, ler e gravar em `dados` e em
+   `dados_historico` são recusados (42501). `nuvem.js` passou a esvaziar o NUVEM por conta própria (não chama o
+   Supabase real). **Primeiro login real: FEITO em 25/09** (conta do Pedro; o código chegou pelo SMTP). O único
+   tropeço foi o e-mail digitado errado no Username do SMTP → `535 Username and Password not accepted` — o motivo
+   só aparece em **Logs → Auth** (`auth_logs`), não no Audit Log nem no log "edge". **Falta:** o login da outra
+   pessoa (no aparelho dela — depende de hospedar) e, depois, desligar **Allow new users to sign up**.
+   **Defeito achado no primeiro uso real (Safari):** depois de entrar, o chip dizia "Sem conexão — The string did
+   not match the expected pattern." Gravar no Supabase devolve **201 Created com corpo vazio** (não 204), e o app
+   tentava ler o vazio como JSON; a gravação tinha dado certo, mas aparecia como falha e ficava "pendente".
+   `chamarNuvem` passou a ler o texto primeiro (vazio = null). O servidor falso de `nuvem.js` respondia 204 — agora
+   responde 201 vazio e o `json()` dele falha no vazio, como o navegador (a versão anterior falha no teste novo).
+
+61. **Login com senha e tela de acesso** (25/09, pedido do Pedro; **a plataforma passou a exigir a conta**). Tela de
+   acesso (`#acesso`, `portaoFechado`, `pintarAcesso`) cobre o app inteiro — o app nem é desenhado por baixo.
+   **Entrar** (e-mail + senha, `grant_type=password`); **Primeiro acesso** (código por e-mail → `conferirCodigo`
+   tipo `email` → **criar senha**, `PUT /auth/v1/user` com `data.senha_criada`); **Esqueci a senha** (`/recover` →
+   código tipo `recovery` → senha nova); conta antiga sem senha → pede para criar (`conferirSeTemSenha`, pelo
+   `GET /auth/v1/user`). "Primeiro acesso" num e-mail que já tem senha é recusado (o código sozinho não entra).
+   Sair encerra a sessão também no Supabase (`/logout`). Senha mínima 8; erros traduzidos (`traduzirErroAcesso`).
+   Pergunta do objetivo e do pós-prova esperam a entrada (`objetivoPendente`, `concluirEntrada`).
+   **Dois defeitos corrigidos junto:** renovar a sessão **sem internet apagava a sessão** (com login obrigatório,
+   trancaria a pessoa fora do app) — agora só sai se o Supabase recusar (4xx); e a renovação perdia os campos da
+   sessão. Suíte nova `login.js` (34 verificações); o Supabase falso virou `testes/_nuvemfalsa.cjs` (usado também
+   por `nuvem.js`). As suítes antigas abrem o app com `window.__semLogin` (o app real nunca liga).
+   **No Supabase (Pedro):** modelo **Reset Password** com `{{ .Token }}` e senha mínima 8.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

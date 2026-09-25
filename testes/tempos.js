@@ -25,7 +25,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-12-11",metaDiariaMin:120,
  revisoes:[],erros:[],cronometro:null};
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const change=el=>el.dispatchEvent(new w.Event("change",{bubbles:true}));

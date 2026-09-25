@@ -17,7 +17,7 @@ function abrir(revisoes, fase){
      questoes:10,acertos:8,dificuldade:2,anotacoes:"minha descrição",tipo:"estudo",criadoEm:1}],
    revisoes,erros:[],cronometro:null};
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"registros",gravadoEm:hoje}));
      w.confirm=()=>true; }});
   return dom.window;

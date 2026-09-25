@@ -16,7 +16,7 @@ const hoje=iso(new Date());
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-  beforeParse(w){ w.confirm=()=>true; }});
+  beforeParse(w){ w.__semLogin=true; w.confirm=()=>true; }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");

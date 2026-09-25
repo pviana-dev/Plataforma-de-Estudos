@@ -12,7 +12,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let guardado=null;                 // o localStorage que sobrevive ao "recarregar"
 function abrir(){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){
+   beforeParse(w){ w.__semLogin=true;
      if (guardado) Object.keys(guardado).forEach(k=>w.localStorage.setItem(k,guardado[k]));
      else w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
    }});

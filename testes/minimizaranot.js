@@ -23,7 +23,7 @@ let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 function abrir(aba, sessao){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba,gravadoEm:hoje}));
      Object.entries(sessao||{}).forEach(([k,v])=>w.sessionStorage.setItem(k,v)); w.confirm=()=>true; }});
   return dom.window;

@@ -8,7 +8,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const abrir=extra=>new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-  beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+  beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
     Object.entries(extra||{}).forEach(([k,v])=>w.localStorage.setItem(k,v)); }});
 const ativa=doc=>{const b=doc.querySelector('#abas [aria-selected="true"]'); return b&&b.dataset.aba;};
 

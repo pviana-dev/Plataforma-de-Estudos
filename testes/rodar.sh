@@ -2,7 +2,7 @@
 # Roda todas as suítes. Uso:  ./rodar.sh          (todas)
 #                             ./rodar.sh fases    (só as que casam com "fases")
 cd "$(dirname "$0")"
-[ -d node_modules ] || { echo "instalando jsdom…"; npm install --silent --no-audit --no-fund; }
+[ -d node_modules/jsdom ] && [ -d node_modules/@electric-sql/pglite ] || { echo "instalando jsdom e pglite…"; npm install --silent --no-audit --no-fund; }
 filtro="$1"; falhas=""; n=0
 for f in *.js; do
   nome="${f%.js}"

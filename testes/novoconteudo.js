@@ -22,7 +22,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let perguntado="", avisado="";
 function abrir(resposta){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"conteudos",gravadoEm:hoje}));
      responderDialogos(w, t=>{ perguntado=t; return resposta; }, t=>{ avisado=t; });
      w.alert=t=>{ avisado=t; };

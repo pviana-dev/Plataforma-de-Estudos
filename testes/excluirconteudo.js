@@ -29,7 +29,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let perguntado="";
 function abrir(confirmar){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed()));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed()));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"conteudos",gravadoEm:hoje}));
      w.confirm=t=>{ perguntado=t; return confirmar; }; }});
   return dom.window;
@@ -94,7 +94,7 @@ const botaoExcluir=(doc,cont)=>[...doc.querySelectorAll('[data-acao="excluir-con
   /* ---- 6. e continua assim depois de recarregar ---- */
   const guardado=w.localStorage.getItem("plataforma-estudos:v1");
   const dom2=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(x){ x.localStorage.setItem("plataforma-estudos:v1",guardado);
+   beforeParse(x){ x.__semLogin=true; x.localStorage.setItem("plataforma-estudos:v1",guardado);
      x.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",gravadoEm:hoje})); }});
   await espera(500);
   const d2=JSON.parse(dom2.window.localStorage.getItem("plataforma-estudos:v1"));

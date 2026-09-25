@@ -1,6 +1,7 @@
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
-const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true});
+const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
+  beforeParse(w){ w.__semLogin=true; }});   // abre o app direto, sem a tela de acesso
 const w=dom.window,doc=w.document;
 setTimeout(()=>{
   const abas=[...doc.querySelectorAll("#abas [data-aba]")];

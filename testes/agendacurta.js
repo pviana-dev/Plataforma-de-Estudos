@@ -22,7 +22,7 @@ let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 function abrir(tela){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify(Object.assign({aba:"revisoes",gravadoEm:hoje,visaoAgenda:"assunto"},tela||{})));
      w.confirm=()=>true; }});
   return dom.window;
@@ -64,7 +64,7 @@ const aparece=(w,id)=>idsNaTela(w).includes(id);
   /* à medida que anda: cumprida a atrasada, a terceira aparece */
   const s2=JSON.parse(JSON.stringify(seed)); s2.revisoes[0].feita=true; s2.revisoes[0].feitaEm=dia(-1);
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(ww){ ww.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(s2));
+   beforeParse(ww){ ww.__semLogin=true; ww.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(s2));
      ww.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",gravadoEm:hoje,visaoAgenda:"assunto"})); }});
   w=dom.window; await espera(400);
   ok("cumprida uma, a seguinte aparece — continuam duas", aparece(w,"a2") && aparece(w,"a3") && !aparece(w,"a4"), idsNaTela(w));

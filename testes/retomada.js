@@ -22,7 +22,7 @@ const seed={versao:1,tema:"claro",dataProva:"",metaDiariaMin:120,
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+ beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
    w.localStorage.setItem("plataforma-estudos:tela",
      JSON.stringify({aba:"revisoes",visaoAgenda:"assunto",verTodosAssuntos:true,gravadoEm:hoje})); }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);

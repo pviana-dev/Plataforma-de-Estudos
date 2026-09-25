@@ -552,6 +552,29 @@ html[data-tema="escuro"] .aviso{background:#3a2e26;border-color:#5a4632;color:#e
   border-top:1px solid var(--grade);border-radius:0 0 13px 13px}
 /* formulários de registro e de revisão: tela sobreposta, larga */
 .modal.grande{max-width:880px}
+/* A TELA DE ACESSO (login). Cobre o app inteiro — o app nem é desenhado por
+   baixo (render sai cedo; ver portaoFechado). Um cartão só, no alto, com a marca. */
+.acesso{position:fixed;inset:0;z-index:70;background:var(--bg);overflow-y:auto;display:flex;
+  justify-content:center;align-items:flex-start;padding:9vh 16px 40px}
+.acesso[hidden]{display:none}
+body.sem-acesso .wrap{display:none}
+.acesso-caixa{width:100%;max-width:400px}
+.acesso-marca{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:20px}
+.acesso-marca h1{font-size:23px;font-weight:650;letter-spacing:-.5px}
+.acesso-marca h1 span{font-weight:400;color:var(--muted)}
+.acesso .card{padding:22px 20px 18px}
+.acesso .card > h2{font-size:17px;margin-bottom:6px}
+.acesso .campos{grid-template-columns:1fr;margin-top:12px}
+.acesso .campo input{font-size:15px;padding:10px 12px}
+.acesso .btn-largo{width:100%;justify-content:center;margin-top:14px;padding:11px}
+.acesso .mostrar{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);margin-top:9px;cursor:pointer}
+.acesso .mostrar input{accent-color:var(--accent)}
+.acesso .erro-form{display:block;margin-top:10px;min-height:1em}
+.acesso .aviso-ok{display:block;margin-top:10px;font-size:12.5px;color:var(--bom-ink)}
+.acesso-links{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:18px}
+.acesso-links button{color:var(--accent-ink);font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+.acesso-links button:hover{color:var(--text)}
+.acesso .regra{font-size:12px;color:var(--muted);margin-top:4px}
 .overlay-topo{z-index:60}                 /* a pergunta curta fica por cima da tela sobreposta */
 .modal-pequeno{max-width:440px}
 .modal-pequeno .conteudo{padding:16px}
@@ -1062,6 +1085,8 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
     <div class="conteudo" id="modalCorpo"></div>
   </div>
 </div>
+<!-- a tela de acesso (login): cobre o app enquanto ninguém entrou na conta — ver portaoFechado -->
+<div class="acesso" id="acesso" hidden></div>
 <!-- a pergunta curta (renomear, remarcar): abre POR CIMA da tela sobreposta, sem fechá-la -->
 <div class="overlay overlay-topo" id="dialogo" hidden>
   <div class="modal modal-pequeno" role="dialog" aria-modal="true" aria-labelledby="dialogoTitulo">
@@ -2691,6 +2716,7 @@ function guardarTela(){
 }
 
 function render(){
+  if (pintarAcesso()) return;              // ninguém entrou: só a tela de acesso (e o app nem é desenhado)
   guardarTela();
   fecharSugestoes();
   document.documentElement.dataset.tema = db.tema;
@@ -2804,8 +2830,6 @@ function ligarFormularios(){
   ligar("#formEdicaoErro", "submit", enviarEdicaoErro);
   ligar("#formRevisao", "submit", enviarRevisao);
   ligar("#formLancamento", "submit", enviarLancamento);
-  ligar("#formEntrar", "submit", enviarEntrar);
-  ligar("#formCodigo", "submit", enviarCodigoForm);
   montarSugestoes();
   ligarSeletoresDisciplina();
   ligar("#campoAssunto", "keydown", ev => {
@@ -7366,6 +7390,9 @@ function modalAjuda(){
         'Abrir os ajustes</button></div>'],
     ["dados", "Seus dados",
       '<ul class="aj-lista">' +
+        '<li>Os dados moram na sua <b>conta</b>: entre com o e-mail e a senha em qualquer aparelho e eles vêm junto. ' +
+          'Esqueceu a senha? Na tela de entrada, <b>Esqueci minha senha</b> manda um código para o e-mail. Para sair, ' +
+          'clique no chip da conta (☁) → <b>Sair da conta</b>.</li>' +
         '<li>Os dois chips do topo dizem onde os dados estão sendo gravados: a <b>conta na nuvem</b> e o <b>arquivo .json</b>. ' +
           'Sem nenhum dos dois, eles ficam só neste navegador — e somem se você limpar os dados de navegação.</li>' +
         '<li><b>↓</b> exporta um backup e <b>↑</b> importa um. Exporte antes de mudanças grandes.</li>' +
@@ -7494,23 +7521,15 @@ setInterval(atualizarCrono, 1000);
    (Project Settings → API). Enquanto estiverem vazias, a plataforma funciona
    exatamente como antes, só no navegador (e no .json, se você ligar um).
 
-   No Supabase, uma vez só:
-   1. SQL Editor → rode:
-        create table dados (
-          id uuid primary key references auth.users on delete cascade,
-          conteudo jsonb not null,
-          atualizado_em timestamptz not null default now()
-        );
-        alter table dados enable row level security;
-        create policy "cada um vê o seu" on dados
-          for all using (auth.uid() = id) with check (auth.uid() = id);
-   2. Authentication → Email Templates → "Magic Link": inclua {{ .Token }} no
-      corpo. É esse código de 6 dígitos que a plataforma pede (sem link, sem
-      redirecionamento — funciona até com o arquivo aberto localmente).
+   No Supabase, uma vez só: o passo a passo está no README ("Nuvem: usar em
+   qualquer aparelho") e o SQL, pronto para colar, em supabase/estrutura.sql —
+   tabela `dados`, regras de acesso (RLS) e histórico de versões. Não esquecer:
+   SMTP próprio (sem ele o código só chega para a equipe do projeto) e
+   {{ .Token }} nos modelos de e-mail Magic Link E Confirm signup.
    ========================================================================== */
 const NUVEM = {
-  url:   "",          // ex.: "https://abcdefgh.supabase.co"
-  chave: ""           // a chave "anon public" (pode ficar no código: é pública)
+  url:   "https://vosdzokcqnbxmrqqrpkv.supabase.co",
+  chave: "sb_publishable_TswOKTJJWewwYwS1FoFKbw_HDXO-R0J"   // publishable: pública por natureza, pode ficar no código
 };
 const CHAVE_SESSAO = "plataforma-estudos:sessao";
 const nuvem = { estado: "desligada", email: "", uid: "", ultimo: null, erro: "", pendente: false };
@@ -7535,32 +7554,81 @@ async function chamarNuvem(caminho, opcoes, comToken){
   }
   if (!r.ok){
     let msg = r.status + " " + r.statusText;
-    try { const e = await r.json(); msg = e.msg || e.message || e.error_description || msg; } catch(x){}
-    throw new Error(msg);
+    try { const e = JSON.parse(await r.text()); msg = e.msg || e.message || e.error_description || msg; } catch(x){}
+    const erro = new Error(msg); erro.status = r.status;     // quem chama distingue "recusado" de "sem conexão"
+    throw erro;
   }
-  return r.status === 204 ? null : r.json();
+  /* Resposta sem corpo é normal: gravar devolve "201 Created" VAZIO (return=minimal),
+     não 204. Ler o vazio como JSON falhava — no Safari com "The string did not
+     match the expected pattern." — e a gravação, que tinha dado certo, aparecia
+     como "sem conexão". Lê o texto primeiro; vazio vale null. */
+  const texto = r.status === 204 ? "" : await r.text();
+  return texto.trim() ? JSON.parse(texto) : null;
 }
 async function renovarSessao(){
   const s = lerSessao(); if (!s || !s.refresh_token) return false;
   try {
     const d = await chamarNuvem("/auth/v1/token?grant_type=refresh_token",
       { method: "POST", body: JSON.stringify({ refresh_token: s.refresh_token }) }, false);
-    gravarSessao({ access_token: d.access_token, refresh_token: d.refresh_token,
-                   email: (d.user && d.user.email) || s.email, uid: (d.user && d.user.id) || s.uid });
+    // o resto da sessão (se a conta já tem senha, por exemplo) atravessa a renovação
+    gravarSessao(Object.assign({}, s, { access_token: d.access_token, refresh_token: d.refresh_token,
+                   email: (d.user && d.user.email) || s.email, uid: (d.user && d.user.id) || s.uid }));
     return true;
-  } catch(e){ gravarSessao(null); return false; }
+  } catch(e){
+    /* SEM CONEXÃO NÃO DESLOGA. Antes qualquer falha apagava a sessão — e, com o
+       login obrigatório, estudar sem internet trancaria a pessoa fora do app.
+       Só sai quando o Supabase RECUSA a renovação (sessão vencida ou revogada). */
+    if (e && e.status >= 400 && e.status < 500){ gravarSessao(null); setTimeout(render, 0); }
+    return false;
+  }
 }
-/** manda o código de 6 dígitos para o e-mail */
-async function enviarCodigo(email){
-  await chamarNuvem("/auth/v1/otp", { method: "POST", body: JSON.stringify({ email, create_user: true }) }, false);
+/* ---------- ENTRAR NA CONTA: senha, primeiro acesso e redefinição ----------
+   Tudo pela API de autenticação do Supabase, sem SDK. A conta guarda, nos
+   metadados, que já criou a senha (`senha_criada`): é assim que o app sabe se
+   precisa pedir uma. A sessão local leva o mesmo sinal (`senha`: true/false; sem
+   o campo = ainda não conferido). */
+const tem = (d, k) => !!(d && d.user && d.user.user_metadata && d.user.user_metadata[k]);
+const sessaoDe = (d, extra) => Object.assign({ access_token: d.access_token, refresh_token: d.refresh_token,
+  email: d.user.email, uid: d.user.id, senha: tem(d, "senha_criada") }, extra || {});
+/** e-mail e senha → sessão */
+async function entrarComSenha(email, senha){
+  const d = await chamarNuvem("/auth/v1/token?grant_type=password",
+    { method: "POST", body: JSON.stringify({ email, password: senha }) }, false);
+  gravarSessao(sessaoDe(d, { senha: true }));      // entrou com senha: ela existe
 }
-/** confere o código e abre a sessão */
-async function confirmarCodigo(email, codigo){
-  const d = await chamarNuvem("/auth/v1/verify",
-    { method: "POST", body: JSON.stringify({ email, token: codigo, type: "email" }) }, false);
-  gravarSessao({ access_token: d.access_token, refresh_token: d.refresh_token,
-                 email: d.user.email, uid: d.user.id });
-  nuvem.email = d.user.email; nuvem.uid = d.user.id;
+/** manda o código de 6 dígitos (criar = pode criar a conta, no primeiro acesso) */
+async function pedirCodigo(email, criar){
+  await chamarNuvem("/auth/v1/otp", { method: "POST", body: JSON.stringify({ email, create_user: !!criar }) }, false);
+}
+/** manda o código para redefinir a senha (modelo "Reset Password" do Supabase) */
+async function pedirRedefinicao(email){
+  await chamarNuvem("/auth/v1/recover", { method: "POST", body: JSON.stringify({ email }) }, false);
+}
+/** confere o código; tipo "email" (primeiro acesso) ou "recovery" (redefinir). Devolve a resposta crua. */
+async function conferirCodigo(email, codigo, tipo){
+  return chamarNuvem("/auth/v1/verify",
+    { method: "POST", body: JSON.stringify({ email, token: codigo, type: tipo }) }, false);
+}
+/** grava a senha da conta logada e marca que ela existe */
+async function gravarSenhaNova(senha){
+  await chamarNuvem("/auth/v1/user",
+    { method: "PUT", body: JSON.stringify({ password: senha, data: { senha_criada: true } }) }, true);
+  const s = lerSessao(); if (s){ s.senha = true; gravarSessao(s); }
+}
+/** sessão antiga (de antes das senhas): pergunta ao Supabase se a conta já tem senha */
+async function conferirSeTemSenha(){
+  const s = lerSessao(); if (!s || s.senha !== undefined) return;
+  try {
+    const u = await chamarNuvem("/auth/v1/user", { method: "GET" }, true);
+    const agora = lerSessao();
+    if (agora){ agora.senha = !!(u && u.user_metadata && u.user_metadata.senha_criada); gravarSessao(agora); }
+  } catch(e){ /* sem conexão: confere na próxima vez; enquanto isso, não tranca ninguém */ }
+}
+/** encerra a sessão no Supabase também (se der; sem conexão, basta a local) */
+async function encerrarSessaoRemota(token){
+  if (!token) return;
+  try { await fetch(NUVEM.url + "/auth/v1/logout", { method: "POST",
+          headers: { "apikey": NUVEM.chave, "Authorization": "Bearer " + token } }); } catch(e){}
 }
 async function baixarDaNuvem(){
   const s = lerSessao(); if (!s) return null;
@@ -7594,9 +7662,40 @@ async function iniciarNuvem(){
   if (!nuvemLigada()){ nuvem.estado = "desligada"; pintarChipNuvem(); return; }
   const s = lerSessao();
   if (!s){ nuvem.estado = "deslogado"; pintarChipNuvem(); return; }
+  if (s.senha === undefined){                    // sessão de antes das senhas: a conta já tem uma?
+    await conferirSeTemSenha();
+    if (portaoFechado()){ render(); return; }    // não tem: a tela pede, e a sincronia vem depois
+  }
+  if (s.senha === false) return;                 // ainda criando a senha (tela de acesso aberta)
   nuvem.email = s.email; nuvem.uid = s.uid;
   try {
     const linha = await baixarDaNuvem();
+    /* OUTRA CONTA NESTE NAVEGADOR. O dado daqui sabe de que conta ele é
+       (db.contaNuvem). Sem isso, sair da conta A e entrar com B no mesmo
+       navegador subia os dados de A para a conta de B (ou os usava por cima dos
+       de B, se parecessem mais novos). Agora: pergunta, e troca pelos dados de B
+       — os de A continuam na nuvem, na conta de A. Não aceitou: não entra. */
+    if (db.contaNuvem && db.contaNuvem !== s.uid){
+      const deQuem = db.contaNuvemEmail || "outra conta";
+      const temDados = !!(linha && pareceBackup(linha.conteudo));
+      if (!confirm("Os dados deste navegador são da conta " + deQuem + ".\n\n" +
+                   "Entrar como " + s.email + " troca-os pelos dados dessa conta" +
+                   (temDados ? "" : " (que ainda não tem nada: a plataforma começa vazia)") + ". " +
+                   "Os de " + deQuem + " continuam guardados na nuvem, na conta dela.\n\n" +
+                   "Quer uma cópia do que está aqui? Cancele e use ↓ exportar antes.\n\nContinuar?")){
+        gravarSessao(null);
+        nuvem.estado = "deslogado"; nuvem.email = ""; nuvem.uid = "";
+        pintarChipNuvem(); render();
+        toast("Entrada cancelada — os dados deste navegador ficaram como estavam.");
+        return;
+      }
+      aplicarDados(temDados ? linha.conteudo : estadoInicial());
+      marcarDonoDaNuvem(s);
+      persistir(true); render();
+      toast(temDados ? "Dados da conta " + s.email + " carregados." : "Conta " + s.email + " começando do zero.");
+      nuvem.estado = "pronta"; nuvem.ultimo = Date.now(); pintarChipNuvem();
+      return;
+    }
     if (linha && pareceBackup(linha.conteudo)){
       const daNuvem = new Date(linha.atualizado_em).getTime();
       const daqui   = dataDoLocal();             // a gravação da própria abertura não conta
@@ -7610,15 +7709,29 @@ async function iniciarNuvem(){
     } else {
       await subirParaNuvem();                      // primeira vez: sobe o que existe aqui
     }
+    marcarDonoDaNuvem(s);                          // daqui em diante, este dado é desta conta
     nuvem.estado = "pronta"; nuvem.ultimo = Date.now();
   } catch(e){ nuvem.estado = "offline"; nuvem.erro = e.message || String(e); }
   pintarChipNuvem();
 }
+/** grava no próprio dado de que conta ele é (ver "OUTRA CONTA NESTE NAVEGADOR") */
+function marcarDonoDaNuvem(s){
+  if (db.contaNuvem === s.uid && db.contaNuvemEmail === s.email) return;
+  db.contaNuvem = s.uid; db.contaNuvemEmail = s.email;
+  persistir(true);
+}
 function sairDaNuvem(){
-  if (!confirm("Sair da conta? Os dados continuam neste navegador e na nuvem.")) return;
+  if (!confirm("Sair da conta? Os dados continuam na nuvem; para voltar, entre com o e-mail e a senha.")) return;
+  sairAgora();
+  toast("Você saiu da conta.");
+}
+function sairAgora(){
+  const s = lerSessao();
+  encerrarSessaoRemota(s && s.access_token);
   gravarSessao(null);
   nuvem.estado = "deslogado"; nuvem.email = ""; nuvem.uid = "";
-  fecharModal(); render(); toast("Você saiu da conta.");
+  Object.assign(acesso, { etapa: "entrar", email: (s && s.email) || acesso.email, erro: "", aviso: "", tipo: "" });
+  fecharModal(); render();
 }
 
 /* ==========================================================================
@@ -7782,6 +7895,192 @@ function pintarChipNuvem(){
   c.title = titulo;
   c.innerHTML = (nuvem.estado === "pronta" ? "☁ " : nuvem.estado === "offline" ? "⚠ " : "") + esc(texto);
 }
+/* ==========================================================================
+   A TELA DE ACESSO (pedido do Pedro, 25/09): o app EXIGE a conta.
+   --------------------------------------------------------------------------
+   · Entrar: e-mail + senha.
+   · Primeiro acesso: e-mail → código de 6 dígitos → crie sua senha.
+   · Esqueci a senha: e-mail → código → nova senha.
+   · Conta que entrou antes das senhas: pede para criar uma, uma vez.
+   Depois de entrar, a sessão fica no aparelho — sem internet o app segue
+   funcionando (renovarSessao só desloga se o Supabase recusar).
+   O "primeiro acesso" num e-mail que JÁ tem senha é recusado: entrar só com o
+   código não vale — para isso existe o "esqueci a senha".
+   window.__semLogin: só as suítes de teste antigas ligam, para abrir o app
+   direto; o app de verdade nunca. */
+const SENHA_MINIMA = 8;
+const exigeLogin = () => nuvemLigada() && !window.__semLogin;
+/** a tela de acesso está no caminho? (sem sessão, ou conta ainda sem senha) */
+function portaoFechado(){
+  if (!exigeLogin()) return false;
+  const s = lerSessao();
+  return !s || s.senha === false;
+}
+const acesso = { etapa: "entrar", email: "", tipo: "", motivo: "", erro: "", aviso: "", ocupado: false };
+let objetivoPendente = false;           // a pergunta do objetivo espera a pessoa entrar
+/** os erros do Supabase, em português de gente */
+function traduzirErroAcesso(e){
+  const m = (e && e.message) || String(e || "");
+  if (e instanceof TypeError || /failed to fetch|load failed|networkerror|network request/i.test(m))
+    return "Sem conexão com a internet. Confira e tente de novo.";
+  if (/invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
+  if (/email not confirmed/i.test(m)) return "Este e-mail ainda não foi confirmado — use “Primeiro acesso”.";
+  if (/expired|invalid.*token|token.*invalid|otp/i.test(m)) return "Código inválido ou vencido. Peça outro.";
+  let x = m.match(/at least (\d+) characters/i);
+  if (x) return "A senha precisa ter pelo menos " + x[1] + " caracteres.";
+  if (/different from the old password/i.test(m)) return "A nova senha precisa ser diferente da anterior.";
+  if (/weak|pwned|leaked/i.test(m)) return "Essa senha é fraca ou já apareceu em vazamentos. Escolha outra.";
+  x = m.match(/after (\d+) seconds?/i);
+  if (x) return "Espere " + x[1] + " segundos para pedir outro código.";
+  if (/rate limit/i.test(m)) return "Muitas tentativas. Espere alguns minutos e tente de novo.";
+  if (/signups? not allowed|user not found/i.test(m)) return "Este e-mail não tem conta. Fale com quem administra a plataforma.";
+  if (/error sending/i.test(m)) return "Não foi possível enviar o e-mail agora. Tente de novo em instantes.";
+  return m;
+}
+function htmlAcesso(){
+  const a = acesso, email = esc(a.email || "");
+  const campoEmail = campo("E-mail", '<input type="email" name="email" autocomplete="username" required ' +
+    'placeholder="voce@exemplo.com" value="' + email + '">', true);
+  const mostrar = '<label class="mostrar"><input type="checkbox" data-acesso-mostrar> mostrar a senha</label>';
+  const rodape = (botao) =>
+    '<button class="btn btn-largo" type="submit"' + (a.ocupado ? " disabled" : "") + '>' +
+      (a.ocupado ? "Aguarde…" : botao) + '</button>' +
+    '<span class="erro-form" role="alert">' + esc(a.erro) + '</span>' +
+    (a.aviso ? '<span class="aviso-ok" role="status">' + esc(a.aviso) + '</span>' : '');
+  const link = (acao, rot) => '<button type="button" data-acesso="' + acao + '">' + rot + '</button>';
+  let titulo = "", texto = "", corpo = "", links = "";
+  if (a.etapa === "entrar"){
+    titulo = "Entrar";
+    corpo = campoEmail +
+      campo("Senha", '<input type="password" name="senha" autocomplete="current-password" required>', true) + mostrar;
+    corpo += rodape("Entrar");
+    links = link("primeiro", "Primeiro acesso? Receber o código") + link("esqueci", "Esqueci minha senha");
+  } else if (a.etapa === "primeiro" || a.etapa === "esqueci"){
+    const primeiro = a.etapa === "primeiro";
+    titulo = primeiro ? "Primeiro acesso" : "Redefinir a senha";
+    texto = primeiro
+      ? "Digite o seu e-mail. Enviamos um código de 6 dígitos para confirmar que ele é seu; depois você cria a sua senha."
+      : "Digite o e-mail da conta. Enviamos um código de 6 dígitos; com ele você cria uma senha nova.";
+    corpo = campoEmail + rodape("Enviar o código");
+    links = link("entrar", "Voltar para entrar");
+  } else if (a.etapa === "codigo"){
+    titulo = "Digite o código";
+    texto = "Enviamos um código de 6 dígitos para " + (a.email || "o seu e-mail") + ". Veja também a caixa de spam.";
+    corpo = campo("Código", '<input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="10" ' +
+      'required placeholder="123456">', true) + rodape("Continuar");
+    links = link("reenviar", "Reenviar o código") + link("entrar", "Voltar para entrar");
+  } else {                                    // "senha": criar ou trocar
+    const conta = a.motivo === "conta", redefinir = a.motivo === "redefinir";
+    titulo = redefinir ? "Crie a senha nova" : "Crie a sua senha";
+    texto = conta ? "A sua conta ainda não tem senha. Crie uma agora — daqui em diante, a entrada é com o e-mail e a senha."
+          : redefinir ? "Código confirmado. Escolha a senha nova."
+          : "E-mail confirmado. Agora crie a senha que você vai usar para entrar.";
+    corpo = campo("Senha", '<input type="password" name="senha" autocomplete="new-password" required minlength="' +
+              SENHA_MINIMA + '">', true) +
+            campo("Repita a senha", '<input type="password" name="senha2" autocomplete="new-password" required>', true) +
+            '<div class="regra">Pelo menos ' + SENHA_MINIMA + ' caracteres.</div>' + mostrar + rodape("Salvar a senha");
+    links = link("sair", "Sair e entrar com outra conta");
+  }
+  return '<div class="acesso-caixa">' +
+    '<div class="acesso-marca"><span class="marca" aria-hidden="true"> <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"> <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H5.5A1.5 1.5 0 0 1 4 15V5.5Z"/> <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h5A1.5 1.5 0 0 0 20 15V5.5Z"/> </svg> </span><h1>Plataforma <span>de Estudos</span></h1></div>' +
+    '<div class="card"><h2>' + esc(titulo) + '</h2>' + (texto ? '<p class="sub" style="margin:0">' + esc(texto) + '</p>' : '') +
+      '<form id="formAcesso" data-etapa="' + a.etapa + '" novalidate><div class="campos">' + corpo + '</div></form>' +
+      '<div class="acesso-links">' + links + '</div></div></div>';
+}
+/** desenha (ou tira) a tela de acesso. Devolve se ela está no caminho. */
+function pintarAcesso(){
+  const el = document.getElementById("acesso");
+  const fechado = portaoFechado();
+  document.body.classList.toggle("sem-acesso", fechado);
+  if (!el) return fechado;
+  if (!fechado){ if (!el.hidden){ el.hidden = true; el.innerHTML = ""; } return false; }
+  const s = lerSessao();
+  if (s && s.senha === false && acesso.etapa !== "senha"){ acesso.etapa = "senha"; acesso.motivo = acesso.motivo || "conta"; }
+  el.hidden = false;
+  el.innerHTML = htmlAcesso();
+  const f = document.getElementById("formAcesso");
+  f.addEventListener("submit", enviarAcesso);
+  el.querySelectorAll("[data-acesso]").forEach(b => b.addEventListener("click", () => navegarAcesso(b.dataset.acesso)));
+  el.querySelectorAll("[data-acesso-mostrar]").forEach(c => c.addEventListener("change", () =>
+    f.querySelectorAll('input[name^="senha"]').forEach(i => { i.type = c.checked ? "text" : "password"; })));
+  const primeiro = f.querySelector(acesso.etapa === "entrar" && acesso.email ? '[name="senha"]' : "input");
+  if (primeiro) try { primeiro.focus(); } catch(e){}
+  return true;
+}
+function navegarAcesso(para){
+  acesso.erro = ""; acesso.aviso = "";
+  if (para === "sair"){ sairAgora(); return; }
+  if (para === "reenviar"){ reenviarCodigo(); return; }
+  acesso.etapa = para;
+  pintarAcesso();
+}
+async function reenviarCodigo(){
+  try {
+    if (acesso.tipo === "recovery") await pedirRedefinicao(acesso.email);
+    else await pedirCodigo(acesso.email, true);
+    acesso.erro = ""; acesso.aviso = "Código reenviado. Veja também o spam.";
+  } catch(e){ acesso.erro = traduzirErroAcesso(e); acesso.aviso = ""; }
+  pintarAcesso();
+}
+async function enviarAcesso(ev){
+  ev.preventDefault();
+  if (acesso.ocupado) return;
+  const f = ev.target, d = Object.fromEntries(new FormData(f).entries());
+  const etapa = f.dataset.etapa;
+  const falha = msg => { acesso.erro = msg; acesso.aviso = ""; acesso.ocupado = false; pintarAcesso(); };
+  if (d.email !== undefined) acesso.email = (d.email || "").trim().toLowerCase();
+  if (d.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acesso.email)) return falha("Digite um e-mail válido.");
+  if (etapa === "entrar" && !d.senha) return falha("Digite a senha.");
+  if (etapa === "codigo" && !(d.codigo || "").trim()) return falha("Digite o código que chegou no e-mail.");
+  if (etapa === "senha"){
+    if ((d.senha || "").length < SENHA_MINIMA) return falha("A senha precisa ter pelo menos " + SENHA_MINIMA + " caracteres.");
+    if (d.senha !== d.senha2) return falha("As duas senhas não são iguais.");
+  }
+  acesso.erro = ""; acesso.aviso = ""; acesso.ocupado = true; pintarAcesso();
+  try {
+    if (etapa === "entrar"){
+      await entrarComSenha(acesso.email, d.senha);
+      return concluirEntrada("Bem-vindo de volta.");
+    }
+    if (etapa === "primeiro" || etapa === "esqueci"){
+      acesso.tipo = etapa === "primeiro" ? "email" : "recovery";
+      if (etapa === "primeiro") await pedirCodigo(acesso.email, true);
+      else await pedirRedefinicao(acesso.email);
+      acesso.etapa = "codigo"; acesso.ocupado = false; pintarAcesso(); return;
+    }
+    if (etapa === "codigo"){
+      const r = await conferirCodigo(acesso.email, d.codigo.trim(), acesso.tipo || "email");
+      if (acesso.tipo !== "recovery" && tem(r, "senha_criada")){
+        // o primeiro acesso não serve de porta dos fundos: esta conta entra com a senha
+        encerrarSessaoRemota(r.access_token);
+        acesso.etapa = "entrar"; acesso.ocupado = false;
+        return falha("Este e-mail já tem senha. Entre com ela — ou use “Esqueci minha senha”.");
+      }
+      gravarSessao(sessaoDe(r, { senha: false }));
+      acesso.etapa = "senha"; acesso.motivo = acesso.tipo === "recovery" ? "redefinir" : "primeiro";
+      acesso.ocupado = false; pintarAcesso(); return;
+    }
+    if (etapa === "senha"){
+      await gravarSenhaNova(d.senha);
+      const motivo = acesso.motivo;
+      return concluirEntrada(motivo === "redefinir" ? "Senha nova salva." : "Senha criada — pronto para estudar.");
+    }
+  } catch(e){ return falha(traduzirErroAcesso(e)); }
+}
+/** entrou: some a tela, chegam os dados da conta e o app aparece */
+async function concluirEntrada(msg){
+  Object.assign(acesso, { etapa: "entrar", tipo: "", motivo: "", erro: "", aviso: "", ocupado: false });
+  nuvem.estado = "pronta";
+  render();                                       // tira a tela de acesso já
+  await iniciarNuvem();
+  render();
+  toast(msg);
+  // o que a abertura deixou esperando enquanto ninguém tinha entrado
+  if (objetivoPendente && !db.registros.length && !conteudosCad().length && $("#overlay").hidden) modalObjetivo();
+  objetivoPendente = false;
+  if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
+}
+
 function painelNuvem(){
   if (!nuvemLigada()){
     abrirModal("Conta e sincronização",
@@ -7792,15 +8091,9 @@ function painelNuvem(){
     return;
   }
   const s = lerSessao();
-  if (!s){
-    abrirModal("Entrar na conta",
-      '<p class="sub">Com uma conta, seus dados ficam salvos na nuvem e aparecem em qualquer aparelho — ' +
-      'mesmo que você limpe este navegador. Não precisa de senha: enviamos um código de 6 dígitos.</p>' +
-      '<form id="formEntrar"><div class="campos">' +
-        campo("Seu e-mail *", '<input type="email" name="email" id="emailEntrar" required placeholder="voce@exemplo.com" autocomplete="email">', true) +
-      '</div><div class="linha" style="margin-top:12px">' +
-        '<button class="btn" type="submit">Enviar código</button>' +
-        '<span class="erro-form" id="erroNuvem"></span></div></form>', ligarFormularios);
+  if (!s){                                        // entrar é pela tela de acesso (portaoFechado)
+    abrirModal("Entrar na conta", '<p class="sub">Você não está na conta. Recarregue a página para entrar ' +
+      'com o seu e-mail e a sua senha.</p>');
     return;
   }
   abrirModal("Conta e sincronização",
@@ -7817,39 +8110,6 @@ function painelNuvem(){
     '<p class="sub" style="margin-top:14px">Cada alteração sobe sozinha. Se você usar em outro aparelho, ' +
     'abra com o mesmo e-mail e os dados vêm junto.</p>');
 }
-function enviarEntrar(ev){
-  ev.preventDefault();
-  const email = (new FormData(ev.target).get("email") || "").trim();
-  const aviso = document.getElementById("erroNuvem");
-  if (!email){ aviso.textContent = "Informe o e-mail."; return; }
-  aviso.textContent = "Enviando…";
-  enviarCodigo(email).then(() => {
-    abrirModal("Código enviado",
-      '<p class="sub">Enviamos um código de 6 dígitos para <b>'+esc(email)+'</b>. ' +
-      'Ele vale por alguns minutos.</p>' +
-      '<form id="formCodigo" data-email="'+esc(email)+'"><div class="campos">' +
-        campo("Código *", '<input name="codigo" id="codigoEntrar" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required>', true) +
-      '</div><div class="linha" style="margin-top:12px">' +
-        '<button class="btn" type="submit">Entrar</button>' +
-        '<button class="btn ghost" type="button" data-acao="painel-nuvem">Trocar de e-mail</button>' +
-        '<span class="erro-form" id="erroNuvem"></span></div></form>', ligarFormularios);
-  }).catch(e => { aviso.textContent = "Não deu para enviar: " + (e.message || e); });
-}
-function enviarCodigoForm(ev){
-  ev.preventDefault();
-  const f = ev.target, codigo = (new FormData(f).get("codigo") || "").trim();
-  const aviso = document.getElementById("erroNuvem");
-  if (!codigo){ aviso.textContent = "Digite o código que chegou no e-mail."; return; }
-  aviso.textContent = "Conferindo…";
-  confirmarCodigo(f.dataset.email, codigo).then(async () => {
-    fecharModal();
-    nuvem.estado = "pronta";
-    await iniciarNuvem();
-    render();
-    toast("Conectado como " + nuvem.email + ".");
-  }).catch(e => { aviso.textContent = "Código não aceito: " + (e.message || e); });
-}
-
 /** o chip do cabeçalho conta, em uma linha, onde os dados estão sendo gravados */
 function pintarChipArquivo(){
   const c = document.getElementById("chipArquivo"); if (!c) return;
@@ -8655,9 +8915,10 @@ if (primeiraVez || inicio.objetivoDeduzido){
 }
 render();
 if (inicio.danificado) modalDadosDanificados();
+else if (primeiraVez && portaoFechado()) objetivoPendente = true;   // pergunta depois de entrar (concluirEntrada)
 else if (primeiraVez) modalObjetivo();
-// a prova passou e ninguém disse o que fazer: pergunta uma vez
-if (precisaPerguntarPosProva()) modalPosProva();
+// a prova passou e ninguém disse o que fazer: pergunta uma vez (se a tela de acesso não estiver no caminho)
+if (precisaPerguntarPosProva() && !portaoFechado()) modalPosProva();
 /* Esta chamada é DEPOIS do render() de cima, então o que ela marcar não está na
    tela ainda — daí o render() aqui dentro. Sem ele, quem abrisse o app numa base
    que precisava de volta via a agenda vazia até clicar em alguma aba. */

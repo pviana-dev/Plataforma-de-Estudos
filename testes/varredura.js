@@ -20,7 +20,7 @@ let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 function abrir(seed, aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){ if(seed!==null) w.localStorage.setItem("plataforma-estudos:v1",typeof seed==="string"?seed:JSON.stringify(seed));
+   beforeParse(w){ w.__semLogin=true; if(seed!==null) w.localStorage.setItem("plataforma-estudos:v1",typeof seed==="string"?seed:JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"hoje",gravadoEm:hoje}));
      w.confirm=()=>true; w.alert=()=>{}; }});
   return dom.window;

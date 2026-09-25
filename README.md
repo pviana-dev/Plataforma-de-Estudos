@@ -1642,38 +1642,57 @@ escolher arquivo, nada de exportar backup, e os dados aparecem em qualquer apare
 
 ### Configurar (uma vez, você)
 
-1. Crie um projeto no [Supabase](https://supabase.com) (plano gratuito basta).
-2. **SQL Editor** → rode:
-
-```sql
-create table dados (
-  id uuid primary key references auth.users on delete cascade,
-  conteudo jsonb not null,
-  atualizado_em timestamptz not null default now()
-);
-alter table dados enable row level security;
-create policy "cada um vê o seu" on dados
-  for all using (auth.uid() = id) with check (auth.uid() = id);
-```
-
-3. **Authentication → Email Templates → Magic Link**: inclua `{{ .Token }}` no corpo. É esse código de
-   6 dígitos que a plataforma pede — sem link e sem redirecionamento, então funciona até com o arquivo
-   aberto localmente.
-4. **Project Settings → API**: copie a *URL* e a chave *anon public* para o topo do `<script>`:
+1. Crie um projeto no [Supabase](https://supabase.com) (plano gratuito basta; região **São Paulo**).
+2. **SQL Editor → New query**: cole o arquivo **`supabase/estrutura.sql`** inteiro e clique em **Run**. Ele cria a
+   tabela `dados` (uma linha por conta), as regras de acesso (cada conta só lê e grava a própria linha; quem não
+   entrou não toca em nada) e o **histórico de versões** (a versão anterior é guardada no máximo a cada 6 horas,
+   por 30 dias — a rede de segurança para quando um aparelho com dados velhos grava por cima). Pode rodar de
+   novo sem estragar nada. No fim do arquivo está a receita para recuperar uma versão antiga.
+3. **Authentication → Emails → SMTP Settings**: ligue um **SMTP próprio** (Resend, Brevo, ou o Gmail com senha de
+   app). Sem isso, o Supabase **só manda e-mail para os membros da equipe do projeto** — o código de entrada não
+   chegaria para quem vai usar a plataforma — e ainda limita a poucos e-mails por hora.
+4. **Authentication → Emails → Templates**: nos modelos **Confirm signup**, **Magic Link** *e* **Reset Password**,
+   ponha `{{ .Token }}` no corpo (ex.: `Seu código: <b>{{ .Token }}</b>`). É esse código de 6 dígitos que a
+   plataforma pede — sem link e sem redirecionamento. O *Confirm signup* vai no **primeiro acesso** de cada e-mail;
+   o *Reset Password*, no **esqueci a senha**.
+5. **Authentication → Sign In / Providers → Email**: deixe **ligado**. Tamanho do código: **6**. Tamanho mínimo da
+   senha: **8** (o app também exige 8).
+6. Entre na plataforma uma vez com cada e-mail que vai usar (isso cria a conta) — o ideal é cada pessoa no
+   próprio aparelho. Se for no mesmo navegador, tudo bem: a plataforma sabe de que conta são os dados que estão
+   nele e, ao entrar com outra, **pergunta** antes de trocar — nunca sobe os dados de uma conta para a outra
+   (os da primeira continuam na nuvem, na conta dela). Depois, se quiser que **mais ninguém** crie conta no seu
+   projeto, desligue **Allow new users to sign up** — quem já tem conta continua entrando normalmente.
+7. **Project Settings → API Keys**: copie a *Project URL* e a chave pública (**publishable**, `sb_publishable_…`,
+   ou a **anon** antiga) para o topo do `<script>`. **Nunca** a *secret* / *service_role*.
 
 ```js
 const NUVEM = {
   url:   "https://seuprojeto.supabase.co",
-  chave: "eyJhbGciOi..."        // anon public — é pública por natureza, pode ficar no código
+  chave: "sb_publishable_..."   // pública por natureza, pode ficar no código
 };
 ```
 
 Enquanto essas duas linhas estiverem vazias, **nada muda**: o chip da nuvem nem aparece e nenhuma
 chamada de rede é feita.
 
+> **Plano gratuito:** o Supabase **pausa** o projeto depois de uma semana sem nenhum uso. Pausado, a plataforma
+> mostra "Sem conexão" e continua gravando no navegador; para voltar, entre no painel do Supabase e clique em
+> **Restore project**. Com uso diário, isso não acontece.
+
 ### Como fica para quem usa
 
-O chip no cabeçalho mostra a conta: **Entrar na conta** → e-mail → código de 6 dígitos → **☁ nome**.
+**A plataforma exige a conta** (desde 25/09): sem ninguém logado, só aparece a **tela de acesso**.
+
+- **Entrar:** e-mail e senha.
+- **Primeiro acesso:** e-mail → chega um código de 6 dígitos → a pessoa **cria a senha** → entra.
+- **Esqueci minha senha:** e-mail → código → **senha nova** → entra.
+- Conta criada antes das senhas: ao abrir, a plataforma pede para **criar uma senha**, uma vez.
+- O "primeiro acesso" num e-mail que **já tem senha** é recusado — entrar só com o código não vale; para isso
+  existe o "esqueci a senha".
+- Depois de entrar, a sessão fica no aparelho: **sem internet a plataforma continua abrindo**. Só volta para a
+  tela de acesso quem sai da conta, ou se o Supabase recusar a sessão.
+
+O chip no cabeçalho mostra a conta: **☁ nome**.
 Daí em diante cada alteração sobe sozinha (um segundo depois da última mexida) e também ao fechar a
 aba. Abrindo em outro aparelho com o mesmo e-mail, os dados vêm junto.
 
@@ -1682,6 +1701,8 @@ aba. Abrindo em outro aparelho com o mesmo e-mail, os dados vêm junto.
 - **Quem está mais novo ganha**: ao abrir, a plataforma compara a data da nuvem com a local e traz o
   mais recente. O painel tem **Sincronizar agora** e **Trazer da nuvem** para resolver na mão.
 - A regra de segurança (RLS) garante que **cada conta só enxerga a própria linha**.
+- Se uma gravação estragar os dados, o **histórico** do Supabase guarda as versões dos últimos 30 dias
+  (recuperação pelo SQL Editor — receita no fim de `supabase/estrutura.sql`).
 - O botão **↓ exportar** continua ali: quem usa pode sair com os dados quando quiser.
 
 ### E o SQLite?

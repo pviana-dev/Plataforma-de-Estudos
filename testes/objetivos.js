@@ -21,7 +21,7 @@ function abrir(extra, semSeed, aba){
     conteudosMigrados:true,fasesMigradas:true,dificuldadesMigradas:true,
     registros:[],revisoes:[],erros:[],cronometro:null},extra||{});
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){
+   beforeParse(w){ w.__semLogin=true;
      if (!semSeed) w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"revisoes",gravadoEm:hoje}));
      w.confirm=()=>true; w.alert=()=>{}; }});

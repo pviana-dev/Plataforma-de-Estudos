@@ -8,7 +8,7 @@ const base=p=>({versao:1,tema:"claro",dataProva:p,metaDiariaMin:120,disciplinas:
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 function abrir(prova){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-   beforeParse(w){w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(base(prova)));}});
+   beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(base(prova)));}});
   return dom.window;
 }
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
