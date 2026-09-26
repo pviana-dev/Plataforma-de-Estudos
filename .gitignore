@@ -12,3 +12,6 @@ README.md
 prompt-plataforma-estudos.md
 # tarefa do Mac, com o caminho da conta
 supabase/manter-acordado.plist
+
+# cache da ferramenta do Cloudflare (wrangler)
+.wrangler/
