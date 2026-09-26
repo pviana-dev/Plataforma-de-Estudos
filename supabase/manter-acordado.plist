@@ -2,8 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Mantém o Supabase acordado (README → "Manter o projeto acordado").
-  Chama o ping() todo dia às 12h e sempre que o Mac liga ou a sessão abre; se o Mac estiver
-  dormindo às 12h, roda quando acordar. Registro em ~/Library/Logs/supabase-acordado.log (200 = ok, 404 = falta a alteração 02, 000 = sem rede).
+  Chama o ping() toda segunda às 12h e sempre que o Mac liga ou a sessão abre; se o Mac estiver
+  dormindo na hora, roda quando acordar. Registro em ~/Library/Logs/supabase-acordado.log (200 = ok, 404 = falta a alteração 02, 000 = sem rede).
   Instalar: copiar para ~/Library/LaunchAgents/ e rodar
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
 -->
@@ -19,6 +19,8 @@
   </array>
   <key>StartCalendarInterval</key>
   <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
     <key>Hour</key>
     <integer>12</integer>
     <key>Minute</key>

@@ -1702,7 +1702,7 @@ chamada de rede é feita.
 
 No plano gratuito o Supabase **pausa** o projeto depois de **7 dias sem uso** (férias, uma semana sem estudar).
 Pausado, a plataforma mostra "Sem conexão" e continua gravando no navegador; para voltar, é entrar no painel do
-Supabase e clicar em **Restore project**. Para não depender disso, o Mac chama o projeto todo dia — uma chamada leve
+Supabase e clicar em **Restore project**. Para não depender disso, o Mac chama o projeto uma vez por semana — uma chamada leve
 que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
 
 1. **No Supabase** (uma vez): **SQL Editor → New query**, cole **`supabase/alteracao-02-manter-acordado.sql`** e
@@ -1714,8 +1714,10 @@ que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
    ```
 
-   Ele roda todo dia às 12h, ao ligar o Mac e ao entrar na conta; se o Mac estiver dormindo às 12h, roda quando
-   acordar. **Basta o Mac ser ligado uma vez por semana.** Mais de uma semana com ele desligado, o projeto pausa.
+   Ele roda **toda segunda às 12h** (escolha do Pedro, 26/09), e também ao ligar o Mac e ao entrar na conta; se o
+   Mac estiver dormindo na hora, roda quando acordar. **Margem curta:** de uma segunda à outra são exatamente 7
+   dias, o mesmo prazo da pausa — se numa segunda a chamada só sair à noite (Mac fechado até lá), passa do prazo
+   por algumas horas. O uso normal da plataforma também conta como atividade, e ajuda a cobrir essa folga.
 3. **Conferir:** `cat ~/Library/Logs/supabase-acordado.log` — uma linha por chamada, com data, hora e o código:
    **200** ok · **404** falta o passo 1 · **401** chave errada · **000** sem internet naquela hora.
 
