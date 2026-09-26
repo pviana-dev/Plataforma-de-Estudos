@@ -781,6 +781,13 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
      eles, e o aviso diz quais.
    - Suíte nova `difconteudo.js`. **108 suítes verdes.**
 
+75. **Supabase acordado** (26/09, pedido do Pedro). O plano gratuito pausa o projeto após 7 dias sem uso. Função
+   `public.ping()` (só `select now()`, executável pela chave pública) em `supabase/alteracao-02-manter-acordado.sql` e
+   na seção 4 do `estrutura.sql`; o cron-job.org faz `POST /rest/v1/rpc/ping` a cada 3 dias (README → "Manter o
+   projeto acordado"). **Falta o Pedro:** rodar a alteração 02 no SQL Editor e criar o job no cron-job.org. O app não
+   mudou. Descartados: GitHub Actions (projeto sem remoto; o GitHub desliga agendamentos de repositório parado há 60
+   dias), `pg_cron` (atividade de dentro do banco não parece contar) e agendamento no Mac (só com ele ligado).
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

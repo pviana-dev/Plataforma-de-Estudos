@@ -1698,9 +1698,29 @@ const NUVEM = {
 Enquanto essas duas linhas estiverem vazias, **nada muda**: o chip da nuvem nem aparece e nenhuma
 chamada de rede é feita.
 
-> **Plano gratuito:** o Supabase **pausa** o projeto depois de uma semana sem nenhum uso. Pausado, a plataforma
-> mostra "Sem conexão" e continua gravando no navegador; para voltar, entre no painel do Supabase e clique em
-> **Restore project**. Com uso diário, isso não acontece.
+### Manter o projeto acordado
+
+No plano gratuito o Supabase **pausa** o projeto depois de **7 dias sem uso** (férias, uma semana sem estudar).
+Pausado, a plataforma mostra "Sem conexão" e continua gravando no navegador; para voltar, é entrar no painel do
+Supabase e clicar em **Restore project**. Para não depender disso, um serviço gratuito chama o projeto a cada
+3 dias — uma chamada leve que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
+
+1. **No Supabase** (uma vez): **SQL Editor → New query**, cole **`supabase/alteracao-02-manter-acordado.sql`** e
+   clique em **Run**. (Projeto novo não precisa: o `estrutura.sql` já traz a função.)
+2. **No [cron-job.org](https://cron-job.org)** (gratuito): crie a conta e clique em **Create cronjob**.
+   - **Title:** `Supabase acordado` · **URL:** `https://vosdzokcqnbxmrqqrpkv.supabase.co/rest/v1/rpc/ping`
+   - **Execution schedule:** *Every day*, marcando só **segunda e quinta** (ou *Custom*: a cada 3 dias).
+   - Aba **Advanced**: **Request method** `POST`; em **Headers**, adicione `apikey` com a chave
+     **publishable** (a mesma do bloco `NUVEM` no `index.html`) e `Content-Type` com `application/json`.
+   - Em **Notifications**, deixe ligado o aviso **quando a execução falhar**.
+3. Clique em **Test run**: a resposta deve ser **200** com a data e hora entre aspas. Um **404** quer dizer que o
+   passo 1 não foi rodado; **401**, que a chave está errada.
+
+Para conferir sem o cron-job.org, no Terminal:
+
+```sh
+curl -X POST https://vosdzokcqnbxmrqqrpkv.supabase.co/rest/v1/rpc/ping -H "apikey: sb_publishable_..."
+```
 
 ### Como fica para quem usa
 

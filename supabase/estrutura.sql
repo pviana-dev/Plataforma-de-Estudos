@@ -136,6 +136,21 @@ create trigger arquivar_antes_de_atualizar
   execute function public.arquivar_versao_anterior();
 
 
+-- 4. MANTER ACORDADO ---------------------------------------------------------
+-- O plano gratuito pausa o projeto após 7 dias sem uso. Um serviço de fora chama
+-- POST /rest/v1/rpc/ping a cada 3 dias (README → "Manter o projeto acordado").
+-- Só devolve a hora do banco: não lê nem grava dado nenhum.
+create or replace function public.ping()
+returns timestamptz
+language sql
+stable
+set search_path = ''
+as $$ select now() $$;
+
+revoke execute on function public.ping() from public;
+grant execute on function public.ping() to anon, authenticated;
+
+
 -- =============================================================================
 -- CONFERIR (rode depois, se quiser ver que ficou tudo no lugar)
 -- =============================================================================
