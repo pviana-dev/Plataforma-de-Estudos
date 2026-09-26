@@ -49,7 +49,7 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   ok("a atrasada (de outro dia, ainda aberta) não entra aqui", !/Atrasada desde/.test(card.textContent));
   ok("o cabeçalho conta o que está em aberto", /2 em aberto · 0 concluída/.test(card.querySelector(".dica").textContent),
      card.querySelector(".dica").textContent);
-  ok("mas o card avisa quantas estão atrasadas", /1<\/b> atrasada/.test(card.innerHTML),
+  ok("mas o card avisa quantas estão atrasadas", /1<\/b> atrasad/.test(card.innerHTML),
      card.querySelector(".sub").textContent);
   ok("a futura também fica de fora", !new RegExp(mais(4).slice(8)+"/"+mais(4).slice(5,7)).test(card.textContent));
   ok("o card de atrasadas continua existindo", !!doc.querySelector("#revisoes-atrasadas"));

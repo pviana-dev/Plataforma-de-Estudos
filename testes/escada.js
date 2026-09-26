@@ -28,7 +28,7 @@ function abrir(seed,aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"revisoes",gravadoEm:hoje}));
-     w.confirm=()=>true; w.alert=()=>{}; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; w.alert=()=>{}; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

@@ -25,8 +25,8 @@ const anotar=texto=>{ click(doc.querySelector('[data-acao="abrir-composer"]')); 
   /* ---- sem nada escolhido: o botão + já existe (a escolha vem no compositor) ---- */
   await passo(()=>{
     ok("sem escolher nada, o botão + já está disponível", !!doc.querySelector('[data-acao="abrir-composer"]'));
-    ok("e ele avisa que a escolha vem na hora de salvar",
-       /na hora de salvar/.test(doc.querySelector('[data-acao="abrir-composer"]').textContent),
+    ok("e ele não traz mais a pista \"na hora de salvar\" (tirada a pedido do Pedro, 26/09)",
+       !/na hora de salvar/.test(doc.querySelector('[data-acao="abrir-composer"]').textContent),
        doc.querySelector('[data-acao="abrir-composer"]').textContent);
     ok("sem a frase-guia no topo da aba", !/não quer esquecer da matéria/.test($("#view").textContent)); // frase-guia tirada a pedido do Pedro (24/09)
     const d=$("#eDisciplina"); d.value="Legislação"; change(d);

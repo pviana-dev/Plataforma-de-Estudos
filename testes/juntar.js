@@ -19,7 +19,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
  cronometro:null};
 let falhas=0; const ok=(n,c,x)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(x)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.__confirmarNativo=true; w.confirm=()=>true;}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
@@ -34,7 +34,7 @@ const btn=()=>doc.querySelector('[data-acao="toggle-juntar"]');
   const antes=cards().map(c=>titulo(c)+":"+c.querySelectorAll(".apr-item").length);
   ok("começa separado por dia (3 cards de LAI + 1 de Crase)", cards().length===4, antes);
   ok("nenhuma data solta nas linhas", !doc.querySelector(".apr-data"));
-  ok("existe o botão de juntar tudo", !!btn() && /juntar tudo/i.test(btn().textContent), btn()&&btn().textContent);
+  ok("existe o botão de juntar os dias", !!btn() && /juntar os dias/i.test(btn().textContent), btn()&&btn().textContent);
   ok("e ele começa desligado", btn().getAttribute("aria-pressed")==="false");
 
   /* ---- juntar tudo ---- */

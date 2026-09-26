@@ -25,7 +25,7 @@ function abrir(sessao){
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",gravadoEm:hoje,visaoAgenda:"assunto"}));
      Object.entries(sessao||{}).forEach(([k,v])=>w.sessionStorage.setItem(k,v));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const click=(w,el)=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));

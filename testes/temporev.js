@@ -10,7 +10,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
  cronometro:{inicio:Date.now()-45*60000,disciplina:"",assunto:"",destinoTipo:"revisao",destinoId:"v1"}};
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.__confirmarNativo=true; w.confirm=()=>true;}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));

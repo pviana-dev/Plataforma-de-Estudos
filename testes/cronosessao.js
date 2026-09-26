@@ -20,7 +20,7 @@ function abrir(s, tela){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(s));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify(Object.assign({aba:"hoje",gravadoEm:hoje},tela||{})));
-     w.confirm=()=>true; w.HTMLElement.prototype.scrollIntoView=function(){ w.__rolou=this; }; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; w.HTMLElement.prototype.scrollIntoView=function(){ w.__rolou=this; }; }});
   return dom.window;
 }
 const click=(w,el)=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));

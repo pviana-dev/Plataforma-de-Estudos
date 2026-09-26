@@ -7,7 +7,7 @@ const seed={versao:1,tema:"claro",dataProva:"2026-10-11",metaDiariaMin:120,disci
  revisoes:[],erros:[],cronometro:null};
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
- beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;}});
+ beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.__confirmarNativo=true; w.confirm=()=>true;}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const change=el=>el.dispatchEvent(new w.Event("change",{bubbles:true}));
@@ -23,7 +23,8 @@ const enviar=()=>$("#formCrono").dispatchEvent(new w.Event("submit",{bubbles:tru
   ok("o botão Iniciar fica clicável, para poder explicar", !bt.disabled);
   ok("com o motivo no title", /Escolha para onde o tempo vai/.test(bt.getAttribute("title")||""),
      bt.getAttribute("title"));
-  ok("e o aviso explica o que falta", /só inicia com um destino definido/.test($("#formCrono").textContent),
+  // a frase fixa embaixo do seletor saiu (revisão de UX, 26/09): o motivo aparece ao tentar iniciar
+  ok("sem frase fixa explicando embaixo do seletor", !/só inicia com um destino definido/.test($("#formCrono").textContent),
      $("#formCrono").textContent.slice(0,140));
 
   enviar(); await espera(150);

@@ -720,6 +720,67 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    pausado até lá". Saiu também o emoji de calendário do atalho, do aviso e do selo do card. O texto da Ajuda
    foi da aba Disciplinas para a da Agenda. `revprova.js` com 39 verificações.
 
+72. **Telas mais limpas e o Excluir no canto** (26/09, pedidos do Pedro).
+   - **Tempo (min) vazio** quando a sessão não tem tempo (antes vinha "0" ao reabrir), igual às questões.
+   - **Pistas que saíram dos botões:** "você escolhe a disciplina…" (Nova anotação), "ligadas a uma sessão já
+     registrada" (Lançar questões feitas) e "em X / escolha uma disciplina…" (Novo conteúdo — travado, o pedido
+     da disciplina ficou só no `title`). Saiu também "N lançamentos feitos fora de uma sessão" (Baterias avulsas)
+     e "Ordenado pela pior taxa de acerto…" (Desempenho), que ganhou um botão só de seta (`q-ordem-taxa`,
+     `ui.qOrdemTaxa`, lembrado na tela) para inverter a ordem pela taxa.
+   - **Celular:** anotação com ↑ ↓/estrela/editar numa faixa em cima e o texto embaixo na largura toda; Período
+     (7·30·90) numa linha; "Questões dia a dia" com o resumo na linha de baixo.
+   - **Excluir:** o ✕ saiu do card da bateria avulsa (fica só no editor). Nas quatro telas de edição (sessão,
+     revisão/card, anotação, lançamento) o botão (`.excluir-tela`) fica **sempre no canto inferior direito**, com
+     contorno e fundo vermelho; no celular os botões da esquerda encolhem e "Salvar alterações"/"Continuar hoje"
+     viram "Salvar"/"Continuar" (`.so-largo`). E **todo excluir diz só "Excluir"** — saíram "Excluir ponto",
+     "Excluir lançamento", "Excluir revisão" e "Excluir card".
+
+73. **Revisão de UX e correções** (26/09, pedido do Pedro: "corrija tudo o que você identificou"). Relatório com 35
+   itens em 3 grupos, feito com capturas reais (Chrome com emulação de aparelho, 390/820/1280 px, claro e escuro).
+   - **Defeitos**: a faixa "Sessão cronometrada: 0min ( → )… o domínio" aparecia em todo registro aberto pela agenda,
+     pelo ▶ estudar e pelo ▶ continuar (só o cronômetro traz horário); o ✓ de um item de outro dia abria um formulário
+     que não salvava (a revisão tocada não estava na lista); o rótulo do dia contava só a amostra ("3 itens" num dia com
+     11); "+ Novo conteúdo" travado não respondia ao toque; estados vazios que mentiam (Questões: "botão abaixo" que não
+     existe; Falta estudar: "tudo cadastrado já tem sessão" sem cadastro); "Failed to fetch" cru no painel da conta; o
+     card Agenda do Progresso misturava "no dia" e total; a ordem das Sessões contava como filtro; plurais com "(s)".
+     **Achado na correção**: o painel "Personalizar" das revisões até a prova aparecia com "Automáticas" marcado — o
+     display de `.campo` vencia o `hidden`; entrou `[hidden]{display:none!important}`.
+   - **Uso**: o ✓ e o ▶ estudar abrem o registro por cima da aba atual; cronômetro com o grupo **Estudar hoje** e ▶ estudar
+     perguntando *Cronometrar agora / Registrar sessão* (`escolher`, `comecarCronoNoConteudo`); **`confirmar`/`avisar`**
+     (janela do app) no lugar dos 19 `confirm()` e 4 `alert()` — nos testes, `w.__confirmarNativo` responde pelo
+     `w.confirm` e `w.__escolha` pelo `escolher`; Disciplinas com *✎ editar* (nome + **Excluir** no canto, como no item 72)
+     e *✓ concluir* na linha; Lançar questões escolhe o conteúdo (liga à sessão mais recente dele); Ajustes com rodapé
+     fixo; nomes sem jargão (Baixar cópia dos dados, Restaurar uma cópia, Questões fora das sessões, Espaçado); vermelho só
+     para atraso; áreas de toque em `pointer:coarse`; `--muted` #5f676a (≥4,5:1) e ajustes de contraste no escuro; foco
+     preso na janela aberta; aria-label no ✓ e na ★; `*assim*` vira negrito.
+   - **Tela limpa**: as frases do cronômetro, da agenda, do registro, do card de continuar, da Nova revisão, do Lançar,
+     do Personalizar, dos Ajustes, do mural e do Progresso foram para a Ajuda (conferido item a item).
+   - **Não feito, por ser decisão do Pedro**: coluna/selo "estudo" (item 31); Progresso abrir no dia de hoje (preso em
+     `virada.js`); e os 4 de "vale reconsiderar" (exemplos 60/20/14 nos campos, números do topo da Agenda contando tudo,
+     tamanho do cabeçalho no celular, card da prova só avisando).
+   - Suíte nova `revisaoux.js`; ajustadas: continuidade, fases, novoconteudo, converter, arquivo, login, grafquestoes,
+     excluirconteudo, varredura, renomear, lancamentos, ajustesajuda, hojerev, retomada, trava, mural, celular, juntar,
+     e as 65 que simulam `confirm` ganharam `__confirmarNativo`. **107 suítes verdes.**
+   - **Depois, a pedido do Pedro:** a opção *Criar os agendamentos automaticamente* dos Ajustes ficou menor (13px, menos
+     folga): com 14px ela media 540px numa área de 558, e a barra de rolagem vertical do navegador fazia surgir a barra
+     lateral. Continua numa linha só no computador; abaixo de 640px quebra a linha em vez de rolar.
+
+74. **Três pedidos de 26/09** (depois do item 73).
+   - **Saiu "Como o cronograma é montado?"** do pé da Agenda (`ajudaCronograma` removida); o texto já estava na Ajuda,
+     seção Continuar e revisar.
+   - **Revisões até a prova personalizadas mandam na Agenda**: em *Todas as agendadas*, as `planoProva` ficam ativas e as
+     outras pendentes do conteúdo (a escada que recomeça depois da prova e as marcadas à mão) aparecem **bloqueadas** —
+     apagadas, sem ✓ nem editar, com "bloqueada até DD/MM" (`bloqueadaPelaProva`, em `itemRevisao` e `linhaRevisao`);
+     em *Só as 2 próximas* elas nem aparecem (`soAsProximas`). O ✓ de uma bloqueada é recusado com aviso.
+   - **Dificuldade editável na aba Disciplinas**: uma caixa Difícil/Médio/Fácil em cada conteúdo
+     (`seletorDificuldadeConteudo`, `definirDificuldadeDoConteudo`). Como a dificuldade do conteúdo é a da sessão MAIS
+     RECENTE dele, a mudança entra nessa sessão e passa por `salvarRegistro` — refaz a escada (concluído) ou o card de
+     continuar (em andamento), e a aba Sessões e o formulário passam a mostrar a nova. Conteúdo sem sessão guarda a
+     escolha em `ficha.dificuldade`, que vem preenchida na primeira sessão (`dificuldadeDaFicha`, `dificuldadeHerdada`,
+     dica "Veio da dificuldade escolhida na aba Disciplinas"). Sessão com vários conteúdos: a mudança vale para todos
+     eles, e o aviso diz quais.
+   - Suíte nova `difconteudo.js`. **108 suítes verdes.**
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

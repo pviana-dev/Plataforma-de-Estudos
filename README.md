@@ -19,7 +19,7 @@ mouse). Fica em todas as abas: é a referência de "hoje", "atrasado" e "amanhã
 | **Agenda** | **Lembrete e alerta** — não é aqui que o tempo é registrado. **Filtros** de **Disciplina** e, embaixo, de **Conteúdo** (só os da disciplina escolhida; sem ela, todos, com a disciplina ao lado), valendo nas três visões, com um **✕ limpar** que tira os dois — o card *Agenda de hoje* não obedece a eles. **Revisões:** por padrão, **só as 2 próximas** — de cada conteúdo, as **2 próximas revisões** e a **próxima retomada** (cumprida uma, a seguinte aparece); **Todas as agendadas** mostra a escada inteira, e a escolha fica lembrada. Vale também para os próximos 7 dias da aba **Hoje**. Duas **sub-abas** no topo: **A fazer** (padrão — hoje, o que atrasou e os próximos dias) e **Concluídos** (o que foi marcado em **dias anteriores**). Abre com **Agenda de hoje** — tudo o que tem a data de hoje; **clicar num item dali leva até ele no cronograma abaixo**. Tem **três visões** da mesma agenda: **Por dia** (padrão), **Por assunto** e **Mês**. Cronograma **por assunto**, com uma caixa de seleção por dia recomendado. A lista de assuntos vem em **ordem alfabética** e abre com **4** deles, com um botão **+ ver todos os N assuntos** que revela o resto (e avisa quando há atraso escondido lá dentro). Verde = feita, destaque = hoje, vermelho = atrasada, neutro = futura. Dá para **adicionar** uma revisão à mão (data, o que foi revisado, tempo e desempenho) e **editar ou excluir** qualquer uma. |
 | **Disciplinas** | O **cadastro** de disciplinas e conteúdos, agrupado por disciplina. Cada conteúdo mostra **em quantas sessões ele aparece** e a fase (*em andamento* ou *concluído em DD/MM*), com **✎ renomear** — que muda o nome **em todo o sistema** — e **✓ concluir / ↩ reabrir**. No cabeçalho de cada disciplina, **✓ concluir disciplina** fecha de uma vez todos os conteúdos abertos dela (e **↩ reabrir disciplina**, quando já está tudo fechado). Fechar um conteúdo fecha **todas as sessões que falam dele** e começa a escada de revisões daquele dia. Aqui se criam disciplinas (**+ Nova disciplina**, que abre uma tela própria; **✕ excluir** aparece enquanto nada usa a disciplina) e conteúdos (**+ Novo conteúdo**, um por linha ou numerados — `1. Crase 2. Regência`); eles também nascem no formulário da aba **Sessões**. Renomear abre uma pergunta do próprio app, por cima da tela. |
 | **Anotações** | Dois filtros: **Disciplina** (mostra todos os cards dela) e **Conteúdo** (mostra só aquele tópico). Ambos listam apenas o que existe nas **sessões já registradas** — aqui não se cria disciplina nem conteúdo. A anotação pode ser feita **na disciplina inteira ou num conteúdo dela**, e o botão **+** no topo da lista está sempre disponível: sem filtro escolhido, o próprio compositor traz o seletor *Onde entra* e a anotação só é salva depois que você escolhe. São anotações de **conhecimento geral** sobre a matéria, não sobre uma questão específica — a aba não tem ligação com as questões que você registra, embora mostre **quantas questões e a taxa de acerto** da disciplina como contexto. A tela tem dois cards: **filtros + indicadores + botão de anotar**, e **Anotações**, com a contagem do que está filtrado. A origem da questão e o tipo do erro são **opcionais** e entram depois, no **editar**, que abre a **tela sobreposta** (centrada, com o Salvar sempre à vista). O texto aceita **formatação leve, com cores** e tem **limite de 2.000 caracteres** (ver abaixo). ★ monta a lista de véspera. |
-| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; Um bloco por conteúdo. O botão **+ Lançar questões feitas**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. O card **Questões das sessões** lista as sessões com questões e deixa **editar** os números ali mesmo — é o mesmo dado da sessão, então a aba Sessões já mostra o valor novo. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
+| **Questões** | Tudo o que foi resolvido: total, acertos, erros, taxa geral, questões da última semana e dias com questões. O desempenho aparece **por disciplina** (padrão) **ou por conteúdo** (botão para alternar), ordenado pela pior taxa, com barra de acerto; Um bloco por conteúdo. O botão **+ Lançar questões**, logo **abaixo dos indicadores**, registra uma bateria feita fora da sessão, **ligada a uma sessão já registrada**. O card **Questões das sessões** lista as sessões com questões e deixa **editar** os números ali mesmo — é o mesmo dado da sessão, então a aba Sessões já mostra o valor novo. Depois dele vem o **gráfico dia a dia**, e o desempenho por disciplina fecha a aba. |
 | **Progresso** | Meta diária, **estudo na semana** e **questões da semana**, calendário de horas por dia, % de acerto por disciplina, tempo por disciplina e situação das revisões. **Filtre por disciplina e por conteúdo** (as mesmas duas caixas das outras abas) — ou clique na própria barra de uma disciplina — para restringir os gráficos; **clique num dia do calendário** para ver o que foi feito naquele dia e filtrar a aba (ver abaixo). |
 
 ### Salvar uma sessão só replaneja quando o plano mudou
@@ -267,7 +267,7 @@ O **editar** abre a mesma **tela sobreposta** das sessões e das revisões, em v
 linha do card em formulário. O motivo é prático: o formulário é alto (caixa de texto grande, origem,
 tipo do erro, onde entra, situação) e, inline, o botão **Salvar** caía abaixo da dobra — era preciso
 rolar para salvar. Na tela sobreposta ela abre **centralizada**, e o rodapé de ações fica **fixo no
-pé da caixa**, então *Salvar*, *Cancelar* e *Excluir ponto* estão sempre à vista, com a rolagem
+pé da caixa**, então *Salvar*, *Cancelar* e *Excluir* estão sempre à vista, com a rolagem
 terminando no fio acima deles.
 
 **Os campos da questão só aparecem quando são o caso.** A tela pergunta *"Isto apareceu numa
@@ -386,7 +386,7 @@ Em vez de uma pilha de cards repetindo a mesma origem:
 - **A data aparece uma vez só**, no cabeçalho, e é sempre uma data cheia — como o card nunca mistura
   dias, não há mais intervalo de datas. Antes ela se repetia em cada anotação; a data individual de
   cada uma continua acessível no *title* da faixa (passe o mouse).
-- **⇅ juntar tudo** (ao lado de *★ só as da véspera*) desfaz a divisão por dia quando você quer ver
+- **⇅ juntar os dias** (ao lado de *★ só as da véspera*) desfaz a divisão por dia quando você quer ver
   tudo de um assunto de uma vez: cada conteúdo vira **um card único**, com todos os dias dentro. Aí a
   data passa a aparecer **miúda em cada anotação, à esquerda da ★**, e o cabeçalho troca a data por
   *"3 dias"*. O botão vira **⇕ separar por dia** e devolve a tela ao estado original. É só um modo de
@@ -485,7 +485,7 @@ pelos conteúdos.
 
 ### Lançar questões ligadas a uma sessão
 
-Nem toda bateria de questões acontece no dia do estudo. O botão **+ Lançar questões feitas**, na aba **Questões** logo abaixo dos indicadores (primeiro o
+Nem toda bateria de questões acontece no dia do estudo. O botão **+ Lançar questões**, na aba **Questões** logo abaixo dos indicadores (primeiro o
 retrato do desempenho, depois a ação), abre a tela sobreposta com quatro campos:
 
 - **Sessão de estudo** (obrigatório) — as 60 sessões mais recentes, `dd/mm · Disciplina · Conteúdo`.
@@ -504,9 +504,9 @@ e tem **editar** e **✕** próprios. Excluir a sessão leva junto os lançament
 ### A ordem da aba Questões
 
 1. **os indicadores** — o retrato primeiro;
-2. **+ Lançar questões feitas** — a ação;
+2. **+ Lançar questões** — a ação;
 3. **os filtros** — encostados no primeiro bloco que eles recortam;
-4. o **gráfico dia a dia**, o **desempenho por disciplina/conteúdo** e as **baterias avulsas**.
+4. o **gráfico dia a dia**, o **desempenho por disciplina/conteúdo** e as **questões fora das sessões** (antes, baterias avulsas).
 
 ### O mesmo filtro em todas as abas: Disciplina e Conteúdo (25/09)
 
@@ -683,7 +683,7 @@ conteúdo** (ou fica avulsa, se ainda não houver sessão dele).
 Além das revisões que o sistema agenda sozinho, o botão **+ adicionar uma revisão** (e o **+ revisão**
 de cada assunto) abre um formulário com data, disciplina, assuntos, **atividade da revisão**,
 detalhes, tempo, questões, acertos e dificuldade. Cada linha da rotina tem **editar**, que abre o mesmo formulário no lugar
-da linha (com **Excluir revisão**).
+da linha (com **Excluir**).
 
 Se a disciplina e os assuntos coincidirem com uma sessão de estudo já registrada, a revisão é
 **ligada a ela** (entra no mesmo card e influencia o replanejamento); senão, fica **avulsa**, com
@@ -1182,7 +1182,7 @@ existe é recusado, ignorando maiúsculas.
 
 #### Excluir um conteúdo
 
-**✕ excluir** tira o conteúdo do **cadastro** e da **agenda**. O que ele *não* faz é apagar o
+**Excluir** (dentro do **✎ editar** do conteúdo, no canto) tira o conteúdo do **cadastro** e da **agenda**. O que ele *não* faz é apagar o
 estudo — e é essa a metade que costuma assustar, então a confirmação diz as duas em voz alta:
 
 ```
@@ -1241,7 +1241,7 @@ de **atrasadas** só existem em *A fazer* — hoje e o atraso são, por definiç
 ### “Revisão” só onde é mesmo uma revisão
 
 > **Vocabulário (24/09):** na tela, o item de conteúdo em andamento se chama **Continuar** (antes,
-> *Retomar*); onde é preciso um substantivo, ele é o **card** (*Editar card*, *Excluir card*, *Data do
+> *Retomar*); onde é preciso um substantivo, ele é o **card** (*Editar card*, *Data do
 > card*). Neste documento e no código, **volta** e **retomada** continuam sendo o nome interno dele — o
 > dado salvo é `retomada`, e não foi renomeado.
 
@@ -1344,7 +1344,7 @@ da escada ou uma que você marcou à mão. O que não pode acontecer é o assunt
 o que fazer com ele, nada mais é marcado.
 
 **A tela de edição fala a língua da fase.** Abrir uma volta pelo *editar* dá **Editar card**, com
-*Data do card*, *Conteúdos a continuar*, *Excluir card* e um aviso no topo lembrando que aquele card é
+*Data do card*, *Conteúdos a continuar* e um aviso no topo lembrando que aquele card é
 para continuar o conteúdo — ele ainda está em andamento, e a escada só começa quando for fechado. O nome
 sugerido é **Continuar**, não *Revisão 1*, porque a volta não ocupa número na sequência. Abrir uma
 revisão de conteúdo já concluído continua dizendo **revisão** em todos os rótulos. Apagar uma volta
@@ -1626,7 +1626,7 @@ São três camadas, e as três funcionam juntas:
 Além dos dados, a plataforma guarda **como você deixou a tela** num registro à parte
 (`plataforma-estudos:tela`): a **aba aberta**, os **filtros** de Sessões (disciplina, período,
 tipo, ordenação e a **busca digitada**), os das **Anotações** (disciplina, conteúdo, *só as
-da véspera*, *juntar tudo*), a visão das **Questões**, a **disciplina e o dia** escolhidos no Progresso,
+da véspera*, *juntar os dias*), a visão das **Questões**, a **disciplina e o dia** escolhidos no Progresso,
 as listas que você abriu com o **+ ver todos**, e o **texto que estava sendo escrito** numa anotação.
 Recarregar devolve tudo no lugar, inclusive o compositor aberto com o rascunho.
 
@@ -1727,8 +1727,8 @@ aba. Abrindo em outro aparelho com o mesmo e-mail, os dados vêm junto.
 - Se uma gravação estragar os dados, o **histórico** do Supabase guarda as versões dos últimos 30 dias
   (recuperação pelo SQL Editor — receita no fim de `supabase/estrutura.sql`).
 - **O perfil** (o círculo com a inicial do nome, no canto do topo) reúne a conta: a situação da sincronização,
-  **Editar perfil** (nome e senha), **Baixar backup**, **Enviar backup** e **Sair da conta**. Quem usa pode sair
-  com os dados quando quiser (Baixar backup). Configurações, ajuda e modo noturno ficam ao lado, soltos.
+  **Editar perfil** (nome e senha), **Baixar cópia dos dados**, **Restaurar uma cópia** e **Sair da conta**. Quem usa pode sair
+  com os dados quando quiser (Baixar cópia dos dados). Configurações, ajuda e modo noturno ficam ao lado, soltos.
 
 ### E o SQLite?
 
@@ -1774,7 +1774,7 @@ buraco de segurança. Daí duas consequências:
   existe*, apontar o `.json` e tudo volta.
 
 **Firefox e Safari não têm essa API.** Lá o chip fica escondido e continua valendo o backup manual:
-**Baixar backup** exporta o `.json`, **Enviar backup** importa de volta (os dois no menu do perfil). O painel explica isso quando não há suporte.
+**Baixar cópia dos dados** exporta o `.json`, **Restaurar uma cópia** importa de volta (os dois no menu do perfil). O painel explica isso quando não há suporte.
 
 ## Os testes
 
@@ -1897,3 +1897,25 @@ enquanto a decisão não estiver tomada.
 
 Os tons de gráfico (`--s1..--s6`, rampa do mapa de calor) **não foram tocados**: são a paleta validada
 para daltonismo. Todos os pares texto/fundo criados aqui foram conferidos em AA nos dois temas.
+
+
+### Revisão de UX (26/09/2026)
+
+Uma análise de telas em celular, tablet e computador (relatório publicado à parte) levou a estas mudanças:
+
+- **O ✓ de um item da agenda** abre o registro **por cima da aba** em que você está (antes ia para Sessões) e sem a
+  faixa "Sessão cronometrada: 0min" que aparecia sem cronômetro. O ✓ de um item **de outro dia** agora salva: a
+  revisão tocada entra na lista (adiantar é contato como outro qualquer).
+- **Cronômetro já no conteúdo**: a lista "O tempo vai para" ganhou o grupo **Estudar hoje** (o que a agenda pede
+  hoje e o Falta estudar); o **▶ estudar** do mural pergunta *Cronometrar agora* ou *Registrar sessão*.
+- **Confirmações do próprio app** no lugar do `confirm()`/`alert()` do navegador, com o verbo no botão
+  ("Excluir", "Descartar") e o destrutivo em vermelho.
+- **Disciplinas**: cada linha tem só *✎ editar* e *✓ concluir*; o **Excluir** mora na janela de editar, no canto.
+  **+ Novo conteúdo** funciona com o filtro em "Todas" — a janela pergunta a disciplina.
+- **Lançar questões** escolhe o **conteúdo** (liga à sessão mais recente dele), não uma sessão numa lista longa.
+- Nomes para quem não é técnico: **Baixar cópia dos dados**, **Restaurar uma cópia**, **Questões fora das sessões**.
+- Contagens: o rótulo do dia conta o dia inteiro; o card Agenda do Progresso fala de um escopo só; a ordem das
+  Sessões não conta como filtro; vermelho só para atraso.
+- Toque e leitura: áreas de toque maiores (o ✓ tinha 19 px), cinza secundário com contraste ≥ 4,5:1, cronômetro e
+  Excluir legíveis no tema escuro, foco do teclado preso na janela aberta, nomes para leitor de tela no ✓ e na ★.
+- Frases explicativas que sobravam na tela foram para a Ajuda. Suíte `testes/revisaoux.js`.

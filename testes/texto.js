@@ -9,7 +9,7 @@ let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
-w.confirm=()=>true;
+w.__confirmarNativo=true; w.confirm=()=>true;
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const change=el=>el.dispatchEvent(new w.Event("change",{bubbles:true}));

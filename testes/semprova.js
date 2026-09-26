@@ -23,7 +23,7 @@ const base=(prova)=>({versao:1,tema:"claro",dataProva:prova,metaDiariaMin:120,di
  revisoes:[],erros:[],cronometro:null});
 let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const abrir=seed=>new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
-  beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.confirm=()=>true;}});
+  beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));w.__confirmarNativo=true; w.confirm=()=>true;}});
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
 (async()=>{try{

@@ -22,7 +22,7 @@ function abrir(seed, aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; if(seed!==null) w.localStorage.setItem("plataforma-estudos:v1",typeof seed==="string"?seed:JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"hoje",gravadoEm:hoje}));
-     w.confirm=()=>true; w.alert=()=>{}; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; w.alert=()=>{}; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -100,7 +100,8 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   /* ---- 6. conteúdo excluído não volta ---- */
   const s6=base(); s6.conteudos=[ficha("LAI")]; s6.registros=[reg("r1",dia(-5),["LAI"])];
   w=abrir(s6,"conteudos"); await espera(400);
-  click(w,w.document.querySelector('[data-acao="excluir-conteudo"]')); await espera(300);
+  click(w,w.document.querySelector('[data-acao="renomear-conteudo"]')); await espera(100);
+  w.document.querySelector('#dialogo [data-dialogo="extra"]').click(); await espera(300);
   click(w,w.document.querySelector('[data-aba="registros"]')); await espera(200);
   click(w,w.document.querySelector('tr[data-id="r1"] td')); await espera(300);
   w.document.querySelector('#formRegistro [name="anotacoes"]').value="corrigi a descrição";
@@ -134,7 +135,8 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   s9.registros=[reg("r1",dia(-2),["LAI","Licitações"])];
   s9.revisoes=[{id:"v1",registroId:"r1",data:dia(2),retomada:true,assuntos:["LAI","Licitações"],feita:false,manual:false}];
   w=abrir(s9,"conteudos"); await espera(400);
-  click(w,w.document.querySelector('[data-acao="excluir-conteudo"][data-cont="LAI"]')); await espera(300);
+  click(w,w.document.querySelector('[data-acao="renomear-conteudo"][data-cont="LAI"]')); await espera(100);
+  w.document.querySelector('#dialogo [data-dialogo="extra"]').click(); await espera(300);
   const v9=db(w).revisoes.find(r=>r.id==="v1");
   ok("9. excluir LAI tira o nome dele do card 'LAI · Licitações'", v9 && v9.assuntos.join()==="Licitações", v9);
 
@@ -143,10 +145,13 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   s10.conteudos=[ficha("LAI"), {id:"cp",disciplina:"Português",nome:"Crase",fase:"andamento"}];
   s10.registros=[reg("r1",dia(-2),["LAI"])];
   w=abrir(s10,"conteudos"); await espera(400);
-  ok("10a. só a disciplina sem uso tem o ✕ excluir",
-     !!w.document.querySelector('[data-acao="excluir-disciplina"][data-disc="Português"]') &&
-     !w.document.querySelector('[data-acao="excluir-disciplina"][data-disc="Legislação"]'));
-  click(w,w.document.querySelector('[data-acao="excluir-disciplina"][data-disc="Português"]')); await espera(300);
+  /* o Excluir mora na janela "Editar disciplina" (revisão de UX, 26/09) */
+  const extraDe=async disc=>{ click(w,w.document.querySelector('[data-acao="renomear-disciplina"][data-disc="'+disc+'"]')); await espera(100);
+    const b=w.document.querySelector('#dialogo [data-dialogo="extra"]'); return b; };
+  const exLeg=await extraDe("Legislação"); w.document.querySelector('#dialogo [data-dialogo="cancelar"]').click();
+  const exPort=await extraDe("Português");
+  ok("10a. só a disciplina sem uso tem o Excluir (na janela de editar)", !!exPort && !exLeg);
+  exPort.click(); await espera(300);
   ok("10b. excluída, ela e os conteúdos dela saem do cadastro",
      !db(w).disciplinas.includes("Português") && !db(w).conteudos.some(c=>c.disciplina==="Português"), db(w).disciplinas);
 

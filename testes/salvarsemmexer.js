@@ -19,7 +19,7 @@ function abrir(revisoes, fase){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"registros",gravadoEm:hoje}));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

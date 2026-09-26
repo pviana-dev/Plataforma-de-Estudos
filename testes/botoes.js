@@ -48,7 +48,7 @@ const rotulo=b=>b.childNodes[1].textContent.trim();   // texto logo depois do "+
     ok("e vem DEPOIS dos indicadores",
        !!(tiles.compareDocumentPosition(bt) & w.Node.DOCUMENT_POSITION_FOLLOWING),
        "posição relativa");
-    ok("a pista explica o vínculo", /sessão já registrada/.test(bt.querySelector(".pista").textContent),
+    ok("sem a pista \"ligadas a uma sessão\" (tirada a pedido do Pedro, 26/09)", !bt.querySelector(".pista"),
        bt.textContent);
   });
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nbotões de adicionar ajustados");

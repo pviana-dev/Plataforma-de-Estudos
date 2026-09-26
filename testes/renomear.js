@@ -20,7 +20,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let perguntado="";
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
-   w.confirm=()=>true; responderDialogos(w, msg=>{ perguntado=msg; return "Crase e acento grave"; }); }});
+   w.__confirmarNativo=true; w.confirm=()=>true; responderDialogos(w, msg=>{ perguntado=msg; return "Crase e acento grave"; }); }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -52,7 +52,7 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   /* ---- renomear propaga para tudo ---- */
   click([...doc.querySelectorAll('[data-acao="renomear-conteudo"]')].find(b=>b.dataset.cont==="Crase"));
   await espera(400);
-  ok("a plataforma perguntou o nome novo", /Crase/.test(perguntado), perguntado);
+  ok("a plataforma perguntou o nome novo (janela Editar conteúdo)", /Editar conteúdo/.test(perguntado) && /Nome do conteúdo/.test(perguntado), perguntado);
   const d=db();
   ok("as DUAS sessões passaram a usar o nome novo",
      d.registros.every(r=>!r.assuntos.includes("Crase")) &&

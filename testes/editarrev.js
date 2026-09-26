@@ -18,7 +18,7 @@ function abrir(seed){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"revisoes",visaoAgenda:"assunto",gravadoEm:hoje}));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 async function trocarConteudo(w, de, para){

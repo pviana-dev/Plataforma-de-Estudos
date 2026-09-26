@@ -51,13 +51,13 @@ const fechar=async()=>{ click($('[data-acao="fechar-modal"]')); await espera(300
   ok("os campos falam do card de continuar",
      /Data do card/.test(corpo) && /Nome do card/.test(corpo) &&
      /Conteúdos a continuar/.test(corpo) && /Detalhes do card/.test(corpo), corpo.slice(0,300));
-  ok("a tela explica que isto é para continuar, não uma revisão",
-     /continuar o conteúdo/.test(corpo) && /em andamento/.test(corpo), corpo.slice(0,220));
+  // a explicação do card de continuar foi para a Ajuda (revisão de UX, 26/09: tela limpa)
+  ok("a tela não repete a explicação do card de continuar", !/não uma revisão/.test(corpo), corpo.slice(0,220));
   ok("o nome sugerido é 'Continuar', não 'Revisão 1'",
      $('#modalCaixa [name="rotulo"]').placeholder==="Continuar",
      $('#modalCaixa [name="rotulo"]').placeholder);
-  ok("o botão de apagar diz 'Excluir card'",
-     /Excluir card/.test($('#modalCaixa [data-acao="excluir-revisao"]').textContent),
+  ok("o botão de apagar diz só 'Excluir' (26/09: nenhum excluir diz o que exclui)",
+     $('#modalCaixa [data-acao="excluir-revisao"]').textContent.trim()==="Excluir",
      $('#modalCaixa [data-acao="excluir-revisao"]').textContent);
   ok("sem a frase-guia do rodapé", !/não ficam aqui/.test(corpo) && !/cumprir esta revisão/.test(corpo)); // frase-guia tirada a pedido do Pedro (24/09)
   await fechar();

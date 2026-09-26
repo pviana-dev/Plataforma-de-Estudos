@@ -9,7 +9,7 @@ let falhas=0; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
-w.confirm=()=>true;                       // jsdom não implementa confirm()
+w.__confirmarNativo=true; w.confirm=()=>true;                       // jsdom não implementa confirm()
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
@@ -31,7 +31,7 @@ const txt=()=>$("#view").textContent.replace(/\s+/g," ");
     // tentar salvar sem escolher a sessão
     $("#formLancamento [name=registroId]").value="";
     $("#formLancamento").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
-    ok("sem sessão é recusado", /Escolha a sessão/.test($("#erroLancamento").textContent), $("#erroLancamento").textContent);
+    ok("sem conteúdo é recusado", /Escolha o conteúdo/.test($("#erroLancamento").textContent), $("#erroLancamento").textContent);
     // acertos maiores que questões
     $("#formLancamento [name=registroId]").value="rA";
     $("#formLancamento [name=questoes]").value="10";
@@ -81,6 +81,7 @@ const txt=()=>$("#view").textContent.replace(/\s+/g," ");
 
   /* ---- excluir o registro leva o lançamento junto ---- */
   await passo(()=>{ click(doc.querySelector('[data-aba="questoes"]')); });
+  await passo(()=>{ click(doc.querySelector('[data-acao="editar-lancamento"]')); });   // excluir mora no editor
   await passo(()=>{ click(doc.querySelector('[data-acao="excluir-lancamento"]')); });
   await passo(()=>{
     ok("dá para excluir o lançamento", lerDb().lancamentos.length===0, lerDb().lancamentos);

@@ -22,7 +22,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   click(eng); await espera(250);
   ok("a engrenagem abre os Ajustes", $("#modalTitulo").textContent==="Ajustes" && !!$("#formAjustes"), $("#modalTitulo").textContent);
   ok("sem o texto da ajuda", !/Metodologias aplicadas/.test($("#modalCorpo").textContent));
-  click($('#modalCorpo [data-acao="abrir-ajuda"]')); await espera(250);
+  click($('#modalCaixa [data-acao="abrir-ajuda"]'));   // o link foi para o rodapé fixo, junto do Salvar await espera(250);
   ok("o link dos ajustes leva à ajuda", $("#modalTitulo").textContent==="Ajuda", $("#modalTitulo").textContent);
 
   click($("#btnAjuda")); await espera(250);

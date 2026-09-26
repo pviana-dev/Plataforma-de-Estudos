@@ -24,7 +24,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 function abrir(s,aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(s));
-     w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba,gravadoEm:hoje})); w.confirm=()=>true; }});
+     w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba,gravadoEm:hoje})); w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const click=(w,el)=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
@@ -45,7 +45,8 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   ok("↑ no primeiro não faz nada", mural().join()==="Improbidade,LGPD,Licitações", mural());
   w=abrir(db(w),"hoje"); await espera(400);
   ok("a ordem ficou gravada", mural().join()==="Improbidade,LGPD,Licitações", mural());
-  ok("o card diz que dá para arrastar ou usar ↑ ↓", /arraste ou use ↑ ↓/.test(w.document.querySelector("#view").textContent));
+  // a frase "arraste ou use ↑ ↓" saiu do card (revisão de UX, 26/09): tela limpa, a explicação mora na Ajuda
+  ok("o card não carrega mais a frase de como reordenar", !/arraste ou use/.test(w.document.querySelector("#view").textContent));
 
   /* ---- anotações: ↑ ↓ de toque ---- */
   w=abrir(seed,"erros"); await espera(400);

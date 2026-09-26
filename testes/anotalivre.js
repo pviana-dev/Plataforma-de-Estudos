@@ -20,8 +20,8 @@ const erros=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).erro
 
   /* ---- o botão aparece sem filtro nenhum ---- */
   ok("sem disciplina escolhida, o botão + já está lá", !!doc.querySelector('[data-acao="abrir-composer"]'));
-  ok("e a pista explica que a escolha vem depois",
-     /escolhe a disciplina ou o conteúdo na hora de salvar/.test(doc.querySelector('[data-acao="abrir-composer"]').textContent),
+  ok("e o botão fica só com o nome, sem a pista longa (pedido do Pedro, 26/09)",
+     doc.querySelector('[data-acao="abrir-composer"]').textContent.trim()==="+ Nova anotação",
      doc.querySelector('[data-acao="abrir-composer"]').textContent);
   ok("o aviso antigo que substituía o botão sumiu",
      !/para anotar algo que vale para a matéria toda/.test($("#view").textContent));

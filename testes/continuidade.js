@@ -16,7 +16,7 @@ function abrir(seed,aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"revisoes",gravadoEm:hoje}));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -29,7 +29,7 @@ const pend=w=>db(w).revisoes.filter(r=>!r.feita);
      db(w).revisoes);
   ok("marcada como volta", pend(w)[0].retomada===true);
   ok("contada de hoje, com a cadência da dificuldade", pend(w)[0].data===dia(2), pend(w)[0].data);
-  ok("e a plataforma avisa que repôs", /sem agendamento/.test(w.document.getElementById("toast").textContent),
+  ok("e a plataforma avisa que repôs", /Agenda atualizada: .*card de continuar/.test(w.document.getElementById("toast").textContent),
      w.document.getElementById("toast").textContent);
 
   /* ---- 2. base com tudo já feito ---- */

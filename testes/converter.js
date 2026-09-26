@@ -19,7 +19,7 @@ seed.registros.forEach(r=>{ r.fase="concluido"; r.concluidoEm=r.data; });
 let falhas=0,perguntas=[]; const ok=(n,c,e)=>{console.log((c?"  ok   ":"  FALHA")+"  "+n+(c?"":"   → "+JSON.stringify(e)));if(!c)falhas++;};
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.__semLogin=true;w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
-   w.confirm=m=>{perguntas.push(m);return true;};}});
+   w.__confirmarNativo=true; w.confirm=m=>{perguntas.push(m);return true;};}});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const lerDb=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
@@ -49,7 +49,7 @@ const abrir=async id=>{ click([...doc.querySelectorAll("tbody tr")].find(tr=>tr.
 
   const d=lerDb(), conv=d.registros.find(r=>r.id==="rHoje");
   ok("avisou que as revisões agendadas seriam apagadas",
-     perguntas.some(p=>/apaga os \d+ item\(ns\) que esta sessão tinha na agenda/.test(p)), perguntas);
+     perguntas.some(p=>/apaga (o item|os \d+ itens) que esta sessão tinha na agenda/.test(p)), perguntas);
   ok("a sessão virou revisão", conv.tipo==="revisao", conv.tipo);
   ok("o conteúdo passou a ser o da revisão", conv.assuntos.join()==="LAI", conv.assuntos);
   ok("o tempo dela continua", conv.minutos===50, conv.minutos);

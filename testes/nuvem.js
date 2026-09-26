@@ -13,7 +13,7 @@ function abrir(html, srv, sessao){
     beforeParse(w){
       w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
       if (sessao) w.localStorage.setItem("plataforma-estudos:sessao",JSON.stringify(sessao));
-      w.fetch=srv.fetch; w.confirm=()=>true;
+      w.fetch=srv.fetch; w.__confirmarNativo=true; w.confirm=()=>true;
     }});
 }
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
@@ -115,7 +115,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const abrirCom=(srvX,sessao,dados,resposta)=>new JSDOM(configurado,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
     beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(dados));
       w.localStorage.setItem("plataforma-estudos:sessao",JSON.stringify(sessao)); w.fetch=srvX.fetch;
-      w.__perguntas=[]; w.confirm=m=>{ w.__perguntas.push(m); return resposta; }; }});
+      w.__perguntas=[]; w.__confirmarNativo=true; w.confirm=m=>{ w.__perguntas.push(m); return resposta; }; }});
   const deA={...seed,contaNuvem:"uA",contaNuvemEmail:"a@exemplo.com",atualizadoEm:Date.now(),
     registros:[{...seed.registros[0],id:"rDeA",assuntos:["Só de A"],assunto:"Só de A"}]};
   const sessB={access_token:"tok",refresh_token:"ref",email:"b@exemplo.com",uid:"uB"};

@@ -31,20 +31,28 @@ function abrir(confirmar){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed()));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"conteudos",gravadoEm:hoje}));
-     w.confirm=t=>{ perguntado=t; return confirmar; }; }});
+     w.__confirmarNativo=true; w.confirm=t=>{ perguntado=t; return confirmar; }; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
 const nomes=doc=>[...doc.querySelectorAll("#view .item .titulo")].map(t=>t.textContent);
-const botaoExcluir=(doc,cont)=>[...doc.querySelectorAll('[data-acao="excluir-conteudo"]')]
-  .find(b=>b.dataset.cont===cont);
+/* O Excluir mora na janela "Editar conteúdo" (revisão de UX, 26/09): abre pelo
+   "✎ editar" da linha e devolve o botão do canto da janela. */
+const botaoExcluir=(doc,cont)=>{
+  const ed=[...doc.querySelectorAll('[data-acao="renomear-conteudo"]')].find(b=>b.dataset.cont===cont);
+  ed.dispatchEvent(new doc.defaultView.MouseEvent("click",{bubbles:true}));
+  return doc.querySelector('#dialogo [data-dialogo="extra"]');
+};
 
 (async()=>{try{
   /* ---- 1. o botão existe e pergunta antes ---- */
   let w=abrir(false); await espera(450);
   let doc=w.document, $=s=>doc.querySelector(s);
-  ok("cada conteúdo tem um botão de excluir",
-     [...doc.querySelectorAll('[data-acao="excluir-conteudo"]')].length===3, nomes(doc));
+  ok("a linha não tem mais o excluir vermelho; cada conteúdo tem o ✎ editar",
+     !doc.querySelector('#view [data-acao="excluir-conteudo"]') &&
+     [...doc.querySelectorAll('[data-acao="renomear-conteudo"]')].length===3, nomes(doc));
+  ok("a janela de editar traz o Excluir no canto", /Excluir/.test((botaoExcluir(doc,"LAI")||{}).textContent||""));
+  doc.querySelector('#dialogo [data-dialogo="cancelar"]').click();
   botaoExcluir(doc,"LAI").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(400);
   ok("a exclusão pede confirmação", /Excluir o conteúdo “LAI”/.test(perguntado), perguntado);

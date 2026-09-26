@@ -26,7 +26,7 @@ function abrir(resposta){
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"conteudos",gravadoEm:hoje}));
      responderDialogos(w, t=>{ perguntado=t; return resposta; }, t=>{ avisado=t; });
      w.alert=t=>{ avisado=t; };
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -43,13 +43,26 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   const ordem=[...doc.querySelectorAll('#view [data-acao="nova-disciplina"], #view #cDisciplina, #view [data-acao="novo-conteudo"]')]
     .map(e=>e.dataset.acao||e.id);
   ok("fica abaixo dos filtros de disciplina", ordem[0]==="nova-disciplina" && ordem[ordem.length-1]==="novo-conteudo", ordem);
-  ok("em Todas, fica travado pedindo a disciplina", btn().disabled && /escolha uma disciplina/.test(btn().textContent),
+  /* Em Todas o botão responde (revisão de UX, 26/09): travado, não reagia ao toque e a
+     explicação ficava num title que o celular não mostra. A janela pede a disciplina. */
+  ok("em Todas, o botão responde e diz só '+ Novo conteúdo'", !btn().disabled && btn().textContent.trim()==="+ Novo conteúdo",
      btn().textContent);
   click(w,btn()); await espera(200);
-  ok("travado, não abre nada", $("#overlay").hidden);
+  ok("abre a janela pedindo a disciplina", !$("#overlay").hidden && !!$("#novosDisc"));
+  $("#formNovosConteudos textarea").value="Sintaxe";
+  $("#formNovosConteudos").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(250);
+  ok("sem disciplina escolhida, avisa e não cria", /Escolha a disciplina/.test($("#erroNovosConteudos").textContent) &&
+     !db(w).conteudos.some(c=>c.nome==="Sintaxe"), $("#erroNovosConteudos").textContent);
+  click(w,$('#modalCaixa [data-acao="fechar-modal"]')); await espera(200);
+  { const w2=abrir(""); await espera(500);
+    click(w2,w2.document.querySelector('[data-acao="novo-conteudo"]')); await espera(200);
+    w2.document.querySelector("#novosDisc").value="Legislação";
+    w2.document.querySelector("#formNovosConteudos textarea").value="Sintaxe";
+    w2.document.querySelector("#formNovosConteudos").dispatchEvent(new w2.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
+    ok("escolhida, cria nela", db(w2).conteudos.some(c=>c.nome==="Sintaxe"&&c.disciplina==="Legislação")); }
 
   { const s=$("#cDisciplina"); s.value="Português"; s.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(300); }
-  ok("filtrado, libera e diz onde cria", !btn().disabled && /em Português/.test(btn().textContent), btn().textContent);
+  ok("filtrado, libera e cria na disciplina do filtro", !btn().disabled && btn().dataset.disc==="Português", btn().textContent);
   const revsAntes=db(w).revisoes.length;
   click(w,btn()); await espera(300);
   ok("abre a caixa", !$("#overlay").hidden && !!$("#formNovosConteudos"));
@@ -85,7 +98,7 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   // ✓ concluir disciplina: pula os a estudar, e o estudado ganha revisões
   click(w,$('[data-acao="fechar-modal"]')); await espera(200);
   const cb=$('[data-acao="concluir-disciplina"][data-disc="Português"]');
-  ok("o botão avisa que os a estudar ficam de fora", cb && /14 conteúdo\(s\) a estudar/.test(cb.title), cb && cb.title);
+  ok("o botão avisa que os a estudar ficam de fora", cb && /14 conteúdos a estudar/.test(cb.title), cb && cb.title);
   click(w,cb); await espera(400);
   const fichas=Object.fromEntries(db(w).conteudos.filter(c=>c.disciplina==="Português").map(c=>[c.nome,c.fase]));
   ok("Crase é concluída", fichas["Crase"]==="concluido", fichas);

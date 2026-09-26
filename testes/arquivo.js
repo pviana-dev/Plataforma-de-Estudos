@@ -19,7 +19,7 @@ setTimeout(()=>{
   setTimeout(()=>{
     const m=doc.getElementById("modalCorpo").textContent;
     ok("o painel explica a limitação e aponta o caminho manual",
-       /não deixa a página escrever/.test(m) && /Baixar backup/.test(m), m.slice(0,140));
+       /não deixa a página escrever/.test(m) && /Baixar cópia dos dados/.test(m), m.slice(0,140));
 
     /* ---- 2. navegador COM a API: arquivo falso em memória ---- */
     let disco = JSON.stringify({...seed, registros:[...seed.registros,
@@ -34,7 +34,7 @@ setTimeout(()=>{
         w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
         w.showSaveFilePicker=async()=>handle;
         w.showOpenFilePicker=async()=>[handle];
-        w.confirm=()=>true;                       // "usar os dados do arquivo"
+        w.__confirmarNativo=true; w.confirm=()=>true;                       // "usar os dados do arquivo"
       }});
     const w2=comApi.window, doc2=w2.document, $2=s=>doc2.querySelector(s);
     setTimeout(()=>{

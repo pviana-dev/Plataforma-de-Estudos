@@ -25,7 +25,7 @@ function abrir(seed,tela){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify(Object.assign({aba:"revisoes",gravadoEm:hoje},tela||{})));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const cardDe=(doc,t)=>[...doc.querySelectorAll("#view .card")]

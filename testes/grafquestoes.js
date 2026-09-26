@@ -25,7 +25,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
  beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
    w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"questoes",qPeriodo:7,gravadoEm:hoje}));
-   w.confirm=()=>true; }});
+   w.__confirmarNativo=true; w.confirm=()=>true; }});
 const w=dom.window,doc=w.document,$=s=>doc.querySelector(s);
 const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -112,12 +112,14 @@ const titulos=()=>[...doc.querySelectorAll("#view .card > h2, #view .btn-add")]
 
   /* ---- 6. as baterias avulsas continuam editáveis ---- */
   ok("as baterias avulsas ganharam lugar próprio",
-     titulos().some(t=>/^Baterias avulsas/.test(t)), titulos());
-  ok("com editar e excluir, que só existiam na tabela removida",
+     titulos().some(t=>/^Questões fora das sessões/.test(t)), titulos());
+  // o ✕ saiu do card (pedido do Pedro, 26/09): excluir fica só dentro do editor
+  ok("com editar no card, e sem o ✕ de excluir",
      !!doc.querySelector('[data-acao="editar-lancamento"]') &&
-     !!doc.querySelector('[data-acao="excluir-lancamento"]'));
+     !doc.querySelector('[data-acao="excluir-lancamento"]'));
   click(doc.querySelector('[data-acao="editar-lancamento"]')); await espera(400);
   ok("e o editor abre", !!doc.querySelector("#formLancamento") || !$("#overlay").hidden);
+  ok("com o Excluir lançamento dentro dele", !!doc.querySelector('#overlay [data-acao="excluir-lancamento"]'));   // no rodapé do modal
 
   /* ---- 7. filtrar as questões por disciplina ---- */
   click(doc.querySelector('[data-acao="fechar-modal"]')); await espera(300);
@@ -138,7 +140,7 @@ const titulos=()=>[...doc.querySelectorAll("#view .card > h2, #view .btn-add")]
   const corpo=[...doc.querySelectorAll("#view table tbody tr td:first-child")].map(t=>t.textContent);
   ok("a tabela de desempenho mostra só ela", corpo.length===1 && /Português/.test(corpo[0]), corpo);
   ok("a bateria avulsa de outra disciplina sai da lista",
-     !titulos().some(t=>/^Baterias avulsas/.test(t)), titulos());
+     !titulos().some(t=>/^Questões fora das sessões/.test(t)), titulos());
   ok("mas o filtro continua listando todas, para dar o caminho de volta",
      [...doc.querySelectorAll('[data-acao="filtrar-questoes"]')].some(b=>b.dataset.disc==="Legislação"));
   ok("a escolha é lembrada entre recargas",

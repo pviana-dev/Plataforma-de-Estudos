@@ -21,7 +21,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 function abrir(s){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(s));
-     w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"hoje",gravadoEm:hoje})); w.confirm=()=>true; }});
+     w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"hoje",gravadoEm:hoje})); w.__confirmarNativo=true; w.__escolha="registrar"; w.confirm=()=>true; }});
   return dom.window;
 }
 (async()=>{try{

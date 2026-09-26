@@ -26,7 +26,7 @@ function abrir(resposta){
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:"registros",gravadoEm:hoje}));
      responderDialogos(w, t=>{ perguntado=t; return resposta; }, t=>{ avisado=t; });
      w.alert=t=>{ avisado=t; };
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));

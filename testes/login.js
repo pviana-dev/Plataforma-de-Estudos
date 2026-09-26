@@ -20,7 +20,7 @@ function abrir(srv, sessao, fetchQuebrado){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
     beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(dados));
       if (sessao) w.localStorage.setItem("plataforma-estudos:sessao",JSON.stringify(sessao));
-      w.fetch=fetchQuebrado ? (async()=>{ throw new TypeError("Load failed"); }) : srv.fetch; w.confirm=()=>true; }});
+      w.fetch=fetchQuebrado ? (async()=>{ throw new TypeError("Load failed"); }) : srv.fetch; w.__confirmarNativo=true; w.confirm=()=>true; }});
   const w=dom.window, doc=w.document;
   const $=s=>doc.querySelector(s);
   return { w, doc, $,
@@ -62,7 +62,7 @@ function abrir(srv, sessao, fetchQuebrado){
   clica(t.$("#btnPerfil")); await espera(100);
   ok("tocar no círculo abre o menu, com e-mail e as opções",
      !t.$("#menuPerfil").hidden && /ana@exemplo\.com/.test(t.$("#menuPerfil").textContent) &&
-     ["Editar perfil","Baixar backup","Enviar backup","Sair da conta"].every(x=>t.$("#menuPerfil").textContent.includes(x)));
+     ["Editar perfil","Baixar cópia dos dados","Restaurar uma cópia","Sair da conta"].every(x=>t.$("#menuPerfil").textContent.includes(x)));
   clica(t.$("#view")); await espera(100);
   ok("clicar fora fecha o menu", t.$("#menuPerfil").hidden);
   clica(t.$("#btnPerfil")); await espera(80); clica(t.$('[data-acao="editar-perfil"]')); await espera(200);

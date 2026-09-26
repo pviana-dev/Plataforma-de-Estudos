@@ -37,7 +37,7 @@ function abrir(seed,aba){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
    beforeParse(w){ w.__semLogin=true; w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
      w.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba:aba||"revisoes",gravadoEm:hoje}));
-     w.confirm=()=>true; }});
+     w.__confirmarNativo=true; w.confirm=()=>true; }});
   return dom.window;
 }
 const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
@@ -136,9 +136,10 @@ async function gravarSessao(w){
   w=abrir(seedBase({registros:[sess("r1")]}),"registros"); await espera(400);
   w.document.querySelector('[data-acao="toggle-form-registro"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(350);
-  // a fase saiu do formulário: ela é do conteúdo, e a tela só mostra como está
-  ok("o formulário mostra a fase dos conteúdos, sem perguntar",
-     /Fase dos conteúdos/.test(w.document.querySelector("#modalCorpo").textContent) &&
+  // a fase saiu do formulário: ela é do conteúdo, e a tela só mostra como está.
+  // Sem conteúdo escolhido o campo nem aparece (revisão de UX, 26/09: a frase explicando saiu)
+  ok("o formulário não pergunta a fase; sem conteúdo, nem mostra o campo",
+     !/Fase dos conteúdos/.test(w.document.querySelector("#modalCorpo").textContent) &&
      !w.document.querySelector('#modalCaixa [name="fase"]'),
      w.document.querySelector("#modalCorpo").textContent.slice(0,120));
 
@@ -163,7 +164,7 @@ async function gravarSessao(w){
   ok("e a já feita também", !!d7.revisoes.find(r=>r.id==="f1"));
   ok("a migração roda uma vez só", d7.fasesMigradas===true);
   ok("e a plataforma avisa o que aconteceu",
-     /passaram a .em andamento/.test(w.document.getElementById("toast").textContent),
+     /(passou|passaram) a .em andamento/.test(w.document.getElementById("toast").textContent),
      w.document.getElementById("toast").textContent);
 
   /* ---- 8. quem já vinha com fase não é tocado ---- */
