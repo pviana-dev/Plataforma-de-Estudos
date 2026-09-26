@@ -1699,6 +1699,7 @@ function prepararDados(d){
   const objetivoDeduzido = migrarObjetivo(x);
   const abertos = migrarFases(x);
   migrarPlanoManual(x);
+  x.registros.forEach(ajustarBlocosAoTempo);   // tempo baixado antes de 26/09 deixava o dia com o tempo antigo
   const fichas = migrarConteudos(x);
   const soltos = migrarIntegracoes(x).concat(migrarGrupos(x));
   return { db: x, abertos, fichas, objetivoDeduzido, soltos };
@@ -2853,6 +2854,23 @@ function assuntos(){
    descontado do "tempo próprio" da sessão.                                    */
 const somaBlocos = (item, dia) =>
   (item.blocos || []).reduce((s,b) => s + ((!dia || b.data === dia) ? (b.minutos||0) : 0), 0);
+/* Os blocos são PARTE do tempo da sessão, nunca mais que ele. Baixar o tempo
+   para menos do que o cronômetro mediu corta os blocos, do mais recente para o
+   mais antigo — senão o dia continuava somando o tempo antigo. Antes disso, o
+   corte sai do tempo próprio (o digitado, que não é de bloco nenhum).        */
+function ajustarBlocosAoTempo(item){
+  if (!item.blocos || !item.blocos.length) return;
+  // soma à mão: roda também na carga (prepararDados), antes de somaBlocos existir
+  let sobra = item.blocos.reduce((t,b) => t + ((b && b.minutos) || 0), 0) - (item.minutos || 0);
+  if (sobra <= 0) return;
+  const blocos = item.blocos.map(b => Object.assign({}, b));
+  for (let i = blocos.length - 1; i >= 0 && sobra > 0; i--){
+    const corte = Math.min(sobra, blocos[i].minutos || 0);
+    blocos[i].minutos = (blocos[i].minutos || 0) - corte;
+    sobra -= corte;
+  }
+  item.blocos = blocos.filter(b => (b.minutos || 0) > 0);
+}
 function minutosNoDia(item, dia, dataBase){
   const doDia   = somaBlocos(item, dia);
   const proprio = (dataBase && dataBase === dia) ? Math.max(0, (item.minutos||0) - somaBlocos(item)) : 0;
@@ -6567,6 +6585,7 @@ async function enviarRegistro(ev){
     criadoEm: anterior ? anterior.criadoEm : Date.now()
   });
   if (anterior && anterior.revisaoId) reg.revisaoId = anterior.revisaoId;
+  ajustarBlocosAoTempo(reg);          // tempo baixado: o que o cronômetro mediu não pode passar dele
   // a fase mora na ficha do conteúdo: a sessão não carrega mais isso
   if (dado.inicio) { reg.inicio = dado.inicio; reg.fim = dado.fim || ""; }
   else if (anterior && anterior.inicio) { reg.inicio = anterior.inicio; reg.fim = anterior.fim; }

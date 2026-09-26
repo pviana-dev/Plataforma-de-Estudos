@@ -2,3 +2,13 @@
 *.bak
 *.log
 node_modules/
+
+# Fora do repositório (ficam só neste Mac):
+# dados reais que o app pode gravar nesta pasta
+estudos.json
+# notas de trabalho com informação pessoal
+ESTADO.md
+README.md
+prompt-plataforma-estudos.md
+# tarefa do Mac, com o caminho da conta
+supabase/manter-acordado.plist
