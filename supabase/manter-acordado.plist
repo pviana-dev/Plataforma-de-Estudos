@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Mantém o Supabase acordado (README → "Manter o projeto acordado").
+  Chama o ping() todo dia às 12h e sempre que o Mac liga ou a sessão abre; se o Mac estiver
+  dormindo às 12h, roda quando acordar. Registro em ~/Library/Logs/supabase-acordado.log (200 = ok, 404 = falta a alteração 02, 000 = sem rede).
+  Instalar: copiar para ~/Library/LaunchAgents/ e rodar
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.revisor.supabase-acordado</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>printf '%s ' "$(date '+%Y-%m-%d %H:%M')"; /usr/bin/curl -s -m 30 -o /dev/null -w '%{http_code}\n' -X POST https://vosdzokcqnbxmrqqrpkv.supabase.co/rest/v1/rpc/ping -H 'apikey: sb_publishable_TswOKTJJWewwYwS1FoFKbw_HDXO-R0J' -H 'Content-Type: application/json'</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>12</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/pedroviana/Library/Logs/supabase-acordado.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/pedroviana/Library/Logs/supabase-acordado.log</string>
+</dict>
+</plist>

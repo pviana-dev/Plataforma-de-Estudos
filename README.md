@@ -1702,25 +1702,26 @@ chamada de rede é feita.
 
 No plano gratuito o Supabase **pausa** o projeto depois de **7 dias sem uso** (férias, uma semana sem estudar).
 Pausado, a plataforma mostra "Sem conexão" e continua gravando no navegador; para voltar, é entrar no painel do
-Supabase e clicar em **Restore project**. Para não depender disso, um serviço gratuito chama o projeto a cada
-3 dias — uma chamada leve que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
+Supabase e clicar em **Restore project**. Para não depender disso, o Mac chama o projeto todo dia — uma chamada leve
+que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
 
 1. **No Supabase** (uma vez): **SQL Editor → New query**, cole **`supabase/alteracao-02-manter-acordado.sql`** e
    clique em **Run**. (Projeto novo não precisa: o `estrutura.sql` já traz a função.)
-2. **No [cron-job.org](https://cron-job.org)** (gratuito): crie a conta e clique em **Create cronjob**.
-   - **Title:** `Supabase acordado` · **URL:** `https://vosdzokcqnbxmrqqrpkv.supabase.co/rest/v1/rpc/ping`
-   - **Execution schedule:** *Every day*, marcando só **segunda e quinta** (ou *Custom*: a cada 3 dias).
-   - Aba **Advanced**: **Request method** `POST`; em **Headers**, adicione `apikey` com a chave
-     **publishable** (a mesma do bloco `NUVEM` no `index.html`) e `Content-Type` com `application/json`.
-   - Em **Notifications**, deixe ligado o aviso **quando a execução falhar**.
-3. Clique em **Test run**: a resposta deve ser **200** com a data e hora entre aspas. Um **404** quer dizer que o
-   passo 1 não foi rodado; **401**, que a chave está errada.
+2. **No Mac** (uma vez), no Terminal, dentro da pasta do projeto:
 
-Para conferir sem o cron-job.org, no Terminal:
+   ```sh
+   cp supabase/manter-acordado.plist ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
+   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
+   ```
 
-```sh
-curl -X POST https://vosdzokcqnbxmrqqrpkv.supabase.co/rest/v1/rpc/ping -H "apikey: sb_publishable_..."
-```
+   Ele roda todo dia às 12h, ao ligar o Mac e ao entrar na conta; se o Mac estiver dormindo às 12h, roda quando
+   acordar. **Basta o Mac ser ligado uma vez por semana.** Mais de uma semana com ele desligado, o projeto pausa.
+3. **Conferir:** `cat ~/Library/Logs/supabase-acordado.log` — uma linha por chamada, com data, hora e o código:
+   **200** ok · **404** falta o passo 1 · **401** chave errada · **000** sem internet naquela hora.
+
+Para desligar: `launchctl bootout gui/$(id -u)/com.revisor.supabase-acordado` e apagar o arquivo de
+`~/Library/LaunchAgents/`. Mudou a chave publishable? Troque também no `.plist`, copie de novo e rode o
+`bootout` e o `bootstrap`.
 
 ### Como fica para quem usa
 
