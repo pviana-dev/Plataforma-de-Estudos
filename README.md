@@ -1702,7 +1702,7 @@ chamada de rede é feita.
 
 No plano gratuito o Supabase **pausa** o projeto depois de **7 dias sem uso** (férias, uma semana sem estudar).
 Pausado, a plataforma mostra "Sem conexão" e continua gravando no navegador; para voltar, é entrar no painel do
-Supabase e clicar em **Restore project**. Para não depender disso, o Mac chama o projeto uma vez por semana — uma chamada leve
+Supabase e clicar em **Restore project**. Para não depender disso, o Mac chama o projeto a cada 6 dias — uma chamada leve
 que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
 
 1. **No Supabase** (uma vez): **SQL Editor → New query**, cole **`supabase/alteracao-02-manter-acordado.sql`** e
@@ -1714,11 +1714,12 @@ que só pergunta a hora ao banco (`ping()`) e não toca em dado nenhum.
    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.revisor.supabase-acordado.plist
    ```
 
-   Ele roda **toda segunda às 12h** (escolha do Pedro, 26/09), e também ao ligar o Mac e ao entrar na conta; se o
-   Mac estiver dormindo na hora, roda quando acordar. **Margem curta:** de uma segunda à outra são exatamente 7
-   dias, o mesmo prazo da pausa — se numa segunda a chamada só sair à noite (Mac fechado até lá), passa do prazo
-   por algumas horas. O uso normal da plataforma também conta como atividade, e ajuda a cobrir essa folga.
-3. **Conferir:** `cat ~/Library/Logs/supabase-acordado.log` — uma linha por chamada, com data, hora e o código:
+   A chamada sai **a cada 6 dias** (escolha do Pedro, 26/09), um dia antes do prazo da pausa. O Mac só *confere* de
+   hora em hora (e ao ligar ou entrar na conta) se já passaram 6 dias desde a última chamada que deu certo — a data
+   dela é a do arquivo `~/Library/Logs/supabase-acordado.ultimo`; se não passaram, sai sem fazer nada. Chamada que
+   falha não conta e é refeita na hora seguinte. **O Mac precisa estar ligado** (acordado) em algum momento entre o
+   6º e o 7º dia; mais de uma semana desligado, o projeto pausa.
+3. **Conferir:** `cat ~/Library/Logs/supabase-acordado.log` — uma linha por chamada (só as de verdade, a cada 6 dias), com data, hora e o código:
    **200** ok · **404** falta o passo 1 · **401** chave errada · **000** sem internet naquela hora.
 
 Para desligar: `launchctl bootout gui/$(id -u)/com.revisor.supabase-acordado` e apagar o arquivo de

@@ -785,7 +785,7 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    `public.ping()` (só `select now()`, executável pela chave pública) em `supabase/alteracao-02-manter-acordado.sql` e
    na seção 4 do `estrutura.sql` — **rodada no Supabase em 26/09**. Quem chama é o **launchd do Mac do Pedro**
    (`supabase/manter-acordado.plist`, instalado em `~/Library/LaunchAgents/com.revisor.supabase-acordado.plist`):
-   toda segunda às 12h (o Pedro pediu uma vez por semana, 26/09) e ao carregar, registro em `~/Library/Logs/supabase-acordado.log` — **primeira chamada 200 em
+   **a cada 6 dias** (pedido do Pedro, 26/09): confere de hora em hora e ao carregar a data de `~/Library/Logs/supabase-acordado.ultimo` (tocado a cada 200) e só chama se passaram 6 dias — o `StartInterval` do launchd para com o Mac dormindo e zera ao reiniciar;, registro em `~/Library/Logs/supabase-acordado.log` — **primeira chamada 200 em
    26/09**. Limite: só protege se o Mac for ligado ao menos uma vez por semana. O Pedro recusou o cron-job.org (conta
    nova); descartados também GitHub Actions (sem remoto; desliga agendamento de repositório parado há 60 dias),
    `pg_cron` (atividade interna não parece contar) e o `/schedule` do Claude (gasta uso).

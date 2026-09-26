@@ -138,7 +138,7 @@ create trigger arquivar_antes_de_atualizar
 
 -- 4. MANTER ACORDADO ---------------------------------------------------------
 -- O plano gratuito pausa o projeto após 7 dias sem uso. O Mac (launchd) chama
--- POST /rest/v1/rpc/ping toda semana (README → "Manter o projeto acordado").
+-- POST /rest/v1/rpc/ping a cada 6 dias (README → "Manter o projeto acordado").
 -- Só devolve a hora do banco: não lê nem grava dado nenhum.
 create or replace function public.ping()
 returns timestamptz
