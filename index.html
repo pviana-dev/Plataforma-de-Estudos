@@ -112,7 +112,7 @@ a{color:var(--accent-ink)}
 header.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-bottom:20px}
 .top .esq{display:flex;align-items:center;gap:11px;min-width:0}
 .top .dir{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.marca{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+.marca{flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;
   background:var(--accent-forte);color:#fff;box-shadow:0 2px 8px var(--brilho)}
 html[data-tema="escuro"] .marca{color:#1c2123;box-shadow:none}
 /* a engrenagem dos ajustes tem a mesma cara do livro da marca: bloco cheio na cor da identidade */
@@ -133,7 +133,7 @@ html[data-tema="escuro"] .icon-btn.btn-ajustes:hover{color:#1b2224;box-shadow:0 
 .top .dir .icon-btn:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff;
   transform:translateY(-2px);box-shadow:0 6px 16px var(--brilho)}
 html[data-tema="escuro"] .top .dir .icon-btn:hover{color:#1b2224}
-.brand h1{font-size:25px;font-weight:650;letter-spacing:-.5px;line-height:1.1;white-space:nowrap}
+.brand h1{font-size:29px;font-weight:650;letter-spacing:-.6px;line-height:1.1;white-space:nowrap}
 .brand h1 span{font-weight:400;color:var(--muted);letter-spacing:-.2px}
 .chip-data{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:9px;
   border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;transition:.15s}
@@ -157,19 +157,58 @@ html[data-tema="escuro"] .top .dir .icon-btn:hover{color:#1b2224}
   align-items:baseline;text-align:left;padding:5px 12px;line-height:1.25}
 .chip-data .so{grid-column:1 / -1}
 .chip-data .hoje-rot,.chip-data .hoje-data{padding-top:3px;border-top:1px dashed var(--border)}
+.chip-data.so-hoje .hoje-rot,.chip-data.so-hoje .hoje-data{padding-top:0;border-top:0}   /* só hoje: sem o fio */
+#regressiva[hidden]{display:none}
 .chip-data .hoje-data{color:var(--accent-ink);font-weight:600;font-variant-numeric:tabular-nums}
 .chip-data:hover{border-color:var(--accent);color:var(--accent-ink)}
+/* O PERFIL: círculo com a inicial (verde da marca) e o menu que abre dele */
+.perfil{position:relative;flex:none}
+.avatar{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;
+  background:var(--accent-forte);color:#fff;font-weight:650;font-size:19px;letter-spacing:0;border:2px solid var(--surface);
+  box-shadow:0 0 0 1px var(--accent-forte),0 2px 8px var(--brilho);transition:transform .15s,box-shadow .15s}
+button.avatar:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--accent-ink),0 6px 16px var(--brilho)}
+button.avatar[aria-expanded="true"]{box-shadow:0 0 0 3px var(--foco)}
+html[data-tema="escuro"] .avatar{color:#1b2224}
+.avatar-grande{width:44px;height:44px;font-size:19px}
+.avatar-ponto{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;
+  border:2px solid var(--surface);background:var(--alerta)}
+.avatar-ponto.falha{background:var(--critico)}
+.menu-perfil{position:absolute;right:0;top:calc(100% + 8px);z-index:45;width:300px;max-width:calc(100vw - 24px);
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.16);
+  padding:8px;text-align:left}
+.menu-perfil[hidden]{display:none}
+.menu-cab{display:flex;align-items:center;gap:11px;padding:8px 8px 10px}
+.menu-quem{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.menu-quem b{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-quem span{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-sep{height:1px;background:var(--border);margin:6px 2px}
+.menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:8px;
+  color:var(--text);font-size:14px;text-align:left;white-space:nowrap}
+.menu-item .menu-ic{flex:none;color:var(--accent-ink)}
+.menu-item:hover,.menu-item:focus-visible{background:var(--accent-soft);outline:none}
+.menu-sair,.menu-sair .menu-ic{color:var(--critico-ink)}
+.menu-perfil .menu-estado[hidden]{display:none}
+.menu-aviso{margin-left:auto;font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.menu-aviso.atencao{color:var(--alerta-ink)}
+.menu-aviso.falha{color:var(--critico-ink)}
+/* "carregando…": uma rodinha discreta, na cor da marca */
+.carregando{display:flex;align-items:center;gap:10px}
+.girando{width:16px;height:16px;border-radius:50%;border:2px solid var(--accent-soft);border-top-color:var(--accent-forte);
+  animation:gira .8s linear infinite;flex:none}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.girando{animation-duration:2.4s}}
 .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
   border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:.15s;font-size:15px}
 .icon-btn:hover{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
-.regressiva{display:inline-flex;align-items:baseline;gap:9px;padding:9px 22px;border-radius:14px;
+/* A CONTAGEM DA PROVA. Sem os fogos (25/09), o espaço deles virou letra maior — no
+   limite de o card NÃO crescer: medido no navegador, o mesmo tamanho de antes
+   (226×42 na web, 218×38 no celular). Quem limita é a altura; a largura que
+   sobra fica de respiro dos lados. */
+.regressiva{display:inline-flex;align-items:baseline;gap:8px;padding:3px 29px;border-radius:13px;
   background:var(--accent-forte);border:1px solid var(--accent-forte);color:#fff;
   box-shadow:0 2px 12px var(--brilho);white-space:nowrap}
-.regressiva b{font-size:27px;font-weight:650;line-height:1;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:inherit}
-.regressiva span{font-size:13px;opacity:.92}
-.regressiva .fogo{font-size:16px;line-height:1;letter-spacing:-1px;opacity:1}
-.regressiva .fogo:first-child{margin-right:1px}
-.regressiva .fogo:last-child{margin-left:1px}
+.regressiva b{font-size:32px;font-weight:650;line-height:1;letter-spacing:-.6px;font-variant-numeric:tabular-nums;color:inherit}
+.regressiva span{font-size:15px;opacity:.92}
 .regressiva.urgente{background:var(--critico);border-color:var(--critico);color:#fff;
   box-shadow:0 2px 12px var(--brilho-critico)}
 .regressiva.neutra{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);
@@ -259,6 +298,17 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(0,0,0,.
 .uma-coluna .dia-prova{flex-direction:column;align-items:stretch}   /* nome e data do dia de prova, um embaixo do outro */
 .uma-coluna .dia-prova .excluir{align-self:flex-start}
 .ajuda-campo{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.35}
+/* revisões até a prova: a lista de datas escolhidas */
+.intro-rev-prova{margin:0 0 12px;line-height:1.5}
+#formRevProva .campos + .intro-rev-prova{margin-top:14px}
+.painel-rev-prova{gap:10px}
+.painel-rev-prova .campo{max-width:260px}
+.lista-datas-prova{display:flex;flex-direction:column;gap:6px}
+.data-prova-rev{gap:10px;align-items:center;flex-wrap:nowrap}
+.data-prova-rev .num{min-width:2.2em;font-weight:600;color:var(--text-2)}
+.data-prova-rev input{max-width:190px}
+.data-prova-rev .dia-semana{font-size:13px;color:var(--text-2)}
+.meta.ate-prova{color:var(--accent-ink)}
 .ajuda-campo:empty{display:none}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
    anima a altura sem precisar saber quanto o conteúdo mede; o `visibility` no
@@ -609,11 +659,21 @@ html[data-tema="escuro"] .faixa.agora{color:#1b2224}
 .pulso{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--critico);margin-right:7px;
   animation:pisca 1.6s ease-in-out infinite;vertical-align:middle}
 @keyframes pisca{0%,100%{opacity:1}50%{opacity:.25}}
-.crono-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;
-  background:var(--accent-forte);border:1px solid var(--accent-forte);color:#fff;font-size:12.5px;max-width:250px}
+/* O MEIO DO CABEÇALHO: a contagem da prova e, embaixo dela, o cronômetro rodando.
+   Na versão web (cabeçalho em três colunas), quando o cronômetro aparece, a
+   contagem sobe um pouco e o conjunto não empurra as abas para baixo. */
+.centro{display:flex;flex-direction:column;align-items:center;gap:6px}
+#cronoChip:empty{display:none}
+@media (min-width:1061px){
+  .centro.com-crono{margin:-15px 0 -14px;gap:4px}
+  .centro .crono-chip .encerrar{padding:1px 7px}
+}
+/* o cronômetro rodando, no cabeçalho: um pouco menor (pedido do Pedro, 25/09) — web e celular */
+.crono-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;
+  background:var(--accent-forte);border:1px solid var(--accent-forte);color:#fff;font-size:11.5px;max-width:230px}
 .crono-chip .nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.crono-chip b{font-variant-numeric:tabular-nums;font-size:14px}
-.crono-chip .encerrar{color:#fff;opacity:.85;font-size:12px;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.18)}
+.crono-chip b{font-variant-numeric:tabular-nums;font-size:12.5px}
+.crono-chip .encerrar{color:#fff;opacity:.85;font-size:11px;padding:1px 7px;border-radius:6px;background:rgba(255,255,255,.18)}
 .crono-chip .encerrar:hover{opacity:1;background:rgba(255,255,255,.3)}
 .divisor{border:none;border-top:1px solid var(--border);margin:14px 0}
 /* --- seletor de conteúdos (aba Aprendizados) --- */
@@ -886,6 +946,9 @@ mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px
   padding:9px 12px;font-size:14px;flex:1;min-width:0;max-width:520px}
 /* Mostrar: só as próximas / todas — escolha secundária, botões menores que os de Situação e Organizar */
 .filtros-agenda .aba-mini{padding:5px 12px;font-size:12.5px}
+/* personalizar as revisões até a prova: um atalho logo abaixo de "Revisões" */
+.filtros-agenda .linha-rev-prova{margin-top:8px}
+.filtros-agenda .linha-rev-prova .act{font-size:12.5px}
 .filtros-agenda select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--foco);outline:none}
 /* dias de prova do vestibular (ajustes) e a ligação opcional na aba Disciplinas */
 .dia-prova{gap:6px;margin-bottom:6px;flex-wrap:nowrap}
@@ -958,11 +1021,21 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
   background:var(--accent-soft);border:1px solid var(--filtro-borda)}
 .aj-fluxo small{font-size:11.5px;color:var(--text-2)}
 .aj-fluxo i{font-style:normal;color:var(--muted)}
-/* até 900px (tablet em pé incluído) o cabeçalho empilha: em três colunas, a
-   contagem regressiva ia por cima do nome "Plataforma de Estudos" */
-@media (max-width:900px){
-  header.top{grid-template-columns:1fr;justify-items:center;text-align:center}
-  .top .dir{justify-content:center}
+/* até 1060px (tablet incluído) o cabeçalho empilha: em três colunas, a contagem
+   regressiva ia por cima do nome "Plataforma de Estudos" — que cresceu em 25/09
+   e passou a pedir mais largura (a 980px já encostava na contagem) */
+@media (max-width:1060px){
+  header.top{grid-template-columns:1fr;justify-items:center;text-align:center;position:relative}
+  /* a fileira de baixo ocupa a largura toda: as datas na ponta esquerda, os botões
+     (ajustes, ajuda, tema) na direita e o meio vazio (pedido do Pedro, 25/09) */
+  .top .dir{justify-self:stretch;justify-content:flex-end}
+  .top .dir .chip-data{margin-right:auto}
+  /* O PERFIL NO CANTO SUPERIOR DIREITO, na altura do nome (pedido do Pedro, 25/09 —
+     primeiro foi o esquerdo): sai da fileira de botões e fica solto no canto, com
+     destaque; o nome se afasta o bastante para os dois não se encostarem, e o menu
+     abre alinhado pela direita, dentro da tela. */
+  .top .dir .perfil{position:absolute;right:0;top:0}
+  .top .esq{padding-right:54px}
 }
 @media (max-width:620px){
   .wrap{padding:16px 13px 70px}
@@ -1024,10 +1097,16 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
             mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}   /* "tem mais para o lado" */
   nav.abas::-webkit-scrollbar{display:none}
   nav.abas .aba{flex:none;padding:8px 13px;font-size:13.5px}
+  /* filtros da Agenda: rótulo colado nos botões, para "Situação: A fazer · Concluídos" caber numa linha */
+  .filtros-agenda .hl-tema{min-width:0}
+  .filtros-agenda .linha{gap:6px}
+  .filtros-agenda .aba:not(.aba-mini){padding:8px 13px;font-size:13.5px}
+  .filtros-agenda .aba-mini{padding:5px 10px;font-size:12px}
   header.top{gap:9px;margin-bottom:14px}
-  .regressiva{padding:7px 16px}
-  .regressiva b{font-size:23px}
-  .brand h1{font-size:22px}
+  .regressiva{padding:3px 27px}
+  .regressiva b{font-size:28px}
+  .brand h1{font-size:24px}
+  .marca{width:40px;height:40px;border-radius:12px}
 }
 /* TELA DE TOQUE: campo com letra menor que 16px faz o iPhone dar zoom na página
    inteira ao tocar nele (e ela fica ampliada depois). Com 16px, não há zoom. */
@@ -1041,7 +1120,7 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
   <header class="top">
     <div class="esq brand">
       <span class="marca" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor"
              stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H5.5A1.5 1.5 0 0 1 4 15V5.5Z"/>
           <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h5A1.5 1.5 0 0 0 20 15V5.5Z"/>
@@ -1049,10 +1128,15 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
       </span>
       <h1>Plataforma <span>de Estudos</span></h1>
     </div>
-    <div id="regressiva"></div>
-    <div class="dir">
+    <!-- no meio: a contagem da prova e, embaixo dela, o cronômetro quando está rodando -->
+    <div class="centro" id="centroTopo">
+      <div id="regressiva"></div>
       <div id="cronoChip"></div>
-      <button class="chip-data" id="chipData" data-acao="abrir-ajustes"></button>
+    </div>
+    <div class="dir">
+      <button class="chip-data" id="chipData" data-acao="info-datas"></button>
+      <button class="icon-btn" id="btnTema" title="Alternar tema claro/escuro" aria-label="Alternar tema">◐</button>
+      <button class="icon-btn" id="btnAjuda" title="Ajuda" aria-label="Ajuda">?</button>
       <button class="icon-btn btn-ajustes" id="btnAjustes" data-acao="abrir-ajustes" title="Ajustes" aria-label="Ajustes">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
              stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1060,12 +1144,25 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
         </svg>
       </button>
-      <button class="icon-btn" id="btnAjuda" title="Ajuda" aria-label="Ajuda">?</button>
-      <button class="chip-arq" id="chipNuvem" data-acao="painel-nuvem" title="Sua conta e a sincronização"></button>
-      <button class="chip-arq" id="chipArquivo" data-acao="painel-arquivo" title="Onde os dados estão sendo gravados"></button>
-      <button class="icon-btn" id="btnExportar" title="Exportar backup (.json)" aria-label="Exportar backup">↓</button>
-      <button class="icon-btn" id="btnImportar" title="Importar backup (.json)" aria-label="Importar backup">↑</button>
-      <button class="icon-btn" id="btnTema" title="Alternar tema claro/escuro" aria-label="Alternar tema">◐</button>
+      <!-- O PERFIL (25/09): o círculo com a inicial, como nos apps. Dentro dele ficam a conta,
+           o backup (baixar/enviar), o arquivo no computador e o sair — ver pintarPerfil. -->
+      <div class="perfil" id="perfil">
+        <button class="avatar" id="btnPerfil" data-acao="abrir-perfil" aria-haspopup="menu" aria-expanded="false"
+                aria-controls="menuPerfil" title="Seu perfil"><span id="avatarLetra">?</span>
+          <span class="avatar-ponto" id="avatarPonto" hidden></span></button>
+        <div class="menu-perfil" id="menuPerfil" role="menu" hidden>
+          <div class="menu-cab"><span class="avatar avatar-grande" aria-hidden="true"><span id="menuLetra">?</span></span>
+            <div class="menu-quem"><b id="menuNome"></b><span id="menuEmail"></span></div></div>
+          <button class="chip-arq menu-estado" id="chipNuvem" data-acao="painel-nuvem" title="Sua conta e a sincronização"></button>
+          <div class="menu-sep"></div>
+          <button class="menu-item so-conta" type="button" data-acao="editar-perfil" role="menuitem"><svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar perfil</button>
+          <button class="menu-item" type="button" id="btnExportar" role="menuitem" title="Baixar um backup (.json) com todos os dados"><svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar backup (.json)</button>
+          <button class="menu-item" type="button" id="btnImportar" role="menuitem" title="Enviar um backup (.json) — substitui os dados atuais"><svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg> Enviar backup (.json)</button>
+          <button class="chip-arq menu-estado" id="chipArquivo" data-acao="painel-arquivo" title="Gravar também num arquivo .json no computador"></button>
+          <div class="menu-sep so-conta"></div>
+          <button class="menu-item menu-sair so-conta" type="button" data-acao="nuvem-sair" role="menuitem"><svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Sair da conta</button>
+        </div>
+      </div>
       <input type="file" id="arquivo" accept="application/json" hidden>
     </div>
   </header>
@@ -1942,7 +2039,7 @@ function remanejarItem(rev, nova){
   if (!agendamentoAtivo() || nova <= antiga) return;
   fichas.forEach(f => {
     let ant = nova;
-    itensDaFicha(f).filter(r => !r.feita && r.id !== rev.id && r.data >= antiga).sort(porData).forEach(r => {
+    itensDaFicha(f).filter(r => !r.feita && r.id !== rev.id && !r.planoProva && r.data >= antiga).sort(porData).forEach(r => {
       const passo = Number.isInteger(r.passo) ? r.passo : 1;
       const alvo = foraDaProva(D.soma(ant, passo));
       if (alvo > r.data) r.data = alvo;
@@ -2158,6 +2255,82 @@ function degrauDoItem(rev, ficha, degraus){
   return degrauMaisPerto(degraus, Math.max(0, D.dif(ficha.concluidoEm || rev.data, rev.data)));
 }
 
+/* REVISÕES ATÉ A PROVA ESCOLHIDAS PELA PESSOA (pedido do Pedro, 25/09). Num
+   conteúdo CONCLUÍDO, com prova marcada, a pessoa pode trocar a escada automática
+   por revisões que ela mesma escolhe — quantas e em que dias — até a prova. Até
+   lá, a escada automática fica PAUSADA só para aquele conteúdo; no dia seguinte à
+   prova ela recomeça sozinha, a partir da última revisão. As datas escolhidas são
+   dela: nada as empurra (reancorar/remanejar pulam `planoProva`).
+   ficha.revisoesProva = "AAAA-MM-DD" → o conteúdo está no modo "eu escolho"
+                                        até ESSA prova (guardada: se outra prova
+                                        for marcada depois, a pausa não se estende).
+   rev.planoProva = true               → revisão escolhida nesse modo (é manual).
+   As revisões escolhidas não sobem degrau: passada a prova, a escada recomeça
+   do degrau em que estava — o automático volta inteiro, não pela metade. */
+/** a prova que vale para o conteúdo: a do dia ligado a ele (vestibular) ou a próxima; "" se não há prova à frente */
+function dataProvaDaFicha(ficha){
+  const hoje = D.hoje();
+  const ligado = ficha ? diaDoConteudo(ficha) : null;
+  if (ligado && ligado.data > hoje) return ligado.data;
+  const prox = proximaProva();
+  return prox && prox.data > hoje ? prox.data : "";
+}
+/** até que dia a escada automática deste conteúdo está pausada ("" = não está) */
+function pausaAteProva(ficha){
+  if (!ficha || ficha.fase !== "concluido" || typeof ficha.revisoesProva !== "string") return "";
+  return ficha.revisoesProva >= D.hoje() ? ficha.revisoesProva : "";
+}
+/** o conteúdo pode escolher as revisões até a prova? (concluído, com escada, prova à frente) */
+const podeEscolherAteProva = f => !!f && f.fase === "concluido" && !!dataProvaDaFicha(f) && agendamentoAtivo();
+/** as revisões pendentes do conteúdo até a prova (o que o modal mostra e troca) */
+function pendentesAteProva(ficha, prova){
+  return itensDaFicha(ficha).filter(r => !r.feita && r.data <= prova);
+}
+/* Troca o plano do conteúdo. `datas` = lista de dias escolhidos (modo "eu
+   escolho"); null = volta ao automático. As pendentes AUTOMÁTICAS do conteúdo
+   saem todas (a escada é refeita depois da prova, ou do jeito de sempre), e as
+   pendentes até a prova também — o modal as mostrou e a pessoa decidiu por elas.
+   Item que fala também de outro conteúdo só perde este. */
+function definirRevisoesProva(ficha, datas){
+  const prova = dataProvaDaFicha(ficha);
+  const chave = chaveDaFicha(ficha);
+  const sai = r => !r.feita && !ehRetomada(r) &&
+                   (!r.manual || r.planoProva || (datas && prova && r.data <= prova));
+  db.revisoes = db.revisoes.filter(r => {
+    if (!sai(r) || !falaDe(r, chave)) return true;
+    const ctx = contextoRevisao(r);
+    const resto = ctx.assuntos.filter(a => chaveAssunto(ctx.disciplina, a) !== chave);
+    if (!resto.length) return false;
+    r.assuntos = resto;
+    return true;
+  });
+  if (!datas || !prova){
+    delete ficha.revisoesProva;
+  } else {
+    ficha.revisoesProva = prova;
+    const inicio = ficha.concluidoEm || "";
+    const degraus = degrausDa(dificuldadeDaFicha(ficha));
+    const feitas = itensDaFicha(ficha).filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
+      .sort((a,b) => (a.feitaEm || a.data).localeCompare(b.feitaEm || b.data));
+    const ultima = feitas[feitas.length - 1];
+    const degrau = ultima ? degrauDoItem(ultima, ficha, degraus) : 0;
+    const dono = donoDaEscada(ficha);
+    const unicas = [...new Set(datas)].filter(d => d && d <= prova).sort();
+    let ant = ultima ? (ultima.feitaEm || ultima.data) : (inicio || D.hoje());
+    unicas.forEach((data, i) => {
+      const rev = { id: uid(), assuntos: [ficha.nome], data, ordem: i + 1, degrau,
+                    passo: Math.max(1, D.dif(ant, data)),
+                    feita: false, feitaEm: null, minutos: null, questoes: null, acertos: null,
+                    dificuldade: null, atividade: "", nota: "", manual: true, planoProva: true };
+      if (dono) rev.registroId = dono.id;
+      else { rev.registroId = null; rev.disciplina = ficha.disciplina; }
+      db.revisoes.push(rev);
+      ant = data;
+    });
+  }
+  continuarEscada(ficha);
+  juntarIrmas();
+}
 /** completa a escada do conteúdo até o último degrau que cabe no horizonte */
 function continuarEscada(ficha){
   if (!ficha || ficha.fase !== "concluido" || !agendamentoAtivo()) return 0;
@@ -2183,11 +2356,14 @@ function continuarEscada(ficha){
     dia = inicio; k = 0; piso = hoje;
   }
   const limite = ultimoDiaRevisao();
+  const pausa = pausaAteProva(ficha);
   let criadas = 0;
   for (let j = k + 1; j < degraus.length; j++){
     const passo = degraus[j] - degraus[j - 1];
     let quando = D.soma(dia, passo);
     if (quando < piso) quando = piso;           // o que era para ontem vira hoje, não uma pilha
+    // revisões escolhidas até a prova: a escada automática só volta DEPOIS dela
+    if (pausa && quando <= pausa) quando = D.soma(pausa, 1);
     quando = foraDaProva(quando);
     if (quando > limite) break;                 // o resto nasce quando o horizonte andar
     db.revisoes.push({ id: uid(), registroId: dono.id, assuntos: [ficha.nome], data: quando,
@@ -2235,7 +2411,7 @@ function reancorarEscada(fichas, data, opcoes){
   const chaves = new Set(alvo.map(chaveDaFicha));
   alvo.forEach(f => fixarPassos(f, o.exceto));
 
-  const depois = r => !r.feita && !ehRetomada(r) && r.id !== o.exceto &&
+  const depois = r => !r.feita && !ehRetomada(r) && r.id !== o.exceto && !r.planoProva &&   // a data escolhida é da pessoa
                       (o.mesmoDia ? r.data >= data : r.data > data);
   db.revisoes.filter(depois).forEach(r => {
     const ctx = contextoRevisao(r); if (!ctx) return;
@@ -2284,6 +2460,8 @@ function reespacarEscada(ficha){
     if (k >= degraus.length){ sobra.add(r.id); return; }
     let nova = foraDaProva(D.soma(ant, degraus[k] - degraus[k - 1]));
     if (nova < hoje) nova = hoje;
+    const pausa = pausaAteProva(ficha);
+    if (pausa && nova <= pausa) nova = D.soma(pausa, 1);        // pausada até a prova
     if (nova !== r.data) mudou++;
     r.data = nova; r.degrau = k; r.passo = degraus[k] - degraus[k - 1];
     ant = nova;
@@ -2318,7 +2496,11 @@ function juntarIrmas(){
 function garantirEscadas(){
   if (!agendamentoAtivo()) return 0;
   let n = 0;
-  conteudosCad().forEach(c => { n += continuarEscada(c); });
+  conteudosCad().forEach(c => {
+    // passada a prova, o modo "eu escolho" acaba sozinho: volta o automático
+    if (typeof c.revisoesProva === "string" && c.revisoesProva < D.hoje()) delete c.revisoesProva;
+    n += continuarEscada(c);
+  });
   if (n) juntarIrmas();
   return n;
 }
@@ -2667,6 +2849,7 @@ const CAMPOS_TELA = ["aba",
   "verTodasProximas","verTodosAssuntos","verTodoMural",         // listas abertas/fechadas
   "visaoAgenda","mesAgenda","diaAgenda","verTodaAgenda","faseAgenda","aDisciplina","aAssunto","agendaCompleta",   // como a Agenda está sendo vista
   "cDisciplina","cAssunto",                                     // filtro da aba Disciplinas
+  "cronoDestino",                                               // a sessão escolhida no cronômetro (vale só no dia)
   "compondo","rascunhoAnot"];                                   // e o que está sendo escrito
 function abaSalva(){
   try { const a = localStorage.getItem(CHAVE_ABA); return ABAS.some(x => x.id === a) ? a : ""; }
@@ -2700,6 +2883,10 @@ function restaurarTela(){
      propósito (outro qualquer) continua onde estava. */
   const ontem = salvo.gravadoEm || "";
   if (ontem && ui.diaSel === ontem) ui.diaSel = D.hoje();
+  /* A SESSÃO ESCOLHIDA NO CRONÔMETRO continua escolhida — ao fechar e abrir, depois de
+     encerrar — e só recomeça do zero em OUTRO DIA (pedido do Pedro, 25/09): o
+     cronômetro só soma em sessão de hoje, então a escolha de ontem não vale mais. */
+  if (ontem !== D.hoje()) ui.cronoDestino = "";
   if (ontem && ui.mesCal && ui.mesCal === ontem.slice(0,7)) ui.mesCal = D.hoje().slice(0,7);
 }
 restaurarTela();
@@ -2728,27 +2915,25 @@ function render(){
      salta para o seguinte. Com um dia só (ou no concurso), diz "a prova". */
   const nomeProx = objetivo() === "vestibular" ? nomeDoDia(dia) : "a prova";
   reg.className = "regressiva" + (dias === null ? " neutra" : dias <= 7 ? " urgente" : "");
-  // o fogo cresce com a urgência: um até 14 dias, dois na última quinzena, três na última semana
-  const fogo = dias === null || dias < 0 ? ""
-             : '<span class="fogo" aria-hidden="true">' +
-               (dias <= 7 ? "🔥🔥🔥" : dias <= 14 ? "🔥🔥" : "🔥") + '</span>';
-  // o fogo ladeia a contagem: um em cada ponta da caixa
-  reg.innerHTML = dias === null
-                  ? (objetivo() === "livre" ? '<span><b>Estudo contínuo</b> · sem data de prova</span>'
-                                            : '<span><b>' + esc(nomeObjetivo()) + '</b> · data a definir</span>')
-                : dias > 0 ? fogo+'<b>'+dias+'</b><span>'+(dias===1?"dia":"dias")+' para '+esc(nomeProx)+'</span>'+fogo
-                : dias === 0 ? fogo+'<b>hoje</b><span>é '+esc(nomeProx)+'</span>'+fogo
+  /* Os fogos (🔥) saíram da contagem (pedido do Pedro, 25/09): o espaço deles virou
+     número maior. A urgência continua na cor — a caixa fica vermelha na última semana. */
+  /* SEM DATA DE PROVA (sem objetivo, ou concurso/vestibular com a data a definir), a
+     contagem SOME — não há o que contar (pedido do Pedro, 25/09; antes dizia
+     "Estudo contínuo · sem data de prova"). */
+  reg.hidden = dias === null;
+  reg.innerHTML = dias === null ? ''
+                : dias > 0 ? '<b>'+dias+'</b><span>'+(dias===1?"dia":"dias")+' para '+esc(nomeProx)+'</span>'
+                : dias === 0 ? '<b>hoje</b><span>é '+esc(nomeProx)+'</span>'
                 : '<b>'+(-dias)+'</b><span>'+(dias===-1?"dia":"dias")+' desde '+esc(nomeProx)+'</span>';
   const chip = $("#chipData");
   const semanaHoje = new Date(D.hoje() + "T12:00").toLocaleDateString("pt-BR", { weekday: "long" });
-  chip.innerHTML = (objetivo() === "livre" ? '<span class="so">Sem objetivo</span>'
-                 : !dia ? '<span class="so">' + esc(nomeObjetivo()) + ' · data a definir</span>'
+  chip.classList.toggle("so-hoje", !dia);          // sem data de prova: o card mostra só hoje
+  chip.innerHTML = (!dia ? ''
                  : objetivo() === "vestibular" ? '<span>' + esc(nomeDoDia(dia)) + '</span><b>' + D.brFull(dia.data) + '</b>'
                  : '<span>Prova</span><b>' + D.brFull(dia.data) + '</b>') +
     '<span class="hoje-rot">Hoje</span><span class="hoje-data" title="' + esc(semanaHoje) + '">' + D.brFull(D.hoje()) + '</span>';
-  chip.title = (semProva() ? "Revisões em intervalos crescentes, sem prazo"
-                           : "Revisões agendadas até " + D.brFull(ultimoDiaRevisao())) +
-               " · clique para escolher o objetivo e as datas";
+  chip.title = semProva() ? "Hoje · a data da prova se marca em Ajustes (⚙)"
+                           : "A data da prova pode ser alterada em Ajustes (⚙)";
 
   if (!db.cronometro) $("#cronoChip").innerHTML = "";
   const det = revisoesDetalhadas();
@@ -2765,6 +2950,7 @@ function render(){
 
   pintarChipNuvem();
   pintarChipArquivo();
+  pintarPerfil();
   view.innerHTML = ({ hoje: telaHoje, registros: telaRegistros, questoes: telaQuestoes,
                       revisoes: telaRevisoes, erros: telaErros, painel: telaPainel,
                       conteudos: telaConteudos })[ui.aba]();
@@ -3628,7 +3814,8 @@ function formRegistroHtml(){
         : campo("Disciplina *", seletorDisciplina(v.disciplina))) +
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
                      eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
-      campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(v.minutos ?? "")+'" placeholder="60">') +
+      // sem tempo, a caixa vem vazia com o exemplo apagado — igual às questões
+      campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(Number(v.minutos) > 0 ? Number(v.minutos) : "")+'" placeholder="60">') +
       camposQuestoes(v.questoes, v.acertos) +
       (() => {
         // sessão nova de conteúdo já estudado: a dificuldade vem da última sessão dele
@@ -4637,7 +4824,14 @@ function telaRevisoes(){
         [[false,"Só as 2 próximas"],[true,"Todas as agendadas"]].map(([k,rot]) =>
           '<button class="aba aba-mini" data-acao="agenda-completa" data-valor="'+k+'" aria-selected="'+(!!ui.agendaCompleta===k)+'">' +
           rot + '</button>').join("") +
-        '</div>'
+        '</div>' +
+        /* revisões até a prova, por conteúdo: o atalho abre a janela com a escolha
+           do conteúdo (já no filtrado, se houver um) */
+        (conteudosCad().some(podeEscolherAteProva)
+          ? '<div class="linha linha-rev-prova"><button class="act atalho" type="button" data-acao="revisoes-prova" ' +
+            'title="Escolha, por conteúdo concluído, quantas revisões fazer até a prova e em que dias">' +
+            'Personalizar revisões até a prova</button></div>'
+          : '')
       : '') +
     '</div>';
   h += cardAtrasadas(naFase);
@@ -4706,6 +4900,9 @@ function telaRevisoes(){
       (aberto ? '<span class="badge b-misto" title="A agenda está chamando para voltar ao assunto, não para revisar">' +
                 'em andamento' + (desde >= CONFIG.AVISO_ABERTO_DIAS ? ' · há ' + desde + ' dias' : '') + '</span>' : '') +
       (temAtraso ? '<span class="badge b-critico">tem atraso</span>' : '') +
+      (g.ctx.assuntos.length === 1 && pausaAteProva(acharConteudo(g.disciplina, g.ctx.assuntos[0]))
+        ? '<span class="badge" title="Até a prova, as revisões deste conteúdo são as que você escolheu; depois dela, o automático volta">' +
+          'datas suas até ' + D.br(pausaAteProva(acharConteudo(g.disciplina, g.ctx.assuntos[0]))) + '</span>' : '') +
       '<span class="spacer"></span>' +
       '<button class="act'+(aberto && desde >= CONFIG.AVISO_ABERTO_DIAS ? " destaque" : "")+'" ' +
         'data-acao="'+(aberto ? "concluir-conteudo" : "reabrir-conteudo")+'" ' +
@@ -6244,6 +6441,8 @@ function enviarRegistro(ev){
   if (divisao) criarContinuacoes(salvo, divisao);   // o cronômetro passou da meia-noite e você dividiu
   garantirAgenda();              // aberto sem volta ou fechado sem escada: não fica
   persistir();
+  // veio do cronômetro ("Nova sessão"): a próxima medição já soma nesta sessão, que é a de hoje
+  if (!anterior && ui.prefill && ui.prefill.inicio && salvo.data === D.hoje()) ui.cronoDestino = "registro:" + salvo.id;
   ui.editandoRegistro = null; ui.prefill = null; ui.formAberto = false; ui.ligarRevisao = "";
   const resumo = resumoDaAgenda(salvo);
   render();
@@ -6500,6 +6699,7 @@ function marcarConteudos(fichas, fase){
   tocadas.forEach(c => {
     c.fase = fase;
     c.concluidoEm = fase === "concluido" ? D.hoje() : null;
+    delete c.revisoesProva;                   // revisões até a prova são de conteúdo concluído
   });
   const chaves = new Set(tocadas.map(chaveDaFicha));
 
@@ -6509,7 +6709,7 @@ function marcarConteudos(fichas, fase){
      intocadas: ao fechar, a escada nasce DEPOIS das revisões que você já
      tinha marcado (continuarEscada). */
   db.revisoes = db.revisoes.filter(r => {
-    if (r.feita || r.manual) return true;
+    if (r.feita || (r.manual && !r.planoProva)) return true;   // as escolhidas até a prova saem com o modo
     const ctx = contextoRevisao(r); if (!ctx) return true;
     const resto = ctx.assuntos.filter(a => !chaves.has(chaveAssunto(ctx.disciplina, a)));
     if (resto.length === ctx.assuntos.length) return true;
@@ -6917,6 +7117,7 @@ function telaConteudos(){
                   (c.fase === "concluido" ? "concluído" + (c.concluidoEm ? " em " + D.br(c.concluidoEm) : "")
                                           : nSess ? "em andamento" : "a estudar")+'</div>' +
                   (ligacoesAtivas() ? '<div class="meta dia-cont">Dia de prova: ' + seletorDiaConteudo(c) + '</div>' : '') +
+                  metaAteProva(c) +
                   '</div>' +
                   '<button class="act" data-acao="renomear-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'">✎ renomear</button>' +
                   '<button class="act" data-acao="'+(c.fase === "concluido" ? "reabrir-conteudo" : "concluir-conteudo")+'" ' +
@@ -6934,6 +7135,127 @@ function telaConteudos(){
       'Use o <b>+ Nova disciplina</b> acima — ou registre uma sessão na aba <b>Sessões</b>, que cria a disciplina junto.</div>';
 
   return h + '</div>';
+}
+
+/* ---------- revisões até a prova, escolhidas por conteúdo ---------- */
+/** a linha que diz, no conteúdo, que as revisões até a prova são da pessoa */
+function metaAteProva(c){
+  const prova = pausaAteProva(c);
+  if (!prova) return '';
+  const n = pendentesAteProva(c, prova).length;
+  return '<div class="meta ate-prova">' + (n ? n + (n === 1 ? " revisão escolhida" : " revisões escolhidas") : "nenhuma revisão escolhida") +
+    ' até ' + D.br(prova) + ' — automático pausado até lá</div>';
+}
+
+/** os dias em que dá para marcar revisão até a prova: de hoje à véspera, fora dos dias de prova */
+function diasAteProva(prova){
+  const lista = [];
+  for (let d = D.hoje(); d < prova; d = D.soma(d, 1)) if (!diaDeProva(d)) lista.push(d);
+  return lista;
+}
+/** n datas espalhadas por igual até a véspera — a última cai na véspera */
+function sugerirDatasAteProva(n, prova){
+  const dias = diasAteProva(prova);
+  if (!dias.length) return [];
+  n = Math.max(1, Math.min(n, dias.length));
+  const out = [];
+  for (let i = 1; i <= n; i++){
+    let j = Math.round(i * (dias.length - 1) / n);
+    if (n === dias.length) j = i - 1;
+    while (out.includes(dias[j]) && j < dias.length - 1) j++;
+    out.push(dias[j]);
+  }
+  return [...new Set(out)].sort();
+}
+/* A JANELA "REVISÕES ATÉ A PROVA". Dois modos: Automáticas (a escada de
+   sempre) ou Personalizar — quantas revisões e o dia de cada uma; a plataforma
+   só sugere datas espaçadas por igual até a véspera. */
+function modalRevisoesProva(ficha, escolherConteudo){
+  const prova = dataProvaDaFicha(ficha);
+  if (!prova){ toast("Sem prova marcada à frente — as revisões seguem automáticas."); return; }
+  const dias = diasAteProva(prova);
+  if (!dias.length){ toast("A prova é amanhã: não sobra dia para escolher revisões."); return; }
+  const maximo = Math.min(dias.length, 30);
+  const escolhendo = !!pausaAteProva(ficha);
+  const atuais = pendentesAteProva(ficha, prova).map(r => r.data).filter(d => d >= D.hoje() && d < prova && !diaDeProva(d));
+  const iniciais = atuais.length ? [...new Set(atuais)].slice(0, maximo) : sugerirDatasAteProva(Math.min(3, maximo), prova);
+  const linhaData = (d, i) => '<div class="linha data-prova-rev"><span class="num">' + (i + 1) + 'ª</span>' +
+    '<input type="date" name="dataRev" value="' + esc(d) + '" min="' + D.hoje() + '" max="' + dias[dias.length - 1] + '" ' +
+    'aria-label="Data da ' + (i + 1) + 'ª revisão"><span class="dia-semana">' + esc(D.semana(d)) + '</span></div>';
+  abrirModal("Revisões até a prova",
+    '<form id="formRevProva">' +
+    (escolherConteudo
+      ? '<div class="campos">' + campo("Conteúdo (só os concluídos)",
+          '<select name="conteudoProva">' + conteudosCad().filter(podeEscolherAteProva)
+            .sort((a,b) => (a.disciplina + " " + a.nome).localeCompare(b.disciplina + " " + b.nome, "pt-BR"))
+            .map(c => '<option value="' + esc(chaveDaFicha(c)) + '"' + (c === ficha ? " selected" : "") + '>' +
+                      esc(c.nome) + ' — ' + esc(c.disciplina) + (pausaAteProva(c) ? ' (personalizado)' : '') + '</option>').join("") +
+          '</select>', true) + '</div>'
+      : '') +
+    '<p class="intro-rev-prova"><b>' + esc(ficha.nome) + '</b> · ' + esc(ficha.disciplina) +
+      '<br>Prova em ' + D.br(prova) + ' — faltam ' + D.dif(D.hoje(), prova) + ' dias.</p>' +
+    '<div class="campos">' +
+    '<div class="campo largo"><span>Como revisar até a prova</span><div class="opcoes">' +
+      '<label class="opcao"><input type="radio" name="modo" value="auto"' + (escolhendo ? "" : " checked") + '>' +
+        '<span>Automáticas — a plataforma marca</span></label>' +
+      '<label class="opcao"><input type="radio" name="modo" value="eu"' + (escolhendo ? " checked" : "") + '>' +
+        '<span>Personalizar</span></label>' +
+    '</div></div>' +
+    '<div class="campo largo painel-rev-prova" id="painelRevProva"' + (escolhendo ? "" : " hidden") + '>' +
+      campo("Quantas revisões até a prova",
+            '<input type="number" name="quantas" min="1" max="' + maximo + '" value="' + iniciais.length + '" inputmode="numeric">',
+            false, "De 1 a " + maximo + ". Mudar o número refaz a sugestão de datas.") +
+      '<div class="lista-datas-prova" id="datasRevProva">' + iniciais.map(linhaData).join("") + '</div>' +
+      '<p class="ajuda-campo">Até ' + D.br(prova) + ', só estas revisões aparecem para este conteúdo — ' +
+        'o automático fica pausado. No dia seguinte à prova, ele volta sozinho.</p>' +
+    '</div></div>' +
+    '<div class="linha acoes-form"><button class="btn" type="submit">Salvar</button>' +
+    '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+    '<span class="erro-form" id="erroRevProva"></span></div></form>',
+    () => {
+      const f = $("#formRevProva"), painel = $("#painelRevProva"), lista = $("#datasRevProva");
+      const quantas = f.querySelector('[name="quantas"]');
+      const trocaConteudo = f.querySelector('[name="conteudoProva"]');
+      if (trocaConteudo) trocaConteudo.addEventListener("change", () => {
+        const outra = conteudosCad().find(c => chaveDaFicha(c) === trocaConteudo.value);
+        if (outra) modalRevisoesProva(outra, true);
+      });
+      const modo = () => (f.querySelector('[name="modo"]:checked') || {}).value;
+      const semana = () => lista.querySelectorAll(".data-prova-rev").forEach(l => {
+        const v = l.querySelector("input").value;
+        l.querySelector(".dia-semana").textContent = v ? D.semana(v) : "";
+      });
+      f.querySelectorAll('[name="modo"]').forEach(r => r.addEventListener("change", () => {
+        painel.hidden = modo() !== "eu";
+      }));
+      quantas.addEventListener("input", () => {
+        const n = parseInt(quantas.value, 10);
+        if (!(n >= 1 && n <= maximo)) return;
+        lista.innerHTML = sugerirDatasAteProva(n, prova).map(linhaData).join("");
+      });
+      lista.addEventListener("input", semana);
+      f.addEventListener("submit", ev => {
+        ev.preventDefault();
+        const erro = $("#erroRevProva");
+        if (modo() !== "eu"){
+          definirRevisoesProva(ficha, null);
+          persistir(); fecharModal(); render();
+          toast(escolhendo ? "“" + ficha.nome + "” voltou às revisões automáticas." : "As revisões continuam automáticas.");
+          return;
+        }
+        const n = parseInt(quantas.value, 10);
+        if (!(n >= 1 && n <= maximo)){ erro.textContent = "Escolha de 1 a " + maximo + " revisões."; return; }
+        const datas = [...lista.querySelectorAll('[name="dataRev"]')].map(i => i.value);
+        if (datas.some(d => !d)){ erro.textContent = "Preencha a data de cada revisão."; return; }
+        if (datas.some(d => d < D.hoje() || d >= prova)){ erro.textContent = "As datas vão de hoje até a véspera da prova."; return; }
+        if (datas.some(diaDeProva)){ erro.textContent = "Uma das datas cai num dia de prova."; return; }
+        if (new Set(datas).size !== datas.length){ erro.textContent = "Há duas revisões no mesmo dia."; return; }
+        definirRevisoesProva(ficha, datas);
+        persistir(); fecharModal(); render();
+        toast(datas.length + (datas.length === 1 ? " revisão marcada" : " revisões marcadas") + " até " + D.br(prova) +
+              " para “" + ficha.nome + "”. Depois da prova, o automático volta.");
+      });
+    });
 }
 
 /* ---------- ligação opcional a um dia de prova (vestibular) ---------- */
@@ -7258,7 +7580,6 @@ function modalAjustes(){
     '</div>' +
     '<div class="linha" style="margin-top:12px"><button class="btn" type="submit">Salvar ajustes</button>' +
     '<span class="erro-form" id="erroAjustes"></span>' +
-    '<button class="btn ghost" type="button" data-acao="abrir-conteudos">Ir para a aba Disciplinas</button>' +
     '<span class="hl-tema"><a href="#" data-acao="abrir-ajuda">como o cronograma funciona</a></span></div></form>',
     ligarAjustes);
 }
@@ -7305,7 +7626,9 @@ function modalAjuda(){
           '(conteúdo concluído). Três visões — <b>por dia</b>, <b>por assunto</b> e <b>mês</b> —, filtros de disciplina e ' +
           'conteúdo, e <b>+ Adicionar revisão</b> para marcar datas à mão, uma ou várias de uma vez. Com o nome em branco, ' +
           'a revisão se chama pela ordem (dar nome a uma não renumera as outras). Tempo e questões não se lançam no card: ' +
-          'entram pela <b>sessão</b> que o cumpre.</dd></div>' +
+          'entram pela <b>sessão</b> que o cumpre. Com prova marcada, <b>Personalizar revisões até a prova</b> deixa você ' +
+          'escolher, num conteúdo concluído, quantas revisões fazer até a prova e em que dias: até lá o automático daquele ' +
+          'conteúdo fica pausado, e volta sozinho depois da prova.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Disciplinas") + '</dt><dd>O cadastro: criar e renomear disciplinas e conteúdos, <b>✓ concluir</b> e ' +
           '<b>↩ reabrir</b> um conteúdo (ou a disciplina inteira). Renomear aqui muda o nome em todo o sistema. ' +
           '<b>+ Novo conteúdo</b> lança vários de uma vez (o edital, um por linha ou numerado): eles ficam "a estudar", sem nada na ' +
@@ -7391,11 +7714,12 @@ function modalAjuda(){
     ["dados", "Seus dados",
       '<ul class="aj-lista">' +
         '<li>Os dados moram na sua <b>conta</b>: entre com o e-mail e a senha em qualquer aparelho e eles vêm junto. ' +
-          'Esqueceu a senha? Na tela de entrada, <b>Esqueci minha senha</b> manda um código para o e-mail. Para sair, ' +
-          'clique no chip da conta (☁) → <b>Sair da conta</b>.</li>' +
-        '<li>Os dois chips do topo dizem onde os dados estão sendo gravados: a <b>conta na nuvem</b> e o <b>arquivo .json</b>. ' +
-          'Sem nenhum dos dois, eles ficam só neste navegador — e somem se você limpar os dados de navegação.</li>' +
-        '<li><b>↓</b> exporta um backup e <b>↑</b> importa um. Exporte antes de mudanças grandes.</li>' +
+          'Esqueceu a senha? Na tela de entrada, <b>Esqueci minha senha</b> manda um código para o e-mail.</li>' +
+        '<li>O <b>círculo com a sua inicial</b>, no canto do topo, abre o seu perfil: a situação da sincronização, ' +
+          '<b>Editar perfil</b> (nome e senha), <b>Baixar backup</b>, <b>Enviar backup</b> e <b>Sair da conta</b>. ' +
+          'Um pontinho no círculo avisa quando a sincronização parou.</li>' +
+        '<li><b>Baixar backup</b> guarda um .json com tudo; <b>Enviar backup</b> troca os dados pelos de um .json (a versão ' +
+          'que estava na nuvem fica guardada no histórico). Baixe um antes de mudanças grandes.</li>' +
         '<li><b>◐</b> alterna o tema claro e escuro.</li>' +
       '</ul>'],
     ["metodo", "Metodologias",
@@ -7495,6 +7819,8 @@ function ligarAjustes(){
 function atualizarCrono(){
   const c = db.cronometro;
   const chip = document.getElementById("cronoChip");
+  const centro = document.getElementById("centroTopo");
+  if (centro) centro.classList.toggle("com-crono", !!c);     // a contagem abre espaço para o cronômetro
   if (!c){ if (chip && chip.innerHTML) chip.innerHTML = ""; return; }
   // parado depois da meia-noite, esperando a escolha: o tempo não anda mais
   const t = fmtCrono(Math.floor(((c.parado || Date.now()) - c.inicio)/1000));
@@ -7536,6 +7862,11 @@ const nuvem = { estado: "desligada", email: "", uid: "", ultimo: null, erro: "",
 //              desligada | deslogado | entrando | pronta | sincronizando | offline | erro
 
 const nuvemLigada = () => !!(NUVEM.url && NUVEM.chave);
+/* "Conta e sincronização" aparece JÁ na abertura. Antes o item ficava escondido
+   até a primeira resposta do Supabase — que demora mais justamente depois de o
+   app ficar fechado (a sessão precisa ser renovada). Com a conta configurada e
+   alguém logado, o estado de partida é "iniciando" ("carregando…" no item). */
+if (nuvemLigada()) nuvem.estado = lerSessao() ? "iniciando" : "deslogado";
 function lerSessao(){
   try { return JSON.parse(localStorage.getItem(CHAVE_SESSAO) || "null"); } catch(e){ return null; }
 }
@@ -7589,7 +7920,8 @@ async function renovarSessao(){
    o campo = ainda não conferido). */
 const tem = (d, k) => !!(d && d.user && d.user.user_metadata && d.user.user_metadata[k]);
 const sessaoDe = (d, extra) => Object.assign({ access_token: d.access_token, refresh_token: d.refresh_token,
-  email: d.user.email, uid: d.user.id, senha: tem(d, "senha_criada") }, extra || {});
+  email: d.user.email, uid: d.user.id, senha: tem(d, "senha_criada"),
+  nome: (d.user.user_metadata && d.user.user_metadata.full_name) || "" }, extra || {});
 /** e-mail e senha → sessão */
 async function entrarComSenha(email, senha){
   const d = await chamarNuvem("/auth/v1/token?grant_type=password",
@@ -7609,19 +7941,21 @@ async function conferirCodigo(email, codigo, tipo){
   return chamarNuvem("/auth/v1/verify",
     { method: "POST", body: JSON.stringify({ email, token: codigo, type: tipo }) }, false);
 }
-/** grava a senha da conta logada e marca que ela existe */
-async function gravarSenhaNova(senha){
+/** grava a senha da conta logada e marca que ela existe (e o nome, se veio junto) */
+async function gravarSenhaNova(senha, nome){
+  const data = { senha_criada: true };
+  if (nome) data.full_name = nome;
   await chamarNuvem("/auth/v1/user",
-    { method: "PUT", body: JSON.stringify({ password: senha, data: { senha_criada: true } }) }, true);
-  const s = lerSessao(); if (s){ s.senha = true; gravarSessao(s); }
+    { method: "PUT", body: JSON.stringify({ password: senha, data }) }, true);
+  const s = lerSessao(); if (s){ s.senha = true; if (nome) s.nome = nome; gravarSessao(s); }
 }
-/** sessão antiga (de antes das senhas): pergunta ao Supabase se a conta já tem senha */
+/** sessão antiga: pergunta ao Supabase se a conta já tem senha e qual o nome dela */
 async function conferirSeTemSenha(){
-  const s = lerSessao(); if (!s || s.senha !== undefined) return;
+  const s = lerSessao(); if (!s || (s.senha !== undefined && s.nome !== undefined)) return;
   try {
     const u = await chamarNuvem("/auth/v1/user", { method: "GET" }, true);
-    const agora = lerSessao();
-    if (agora){ agora.senha = !!(u && u.user_metadata && u.user_metadata.senha_criada); gravarSessao(agora); }
+    const agora = lerSessao(), meta = (u && u.user_metadata) || {};
+    if (agora){ agora.senha = !!meta.senha_criada; agora.nome = meta.full_name || ""; gravarSessao(agora); }
   } catch(e){ /* sem conexão: confere na próxima vez; enquanto isso, não tranca ninguém */ }
 }
 /** encerra a sessão no Supabase também (se der; sem conexão, basta a local) */
@@ -7662,7 +7996,7 @@ async function iniciarNuvem(){
   if (!nuvemLigada()){ nuvem.estado = "desligada"; pintarChipNuvem(); return; }
   const s = lerSessao();
   if (!s){ nuvem.estado = "deslogado"; pintarChipNuvem(); return; }
-  if (s.senha === undefined){                    // sessão de antes das senhas: a conta já tem uma?
+  if (s.senha === undefined || s.nome === undefined){   // sessão antiga: a conta já tem senha? qual o nome?
     await conferirSeTemSenha();
     if (portaoFechado()){ render(); return; }    // não tem: a tela pede, e a sincronia vem depois
   }
@@ -7682,7 +8016,7 @@ async function iniciarNuvem(){
                    "Entrar como " + s.email + " troca-os pelos dados dessa conta" +
                    (temDados ? "" : " (que ainda não tem nada: a plataforma começa vazia)") + ". " +
                    "Os de " + deQuem + " continuam guardados na nuvem, na conta dela.\n\n" +
-                   "Quer uma cópia do que está aqui? Cancele e use ↓ exportar antes.\n\nContinuar?")){
+                   "Quer uma cópia do que está aqui? Cancele e use Baixar backup (no círculo do perfil) antes.\n\nContinuar?")){
         gravarSessao(null);
         nuvem.estado = "deslogado"; nuvem.email = ""; nuvem.uid = "";
         pintarChipNuvem(); render();
@@ -7877,23 +8211,34 @@ function desconectarArquivo(){
 }
 
 /** chip da conta: em uma linha, se os dados estão indo para a nuvem */
+/* A LINHA DA CONTA NO MENU DO PERFIL: "Conta e sincronização", com o mesmo
+   desenho dos outros itens (ícone + nome). A situação vai no título (ao passar
+   o mouse) e, só quando há algo a dizer, numa palavra miúda à direita — "sem
+   conexão", "salvando…". Em dia, fica limpa: o pontinho no círculo do perfil
+   já avisa quando algo parou. */
+/* os ícones do menu do perfil: traço fino, na cor da marca — os mesmos dos itens fixos do HTML */
+const ICONE_NUVEM = '<svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H8a5 5 0 1 1 1.3-9.8A6 6 0 0 1 20.9 12 3.5 3.5 0 0 1 17.5 19Z"/></svg>';
+const ICONE_ARQUIVO = '<svg class="menu-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>';
 function pintarChipNuvem(){
   const c = document.getElementById("chipNuvem"); if (!c) return;
-  const curto = e => (e || "").split("@")[0];
   const mapa = {
+    //              [aviso à direita, classe do aviso, título, esconder]
     desligada:     ["", "", "", true],
-    deslogado:     ["Entrar na conta", "atencao", "Seus dados só estão neste navegador — entre para sincronizar", false],
-    entrando:      ["Entrando…", "", "", false],
-    sincronizando: ["Salvando…", "", "Enviando para a nuvem", false],
-    pronta:        [curto(nuvem.email), "ligado", "Sincronizado" + (nuvem.ultimo ? " às " + horaDe(nuvem.ultimo) : "") + " · " + nuvem.email, false],
-    offline:       ["Sem conexão", "atencao", "As alterações ficaram salvas aqui e sobem quando a conexão voltar. " + nuvem.erro, false],
-    erro:          ["Falha na conta", "falha", nuvem.erro, false]
+    deslogado:     ["entrar", "atencao", "Você não está na conta", false],
+    entrando:      ["entrando…", "", "Entrando na conta", false],
+    iniciando:     ["carregando…", "", "Carregando a sua conta…", false],
+    sincronizando: ["salvando…", "", "Enviando para a nuvem", false],
+    pronta:        ["", "", "Sincronizado" + (nuvem.ultimo ? " às " + horaDe(nuvem.ultimo) : "") + " · " + nuvem.email, false],
+    offline:       ["sem conexão", "atencao", "As alterações ficaram salvas aqui e sobem quando a conexão voltar. " + nuvem.erro, false],
+    erro:          ["falha", "falha", nuvem.erro, false]
   };
-  const [texto, classe, titulo, esconder] = mapa[nuvem.estado] || mapa.deslogado;
+  const [aviso, classe, titulo, esconder] = mapa[nuvem.estado] || mapa.deslogado;
   c.hidden = esconder;
-  c.className = "chip-arq" + (classe ? " " + classe : "");
+  c.className = "menu-item menu-estado";
   c.title = titulo;
-  c.innerHTML = (nuvem.estado === "pronta" ? "☁ " : nuvem.estado === "offline" ? "⚠ " : "") + esc(texto);
+  c.innerHTML = ICONE_NUVEM + ' Conta e sincronização' +
+    (aviso ? ' <em class="menu-aviso' + (classe ? " " + classe : "") + '">' + esc(aviso) + '</em>' : '');
+  pintarPerfil();                              // o pontinho do círculo do perfil acompanha
 }
 /* ==========================================================================
    A TELA DE ACESSO (pedido do Pedro, 25/09): o app EXIGE a conta.
@@ -7929,6 +8274,7 @@ function traduzirErroAcesso(e){
   let x = m.match(/at least (\d+) characters/i);
   if (x) return "A senha precisa ter pelo menos " + x[1] + " caracteres.";
   if (/different from the old password/i.test(m)) return "A nova senha precisa ser diferente da anterior.";
+  if (/reauthenticat/i.test(m)) return "Por segurança, saia da conta e entre de novo antes de trocar a senha.";
   if (/weak|pwned|leaked/i.test(m)) return "Essa senha é fraca ou já apareceu em vazamentos. Escolha outra.";
   x = m.match(/after (\d+) seconds?/i);
   if (x) return "Espere " + x[1] + " segundos para pedir outro código.";
@@ -7975,7 +8321,10 @@ function htmlAcesso(){
     texto = conta ? "A sua conta ainda não tem senha. Crie uma agora — daqui em diante, a entrada é com o e-mail e a senha."
           : redefinir ? "Código confirmado. Escolha a senha nova."
           : "E-mail confirmado. Agora crie a senha que você vai usar para entrar.";
-    corpo = campo("Senha", '<input type="password" name="senha" autocomplete="new-password" required minlength="' +
+    const pedeNome = !redefinir && !nomeDoPerfil();      // opcional: sem nome, o círculo usa a inicial do e-mail
+    corpo = (pedeNome ? campo("Seu nome (opcional)", '<input name="nome" maxlength="60" autocomplete="name" ' +
+                              'placeholder="Como você quer ser chamado">', true) : '') +
+            campo("Senha", '<input type="password" name="senha" autocomplete="new-password" required minlength="' +
               SENHA_MINIMA + '">', true) +
             campo("Repita a senha", '<input type="password" name="senha2" autocomplete="new-password" required>', true) +
             '<div class="regra">Pelo menos ' + SENHA_MINIMA + ' caracteres.</div>' + mostrar + rodape("Salvar a senha");
@@ -8061,7 +8410,7 @@ async function enviarAcesso(ev){
       acesso.ocupado = false; pintarAcesso(); return;
     }
     if (etapa === "senha"){
-      await gravarSenhaNova(d.senha);
+      await gravarSenhaNova(d.senha, (d.nome || "").trim().replace(/\s+/g, " "));
       const motivo = acesso.motivo;
       return concluirEntrada(motivo === "redefinir" ? "Senha nova salva." : "Senha criada — pronto para estudar.");
     }
@@ -8081,6 +8430,14 @@ async function concluirEntrada(msg){
   if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
 }
 
+/** espera a conta sair do "iniciando" (a primeira resposta do Supabase) — no máximo 20 s */
+function esperarConta(){
+  return new Promise(pronto => {
+    const inicio = Date.now();
+    const olha = () => (nuvem.estado !== "iniciando" || Date.now() - inicio > 20000) ? pronto() : setTimeout(olha, 200);
+    olha();
+  });
+}
 function painelNuvem(){
   if (!nuvemLigada()){
     abrirModal("Conta e sincronização",
@@ -8088,6 +8445,17 @@ function painelNuvem(){
       '<p class="sub">Para ligar, preencha <code>NUVEM.url</code> e <code>NUVEM.chave</code> no topo do ' +
       'script com os dados do projeto no Supabase. As instruções completas estão no comentário logo acima, ' +
       'e no README.</p>');
+    return;
+  }
+  /* Aberto antes de a conta responder: mostra que está carregando e se redesenha
+     sozinho quando a resposta chegar (esperarConta) — em vez de uma tela com a
+     situação errada ou vazia. */
+  if (nuvem.estado === "iniciando"){
+    abrirModal("Conta e sincronização",
+      '<p class="sub carregando"><span class="girando" aria-hidden="true"></span>Carregando a sua conta…</p>');
+    esperarConta().then(() => {
+      if (!$("#overlay").hidden && $("#modalTitulo").textContent === "Conta e sincronização") painelNuvem();
+    });
     return;
   }
   const s = lerSessao();
@@ -8104,27 +8472,100 @@ function painelNuvem(){
        : esc(nuvem.estado)) + '</b></div>' +
     (nuvem.erro ? '<p class="sub" style="margin-top:8px">Último erro: '+esc(nuvem.erro)+'</p>' : '') +
     '<div class="linha" style="margin-top:14px;gap:8px">' +
-      '<button class="btn" data-acao="nuvem-sincronizar">Sincronizar agora</button>' +
-      '<button class="btn ghost" data-acao="nuvem-baixar">Trazer da nuvem</button>' +
-      '<button class="act excluir" data-acao="nuvem-sair">Sair da conta</button></div>' +
+      '<button class="btn" data-acao="nuvem-sincronizar">Sincronizar agora</button></div>' +
     '<p class="sub" style="margin-top:14px">Cada alteração sobe sozinha. Se você usar em outro aparelho, ' +
-    'abra com o mesmo e-mail e os dados vêm junto.</p>');
+    'entre com o mesmo e-mail e a mesma senha e os dados vêm junto.</p>');
+}
+/* O PERFIL. A inicial é a do nome da pessoa (o que ela deu ao criar a senha, ou
+   em Editar perfil); sem nome, a do e-mail; sem conta, "?". O nome mora na conta
+   do Supabase (user_metadata.full_name — é o "Display name" do painel dele) e a
+   sessão guarda uma cópia, para aparecer sem internet. Um pontinho no círculo
+   avisa quando a sincronização está parada (âmbar) ou com falha (vermelho). */
+const nomeDoPerfil = () => { const s = lerSessao(); return (s && s.nome) || ""; };
+function inicialDe(nome, email){
+  const letra = (String(nome || "").trim().match(/\p{L}/u) || String(email || "").match(/\p{L}/u) || [""])[0];
+  return letra ? letra.toLocaleUpperCase("pt-BR") : "?";
+}
+function pintarPerfil(){
+  const s = lerSessao(), nome = nomeDoPerfil(), email = (s && s.email) || "";
+  const letra = inicialDe(nome, email);
+  const q = id => document.getElementById(id);
+  if (!q("btnPerfil")) return;
+  q("avatarLetra").textContent = letra; q("menuLetra").textContent = letra;
+  // sem nome, o topo do menu mostra só o e-mail (nada de "sem nome")
+  q("menuNome").textContent = nome || (s ? email : "Você não está na conta");
+  q("menuEmail").textContent = nome ? email : (s ? "" : "os dados ficam só neste navegador");
+  q("menuEmail").hidden = !q("menuEmail").textContent;
+  q("btnPerfil").title = nome || email ? "Perfil de " + (nome || email) : "Seu perfil";
+  q("btnPerfil").setAttribute("aria-label", q("btnPerfil").title);
+  document.querySelectorAll("#menuPerfil .so-conta").forEach(el => { el.hidden = !s; });
+  const ponto = q("avatarPonto");
+  ponto.hidden = !(s && (nuvem.estado === "offline" || nuvem.estado === "erro"));
+  ponto.classList.toggle("falha", nuvem.estado === "erro");
+  const aberto = !!ui.menuPerfil;
+  q("menuPerfil").hidden = !aberto;
+  q("btnPerfil").setAttribute("aria-expanded", String(aberto));
+}
+function abrirMenuPerfil(abrir){
+  ui.menuPerfil = abrir === undefined ? !ui.menuPerfil : !!abrir;
+  pintarChipNuvem(); pintarChipArquivo(); pintarPerfil();
+  if (ui.menuPerfil){ const p = document.querySelector("#menuPerfil .menu-item:not([hidden])"); if (p) try { p.focus(); } catch(e){} }
+}
+/** Editar perfil: o nome e, se quiser, uma senha nova */
+function modalPerfil(){
+  const s = lerSessao(); if (!s) return;
+  abrirModal("Editar perfil",
+    '<form id="formPerfil" novalidate><div class="campos uma-coluna">' +
+      campo("Nome (opcional)", '<input name="nome" maxlength="60" autocomplete="name" value="' + esc(nomeDoPerfil()) + '" placeholder="Como você quer ser chamado">', true,
+            "Em branco, o círculo do perfil usa a primeira letra do e-mail.") +
+      campo("E-mail", '<input value="' + esc(s.email || "") + '" disabled>', true,
+            "É o e-mail da conta, usado para entrar e para receber os códigos.") +
+      '<div class="campo largo"><span>Trocar a senha (opcional)</span>' +
+        '<input type="password" name="senha" autocomplete="new-password" placeholder="Senha nova — pelo menos ' + SENHA_MINIMA + ' caracteres">' +
+        '<input type="password" name="senha2" autocomplete="new-password" placeholder="Repita a senha nova" style="margin-top:6px">' +
+        '<span class="ajuda-campo">Em branco, a senha continua a mesma.</span></div>' +
+    '</div><div class="linha acoes-form"><button class="btn" type="submit">Salvar</button>' +
+      '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+      '<span class="erro-form" id="erroPerfil"></span></div></form>',
+    () => $("#formPerfil").addEventListener("submit", async ev => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(ev.target).entries());
+      const erro = m => { $("#erroPerfil").textContent = m; };
+      const nome = (d.nome || "").trim().replace(/\s+/g, " ");
+      if (d.senha || d.senha2){
+        if ((d.senha || "").length < SENHA_MINIMA) return erro("A senha precisa ter pelo menos " + SENHA_MINIMA + " caracteres.");
+        if (d.senha !== d.senha2) return erro("As duas senhas não são iguais.");
+      }
+      erro("Salvando…");
+      try {
+        const corpo = { data: { full_name: nome } };
+        if (d.senha) Object.assign(corpo, { password: d.senha }, { data: { full_name: nome, senha_criada: true } });
+        await chamarNuvem("/auth/v1/user", { method: "PUT", body: JSON.stringify(corpo) }, true);
+        const agora = lerSessao(); if (agora){ agora.nome = nome; gravarSessao(agora); }
+        fecharModal(); render();
+        toast(d.senha ? "Perfil e senha atualizados." : "Perfil atualizado.");
+      } catch(e){ erro(traduzirErroAcesso(e)); }
+    }));
 }
 /** o chip do cabeçalho conta, em uma linha, onde os dados estão sendo gravados */
 function pintarChipArquivo(){
   const c = document.getElementById("chipArquivo"); if (!c) return;
   const mapa = {
-    indisponivel: ["", "", "", true],
-    desligado:    ["Só no navegador", "atencao", "Os dados só estão no navegador — clique para gravar num arquivo", false],
-    permissao:    ["Reconectar arquivo", "atencao", "Autorize de novo para voltar a gravar em " + arq.nome, false],
-    pronto:       [arq.nome, "ligado", "Gravando em " + arq.nome + (arq.ultimo ? " · último: " + horaDe(arq.ultimo) : ""), false],
-    erro:         ["Falha ao gravar", "falha", arq.erro, false]
+    indisponivel: ["", "", "", "", true],
+    // com a conta, os dados já estão na nuvem: o arquivo é um extra, não um alerta
+    //            [texto, aviso à direita, classe do aviso, título, esconder]
+    desligado:    lerSessao() ? ["Salvar também num arquivo .json", "", "", "Gravar uma cópia num arquivo no computador (Chrome/Edge)", false]
+                              : ["Só no navegador", "", "", "Os dados só estão no navegador — clique para gravar num arquivo", false],
+    permissao:    ["Arquivo " + arq.nome, "reconectar", "atencao", "Autorize de novo para voltar a gravar em " + arq.nome, false],
+    pronto:       ["Arquivo " + arq.nome, "", "", "Gravando em " + arq.nome + (arq.ultimo ? " · último: " + horaDe(arq.ultimo) : ""), false],
+    erro:         ["Arquivo " + (arq.nome || ".json"), "falha ao gravar", "falha", arq.erro, false]
   };
-  const [texto, classe, titulo, esconder] = mapa[arq.estado] || mapa.desligado;
+  const [texto, aviso, classe, titulo, esconder] = mapa[arq.estado] || mapa.desligado;
   c.hidden = esconder;
-  c.className = "chip-arq" + (classe ? " " + classe : "");
+  c.className = "menu-item menu-estado";       // mora no menu do perfil, com o desenho dos outros itens
   c.title = titulo;
-  c.innerHTML = (arq.estado === "pronto" ? "🗎 " : arq.estado === "erro" ? "⚠ " : "") + esc(texto);
+  c.innerHTML = ICONE_ARQUIVO + ' ' + esc(texto) +
+    (aviso ? ' <em class="menu-aviso' + (classe ? " " + classe : "") + '">' + esc(aviso) + '</em>' : '');
 }
 function painelArquivo(){
   const linha = (rot, valor) => '<div class="linha" style="gap:7px"><span class="hl-tema">'+rot+'</span><b>'+valor+'</b></div>';
@@ -8134,7 +8575,7 @@ function painelArquivo(){
   if (arq.estado === "indisponivel"){
     corpo += '<div class="faixa-edicao">Este navegador não deixa a página escrever em arquivos.</div>' +
       '<p class="sub">A gravação automática existe no <b>Chrome</b> e no <b>Edge</b>. Aqui, use os botões ' +
-      '<b>↓ exportar</b> e <b>↑ importar</b> do cabeçalho para guardar e recuperar o seu <code>.json</code> à mão.</p>';
+      '<b>Baixar backup</b> e <b>Enviar backup</b> (no círculo do perfil) para guardar e recuperar o seu <code>.json</code> à mão.</p>';
   } else {
     corpo += linha("Situação:", arq.estado === "pronto" ? "gravando em <code>"+esc(arq.nome)+"</code>"
                   : arq.estado === "permissao" ? "arquivo <code>"+esc(arq.nome)+"</code> aguardando autorização"
@@ -8191,6 +8632,10 @@ function importar(arquivo){
     }
     if (!confirm("Isso substitui todos os dados atuais. Continuar?")) return;
     const soltos = aplicarDados(d);
+    /* A marca do envio. No Supabase, o gatilho do histórico guarda a versão que
+       estava lá SEMPRE que esta marca muda — enviar um backup troca tudo de uma
+       vez, e a versão anterior da nuvem precisa ficar a salvo (estrutura.sql). */
+    db.importadoEm = Date.now();
     persistir(true); render();
     toast(soltos ? "Backup importado — " + soltos + " sessão(ões) saíram do antigo plano por disciplina."
                  : "Backup importado.");
@@ -8200,6 +8645,10 @@ function importar(arquivo){
 
 /* ---------- delegação de eventos ---------- */
 document.addEventListener("click", ev => {
+  // o menu do perfil fecha ao clicar fora dele (e depois de escolher um item)
+  if (ui.menuPerfil && !(ev.target.closest && ev.target.closest("#btnPerfil"))){
+    if (!ev.target.closest("#menuPerfil") || ev.target.closest(".menu-item,.menu-estado")) abrirMenuPerfil(false);
+  }
   // a lista de várias disciplinas (Questões) fecha ao clicar em qualquer lugar fora dela
   if (ui.qDiscsAberto && !(ev.target.closest && ev.target.closest(".multi-disc"))){
     ui.qDiscsAberto = false;
@@ -8212,6 +8661,12 @@ document.addEventListener("click", ev => {
   const id = alvo.dataset.id;
   switch (alvo.dataset.acao){
     case "abrir-ajustes": ev.preventDefault(); modalAjustes(); break;
+    /* o card das datas só INFORMA onde se muda a data (pedido do Pedro, 25/09): antes
+       ele abria os Ajustes, e tocar nele por engano no celular jogava a pessoa lá */
+    case "info-datas":
+      toast(semProva() ? "Para marcar a data da prova, use Ajustes (⚙)."
+                       : "A data da prova pode ser alterada em Ajustes (⚙).");
+      break;
     case "abrir-ajuda": ev.preventDefault(); modalAjuda(); break;
     case "ajuda-ir": ev.preventDefault(); irParaAjuda(alvo.dataset.alvo); break;   // sumário da ajuda
     case "minimizar-anot": {                                // bloco de anotações, com a mesma ancoragem da Agenda
@@ -8372,17 +8827,12 @@ document.addEventListener("click", ev => {
     case "tirar-data-rev": { const t = alvo.closest(".tag"); if (t) t.remove(); return; }
     case "gerar-datas-rev": gerarDatasCadeia(false); return;
     case "escada-datas-rev": gerarDatasCadeia(true); return;
-    case "painel-nuvem": painelNuvem(); break;
+    case "abrir-perfil": abrirMenuPerfil(); break;
+    case "editar-perfil": abrirMenuPerfil(false); modalPerfil(); break;
+    case "painel-nuvem": abrirMenuPerfil(false); painelNuvem(); break;
     case "nuvem-sincronizar": subirParaNuvem().then(() => toast("Sincronizado.")); break;
-    case "nuvem-baixar":
-      if (confirm("Trazer os dados da nuvem? Isso substitui o que está neste navegador."))
-        baixarDaNuvem().then(l => {
-          if (l && pareceBackup(l.conteudo)){ aplicarDados(l.conteudo); persistir(true); fecharModal(); render(); toast("Dados trazidos da nuvem."); }
-          else toast("A nuvem ainda não tem dados desta conta.");
-        }).catch(e => alert("Não deu para baixar: " + e.message));
-      break;
     case "nuvem-sair": sairDaNuvem(); break;
-    case "painel-arquivo": painelArquivo(); break;
+    case "painel-arquivo": abrirMenuPerfil(false); painelArquivo(); break;
     case "arq-criar":  escolherArquivo(true); break;
     case "arq-abrir":  escolherArquivo(false); break;
     case "arq-trocar": escolherArquivo(false); break;
@@ -8480,6 +8930,18 @@ document.addEventListener("click", ev => {
       const r = excluirConteudo(disc, nome);
       persistir(); render();
       toast("“" + nome + "” excluído — " + r.itens + " item(ns) saíram da agenda.");
+      break; }
+    case "revisoes-prova": {
+      if (alvo.dataset.cont){
+        const ficha = acharConteudo(alvo.dataset.disc, alvo.dataset.cont);
+        if (ficha) modalRevisoesProva(ficha);
+        break;
+      }
+      // o atalho da Agenda: começa pelo conteúdo do filtro, se ele puder; senão, pelo primeiro
+      const podem = conteudosCad().filter(podeEscolherAteProva);
+      const doFiltro = podem.find(c => chaveDaFicha(c) === ui.aAssunto) ||
+                       podem.find(c => ui.aDisciplina && c.disciplina === ui.aDisciplina);
+      if (podem.length) modalRevisoesProva(doFiltro || podem[0], true);
       break; }
     case "renomear-conteudo":
       pedirNomeDoConteudo(alvo.dataset.disc, alvo.dataset.cont).then(novo => {
@@ -8705,6 +9167,7 @@ document.addEventListener("change", ev => {
 document.addEventListener("keydown", ev => {
   if (ev.key !== "Escape") return;
   if (dialogoAberto){ dialogoAberto.cancelar(); return; }       // a pergunta curta fecha sozinha
+  if (ui.menuPerfil){ abrirMenuPerfil(false); const b = document.getElementById("btnPerfil"); if (b) b.focus(); return; }
   if (!$("#overlay").hidden) fecharModal();
 });
 document.addEventListener("mousedown", ev => {
@@ -8894,6 +9357,7 @@ function verificarVirada(){
   const mesAnterior = diaCorrente.slice(0,7);
   diaCorrente = agora;
   if (seguiaHoje) ui.diaSel = agora;
+  ui.cronoDestino = "";                            // o cronômetro recomeça do zero no dia novo
   if (ui.mesCal === mesAnterior) ui.mesCal = agora.slice(0,7);
   if (garantirAgenda()) persistir();            // o dia virou: ninguém fica sem agendamento
   render();
@@ -8939,7 +9403,15 @@ arranqueFeito = true;             // daqui em diante, gravar é mexer de verdade
 iniciarArquivo();                 // religa o .json escolhido antes, se houver
 iniciarNuvem();                   // e a conta da nuvem, se houver sessão salva
 // voltou a ter conexão: sobe o que ficou pendente
-window.addEventListener("online", () => { if (nuvem.pendente) subirParaNuvem(); });
+/* A CONEXÃO VOLTOU. Se o app abriu sem internet, a conferência com a conta (baixar o
+   que for mais novo, subir o que ficou aqui) nunca aconteceu — ela é refeita agora,
+   em vez de esperar a próxima alteração ou um recarregar. Se só havia gravação
+   pendente, basta subir. */
+window.addEventListener("online", () => {
+  if (!lerSessao() || !nuvemLigada()) return;
+  if (nuvem.estado === "offline" || nuvem.estado === "iniciando") iniciarNuvem();
+  else if (nuvem.pendente) subirParaNuvem();
+});
 /* Pede ao navegador que trate estes dados como permanentes: sem isso ele pode
    descartá-los sozinho quando o disco aperta. Não protege de uma limpeza feita
    à mão, mas tira o risco de sumiço silencioso. */

@@ -623,6 +623,103 @@ git checkout f7b87bb               # a main antes da escada por conteúdo
    por `nuvem.js`). As suítes antigas abrem o app com `window.__semLogin` (o app real nunca liga).
    **No Supabase (Pedro):** modelo **Reset Password** com `{{ .Token }}` e senha mínima 8.
 
+62. **Perfil no cabeçalho** (25/09, pedido do Pedro). Círculo com a **inicial do nome** (`#btnPerfil`, `pintarPerfil`,
+   `inicialDe`) e um menu: nome e e-mail, situação da sincronização (`#chipNuvem`, agora "Sincronizado às…"),
+   **Editar perfil** (`modalPerfil`: nome; e-mail só leitura; senha nova opcional), **Baixar backup**, **Enviar
+   backup** (`#btnExportar`/`#btnImportar` foram para o menu), o arquivo no computador (`#chipArquivo`; com conta, vira
+   "Salvar também num arquivo .json") e **Sair da conta**. Configurações, ajuda e modo noturno ficaram lado a lado.
+   Pontinho no círculo quando a sincronização para (âmbar) ou falha (vermelho). O **nome** é pedido ao criar a senha
+   (primeiro acesso e conta antiga; não no "esqueci") e mora na conta do Supabase (`user_metadata.full_name`, o
+   "Display name" do painel), com cópia na sessão. **Banco:** o nome não pede mudança; o **Enviar backup** pediu a
+   `supabase/alteracao-01-backup-enviado.sql` — o app marca o envio (`importadoEm`) e o gatilho guarda a versão da
+   nuvem sempre que a marca muda (antes, um backup maior enviado dentro das 6 h passava sem guardar a anterior).
+   Testes em `login.js` (menu, perfil, nome) e `supabase.js` (alteração 01).
+   **Banco do projeto real conferido em 25/09:** o Pedro rodou a alteração 01 e uma consulta de conferência deu os 7
+   itens "ok" (4 regras de acesso, permissões enxutas, anon sem acesso, histórico que guarda quando encolhe e quando
+   chega backup, gatilho ligado, funções internas fechadas) — o banco está igual ao `estrutura.sql` atual.
+   No mesmo dia o Pedro configurou o modelo **Reset Password** (com `{{ .Token }}`) e a **senha mínima 8**, e testou
+   no app real: criar a senha, o nome no Editar perfil e o círculo com a inicial — ok. (Commit ainda não pedido.)
+   **Ajustes do mesmo dia (pedido do Pedro):** o item da conta no menu virou **"Conta e sincronização"**, com o mesmo
+   desenho dos outros itens; a situação vai no título e, só quando há algo a dizer, numa palavra miúda à direita
+   ("sem conexão", "salvando…"). Todos os ícones do menu viraram traço fino (SVG), na cor da marca — o ☁ e o 🗎
+   saíam como emoji colorido. O **nome é opcional** (criar a senha e Editar perfil); sem ele, o círculo usa a inicial
+   do e-mail e o topo do menu mostra só o e-mail. O painel "Conta e sincronização" perdeu **Trazer da nuvem** e
+   **Sair da conta** (sair fica só no menu do perfil).
+
+63. **Conta sempre à vista e cronômetro no meio do cabeçalho** (25/09, pedido do Pedro).
+   - **"Conta e sincronização" aparece já na abertura** (antes ficava escondido até a primeira resposta do Supabase,
+     que demora mais depois de o app ficar fechado): com a conta configurada e alguém logado, o estado de partida é
+     `iniciando` → "carregando…" no item. Aberto o painel antes da resposta, ele mostra "Carregando a sua conta…" (com
+     uma rodinha) e se redesenha sozinho quando a conta responde (`esperarConta`, assíncrona, até 20 s).
+   - **Cronômetro rodando embaixo da contagem da prova** (`#centroTopo`: `#regressiva` + `#cronoChip`), não mais à
+     direita. Na versão web (>900px) a contagem sobe ~16px e o conjunto não empurra as abas (3px, medido); no celular
+     o cabeçalho só cresce um pouco (o Pedro pediu o deslocamento só na web).
+   - Testes em `login.js` (conta carregando, painel que se atualiza, cronômetro no meio).
+
+64. **Marca e perfil maiores** (25/09, pedido do Pedro). "Plataforma de Estudos" 25→29px e o bloco do livro 36→44px
+   (no celular, 24px e 40px); o círculo do perfil 36→44px, letra 19px. **Celular e tablet** (cabeçalho empilhado): o
+   perfil sai da fileira de botões e fica no **canto superior direito** (primeiro foi o esquerdo; o Pedro pediu o
+   direito no mesmo dia), na altura do nome; o nome se afasta (54px) e o menu abre alinhado pela direita.
+   Na mesma leva, a fileira de baixo do cabeçalho empilhado ocupa a largura toda: **datas à esquerda, ajustes/ajuda/
+   tema à direita**, meio vazio. O cabeçalho passou a empilhar **até 1060px** (era 900): com o nome maior, a 980px
+   ele já encostava na contagem da prova — medido a 1100px (folga de 21px) e a 980px (empilhado). O ajuste do
+   cronômetro na web acompanha (≥1061px).
+
+65. **Cabeçalho mais enxuto e cronômetro que lembra a sessão** (25/09, pedidos do Pedro).
+   - **Cronômetro no cabeçalho um pouco menor** (web e celular; o card da aba Hoje ficou como era, a pedido) e a
+     **contagem de dias até a prova** também (número 27→23px, menos folga).
+   - **O card Prova/Hoje não abre mais os Ajustes**: tocar nele mostra o aviso "A data da prova pode ser alterada em
+     Ajustes (⚙)" (`info-datas`) — tocar por engano no celular jogava a pessoa nos Ajustes.
+   - **⚙ e ◐ trocaram de lugar**: datas, ◐, ?, ⚙ e o perfil.
+   - **Sem data de prova** (sem objetivo, ou concurso/vestibular com data a definir): a **contagem some** e o card
+     das datas mostra **só hoje** (antes: "Estudo contínuo · sem data de prova" e "Sem objetivo").
+   - **A sessão escolhida no cronômetro fica escolhida** — ao fechar e abrir, ao encerrar — e só zera em **outro dia**
+     (`cronoDestino` no estado de tela, apagado quando o dia salvo não é hoje e na virada do dia). Cronômetro que
+     criou uma sessão nova passa a apontar para ela.
+   - Testes: `cronosessao.js` (memória do cronômetro), `objetivos`/`semprova` (sem data de prova), `ajustesajuda`
+     (o card das datas — o teste antigo passava por acaso, lendo o título de um modal já fechado), `login` (ordem).
+
+66. **Contagem da prova sem os fogos** (25/09, pedido do Pedro). Saíram os 🔥 (antes: 1 de cada lado, 2 na última
+   quinzena, 3 na última semana); a urgência continua na cor (vermelha na última semana). O espaço virou letra maior
+   no limite de o card não crescer — busca feita no navegador: número 23→**32px** na web e 21→**28px** no celular,
+   rótulo 12,5→**15px**; a altura é quem limita, e a largura que sobra ficou de respiro dos lados. Medido: 225×42
+   (era 226×42) na web, 216×38 (era 218×38) no celular. `cabecalho.js` reescrita para a contagem sem fogo.
+
+67. **Dois textos a menos** (25/09, pedido do Pedro): saiu a frase "Para sair da conta, use o círculo do perfil." do
+   painel Conta e sincronização, e o botão **Ir para a aba Disciplinas** dos Ajustes.
+
+68. **Reconectar quando a internet volta** (25/09). Ao evento `online`, se a conta estava *offline* (ou
+   presa em *iniciando*), a nuvem é reiniciada; se só havia gravação pendente, ela sobe. A sessão continua
+   guardada: sem internet ninguém é deslogado (`renovarSessao` só desloga em resposta 4xx). Teste em `nuvem.js`.
+
+69. **Revisões até a prova, escolhidas por conteúdo** (25/09, pedido do Pedro; escolhas dele: *eu escolho as
+   datas*, *depois da prova volta ao automático*, entradas na *aba Disciplinas e no card da Agenda por assunto*).
+   Botão **até a prova** só em conteúdo **concluído** com prova à frente (`podeEscolherAteProva`). Janela
+   `modalRevisoesProva`: Automáticas / Eu escolho, quantidade (1 até os dias livres, máx. 30) e uma data por
+   revisão, sugeridas por igual até a véspera (`sugerirDatasAteProva`). Salvar (`definirRevisoesProva`): saem as
+   automáticas pendentes do conteúdo e as pendentes até a prova; nascem itens `manual:true, planoProva:true`, no
+   degrau da última feita; `ficha.revisoesProva = <data da prova>`. `pausaAteProva` faz `continuarEscada` e
+   `reespacarEscada` só criarem depois da prova; `reancorarEscada` e `remanejarItem` não empurram `planoProva`.
+   Passada a data, `garantirEscadas` apaga o sinal e a escada segue. Reabrir o conteúdo (`marcarConteudos`) tira
+   o sinal e as escolhidas pendentes. Meta na linha do conteúdo e selo "datas suas até DD/MM" no card da Agenda.
+   Suíte `revprova.js` (31 verificações).
+
+70. **Personalizar na Agenda e filtros mais justos no celular** (25/09, pedido do Pedro). O botão das revisões
+   até a prova saiu do card da Agenda por assunto (ficou só o selo "datas suas até DD/MM") e virou o atalho
+   **Personalizar revisões até a prova**, logo abaixo da linha *Revisões* (só em *A fazer* e quando há conteúdo
+   que pode). Vindo dali, a janela tem um seletor de conteúdo (só os concluídos, com "(personalizado)" nos que já
+   estão), que começa no conteúdo do filtro (`ui.aAssunto`) ou na disciplina filtrada. O modo "Eu escolho
+   quantas e quando" passou a se chamar **Personalizar**. No celular, os filtros da Agenda ficaram mais justos:
+   o rótulo não reserva mais 72px, o espaço entre os botões caiu para 6px e os botões diminuíram um pouco. Em
+   390px, *Situação: A fazer · Concluídos* e *Revisões: …* cabem numa linha só. Banco: nenhuma mudança (os campos
+   novos `revisoesProva`/`planoProva` vão dentro do JSON). `revprova.js` com 37 verificações.
+
+71. **Uma entrada só, sem emoji** (25/09, pedido do Pedro). Saiu o botão "até a prova" da aba Disciplinas
+   (`botaoAteProva` removida): a única entrada é o atalho **Personalizar revisões até a prova** da Agenda. Na
+   linha do conteúdo, em Disciplinas, continua só o aviso "N revisões escolhidas até DD/MM — automático
+   pausado até lá". Saiu também o emoji de calendário do atalho, do aviso e do selo do card. O texto da Ajuda
+   foi da aba Disciplinas para a da Agenda. `revprova.js` com 39 verificações.
+
 ## O que falta (sinalizado em 23/09)
 
 - ~~**Commit e merge do ramo `escada-por-conteudo`**~~ — **FEITO** em 23/09, a pedido do Pedro. Ao abrir

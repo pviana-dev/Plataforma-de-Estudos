@@ -52,7 +52,9 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
 
   click($('[data-acao="fechar-modal"]')); await espera(150);
   click($("#chipData")); await espera(250);
-  ok("o botão da prova também abre os ajustes", $("#modalTitulo").textContent==="Ajustes");
+  // desde 25/09 o card das datas só avisa onde se muda a data — não abre mais os Ajustes
+  ok("o card das datas avisa que a data se altera em Ajustes, sem abrir os Ajustes",
+     $("#overlay").hidden && /alterada em Ajustes|marcar a data da prova/.test($("#toast").textContent), $("#toast").textContent);
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\najustes e ajuda separados");
   process.exit(falhas?1:0);

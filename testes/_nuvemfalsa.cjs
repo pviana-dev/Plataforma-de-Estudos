@@ -45,8 +45,12 @@ module.exports = function servidorFalso(){
       if (metodo === "PUT"){
         if (!achado) return resp(401, { msg: "invalid JWT" });
         const [email, u] = achado;
-        if ((corpo.password || "").length < 8) return resp(422, { msg: "Password should be at least 8 characters." });
-        u.senha = corpo.password; Object.assign(u.meta, corpo.data || {});
+        // como o Supabase: a senha só é conferida quando vem; atualizar só o nome não pede senha
+        if (corpo.password !== undefined){
+          if ((corpo.password || "").length < 8) return resp(422, { msg: "Password should be at least 8 characters." });
+          u.senha = corpo.password;
+        }
+        Object.assign(u.meta, corpo.data || {});
         return resp(200, { id: u.id, email, user_metadata: u.meta });
       }
       // sessões antigas dos testes (token "tok"): contas que já têm senha, salvo se o teste disser outra coisa

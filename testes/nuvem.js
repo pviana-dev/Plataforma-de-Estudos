@@ -54,10 +54,13 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   ok("código errado é recusado com aviso", /inválido ou vencido/i.test(tela().textContent), tela().textContent.slice(0,200));
   $('#formAcesso [name="codigo"]').value="123456"; enviar(); await espera(300);
   ok("com o código certo, pede para criar a senha", !!$('#formAcesso [name="senha2"]'));
+  $('#formAcesso [name="nome"]').value="Pessoa Teste";
   $('#formAcesso [name="senha"]').value="segredo123"; $('#formAcesso [name="senha2"]').value="segredo123"; enviar();
   await espera(500);
-  ok("com o código certo, entra", /pessoa/.test(doc.getElementById("chipNuvem").textContent),
-     doc.getElementById("chipNuvem").textContent);
+  ok("com o código certo, entra (o menu do perfil mostra a conta, e 'Conta e sincronização' está em dia)",
+     /Conta e sincronização/.test(doc.getElementById("chipNuvem").textContent) && /Sincronizado/.test(doc.getElementById("chipNuvem").title) &&
+     !doc.querySelector("#chipNuvem .menu-aviso") && /pessoa@exemplo\.com/.test(doc.getElementById("menuEmail").textContent),
+     [doc.getElementById("chipNuvem").textContent, doc.getElementById("chipNuvem").title, doc.getElementById("menuEmail").textContent]);
   ok("a sessão ficou salva", !!JSON.parse(w.localStorage.getItem("plataforma-estudos:sessao")||"null"));
   ok("os dados locais subiram na primeira conexão", !!srv.linha && srv.linha.conteudo.registros.length===1,
      srv.linha && srv.linha.conteudo.registros.length);
@@ -90,13 +93,23 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const dom3=abrir(configurado,srv3,{access_token:"tok",refresh_token:"ref",email:"pessoa@exemplo.com",uid:"u1"});
   await espera(400);
   const c3=dom3.window.document.getElementById("chipNuvem");
-  ok("sem conexão o chip avisa", /Sem conexão/.test(c3.textContent), c3.textContent);
+  ok("sem conexão, 'Conta e sincronização' avisa", /sem conexão/i.test(c3.textContent), c3.textContent);
+
   /* a gravação que dá certo não pode aparecer como erro (201 vazio — 25/09, Safari) */
   ok("gravar com sucesso (201 sem corpo) deixa o chip 'sincronizado', não 'sem conexão'",
-     !/Sem conexão/.test(chip.textContent) && !/Sem conexão/.test(doc.getElementById("chipNuvem").textContent),
+     !/sem conexão/i.test(chip.textContent) && !/sem conexão/i.test(doc.getElementById("chipNuvem").textContent),
      doc.getElementById("chipNuvem").textContent);
   ok("e os dados locais continuam intactos",
      JSON.parse(dom3.window.localStorage.getItem("plataforma-estudos:v1")).registros.length===1);
+  /* a conexão volta: a conferência com a conta é refeita sozinha (dados mais novos da nuvem chegam) */
+  srv3.linha={conteudo:{...seed,registros:[...seed.registros,{id:"rN",data:hoje,disciplina:"Legislação",assuntos:["Da volta"],assunto:"Da volta",minutos:10,questoes:0,acertos:0,dificuldade:2,anotacoes:"",criadoEm:5}],atualizadoEm:Date.now()+60000},
+              atualizado_em:new Date(Date.now()+120000).toISOString()};
+  srv3.fetch=servidorFalso().fetch; const certo=servidorFalso(); certo.linha=srv3.linha; dom3.window.fetch=certo.fetch;
+  dom3.window.dispatchEvent(new dom3.window.Event("online")); await espera(600);
+  ok("voltando a conexão, o app refaz a conferência sozinho e traz o que é mais novo",
+     JSON.parse(dom3.window.localStorage.getItem("plataforma-estudos:v1")).registros.some(r=>r.assunto==="Da volta") &&
+     !/sem conexão/i.test(dom3.window.document.getElementById("chipNuvem").textContent),
+     dom3.window.document.getElementById("chipNuvem").textContent);
 
   /* ---- 6. OUTRA CONTA no mesmo navegador: não mistura os dados ---- */
   const abrirCom=(srvX,sessao,dados,resposta)=>new JSDOM(configurado,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,

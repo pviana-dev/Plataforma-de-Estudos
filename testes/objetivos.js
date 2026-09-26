@@ -59,8 +59,10 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   ok("e não pergunta nada", $(w,"#overlay").hidden);
   w=abrir({dataProva:""}); await espera(300);
   ok("base sem data vira Sem objetivo", db(w).objetivo==="livre", db(w).objetivo);
-  ok("o topo diz estudo contínuo e o chip, Sem objetivo",
-     /Estudo contínuo/.test(topo(w)) && /Sem objetivo/.test($(w,"#chipData").textContent), [topo(w), $(w,"#chipData").textContent]);
+  // desde 25/09: sem data de prova, a contagem some e o card das datas mostra só hoje
+  ok("sem data de prova, a contagem some e o card mostra só hoje",
+     $(w,"#regressiva").hidden && !topo(w).trim() && /^Hoje\d/.test($(w,"#chipData").textContent.trim()) &&
+     !/Prova|Sem objetivo/.test($(w,"#chipData").textContent), [topo(w), $(w,"#chipData").textContent]);
 
   /* ---- 2. primeira abertura ---- */
   w=abrir(null, true); await espera(300);
@@ -199,7 +201,7 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   await ajustes(w, doc=>escolher(doc,"livre"));
   ok("Sem objetivo mantém as duas configurações", db(w).dataProva===dia(30) && db(w).vestibular.dias.length===2);
   await ajustes(w, doc=>{ escolher(doc,"concurso"); doc.querySelector('[name="dataProva"]').value=""; });
-  ok("concurso sem data fica 'data a definir'", db(w).objetivo==="concurso" && /Concurso · data a definir/.test(topo(w)), topo(w));
+  ok("concurso sem data: a contagem some (não há o que contar)", db(w).objetivo==="concurso" && $(w,"#regressiva").hidden, topo(w));
 
   /* ---- 9. validação dos dias ---- */
   w=abrir(VEST([{id:"d1",nome:"1º dia",data:dia(-1)},{id:"d2",nome:"2º dia",data:dia(6)}],{"Legislação":"d1"}));

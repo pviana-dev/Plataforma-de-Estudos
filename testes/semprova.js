@@ -48,9 +48,10 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   await espera(300);
   const w=livre.window, doc=livre.window.document, $=s=>doc.querySelector(s);
   const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
-  ok("sem data, o topo mostra estudo contínuo", /Estudo contínuo/.test($("#regressiva").textContent),
+  ok("sem data, a contagem de dias até a prova some", $("#regressiva").hidden && !$("#regressiva").textContent.trim(),
      $("#regressiva").textContent);
-  ok("e o chip do cabeçalho diz o objetivo", /Sem objetivo/.test($("#chipData").textContent), $("#chipData").textContent);
+  ok("e o card das datas mostra só hoje", /Hoje/.test($("#chipData").textContent) && !/Prova|Sem objetivo/.test($("#chipData").textContent),
+     $("#chipData").textContent);
   click(doc.querySelector('[data-aba="registros"]')); await espera(200);
   click(doc.querySelector('[data-acao="editar-registro"]')); await espera(200);
   ok("o formulário fala em ritmo, não em data", /no seu ritmo/.test($("#modalCorpo").textContent) ||

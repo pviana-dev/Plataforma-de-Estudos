@@ -1500,6 +1500,29 @@ quiser** marcar à mão. Três regras:
 Scrum, e XP fica onde estava. Itens que nascem juntos (mesma sessão, mesmo dia, mesmo degrau) viram
 um card só.
 
+### Revisões até a prova escolhidas por você
+
+Num conteúdo **concluído**, com prova marcada à frente, dá para escolher as revisões até a prova.
+A entrada é o atalho **Personalizar revisões até a prova**, na **Agenda**, logo abaixo de *Revisões:
+só as 2 próximas / todas as agendadas*. Ele abre uma janela com um seletor de conteúdo (só os
+concluídos), que já começa no conteúdo do filtro, se houver um. A janela tem dois modos:
+
+- **Automáticas** — a escada de sempre.
+- **Personalizar** — você diz quantas revisões quer até a prova (de 1 até os dias que
+  sobram, no máximo 30) e o dia de cada uma. A plataforma só **sugere** datas espaçadas por igual,
+  com a última na véspera; dá para trocar qualquer uma. Não aceita duas no mesmo dia, dia de prova
+  nem data da prova em diante.
+
+No modo *Personalizar*, até a prova **só as suas revisões aparecem** para aquele conteúdo: a escada
+automática dele fica **pausada** (as automáticas pendentes saem, e nenhuma nasce antes da prova).
+As datas escolhidas **não são empurradas** por contato nem por remanejar outra revisão — são suas.
+A escolha é **por conteúdo**: os outros conteúdos da disciplina seguem no automático.
+
+No **dia seguinte à prova**, o automático volta sozinho, do degrau em que a escada estava (as
+revisões escolhidas não sobem degrau, para a escada voltar inteira). A data da prova fica guardada
+no conteúdo (`revisoesProva`): marcar outra prova depois não estende a pausa. **Reabrir** o conteúdo
+desfaz o modo, e voltar a *Automáticas* na janela também.
+
 ### A prova passou — e agora?
 
 Antes o sistema **simplesmente parava**: a véspera ficava no passado, a janela virava negativa e
@@ -1703,7 +1726,9 @@ aba. Abrindo em outro aparelho com o mesmo e-mail, os dados vêm junto.
 - A regra de segurança (RLS) garante que **cada conta só enxerga a própria linha**.
 - Se uma gravação estragar os dados, o **histórico** do Supabase guarda as versões dos últimos 30 dias
   (recuperação pelo SQL Editor — receita no fim de `supabase/estrutura.sql`).
-- O botão **↓ exportar** continua ali: quem usa pode sair com os dados quando quiser.
+- **O perfil** (o círculo com a inicial do nome, no canto do topo) reúne a conta: a situação da sincronização,
+  **Editar perfil** (nome e senha), **Baixar backup**, **Enviar backup** e **Sair da conta**. Quem usa pode sair
+  com os dados quando quiser (Baixar backup). Configurações, ajuda e modo noturno ficam ao lado, soltos.
 
 ### E o SQLite?
 
@@ -1749,7 +1774,7 @@ buraco de segurança. Daí duas consequências:
   existe*, apontar o `.json` e tudo volta.
 
 **Firefox e Safari não têm essa API.** Lá o chip fica escondido e continua valendo o backup manual:
-**↓** exporta o `.json`, **↑** importa de volta. O painel explica isso quando não há suporte.
+**Baixar backup** exporta o `.json`, **Enviar backup** importa de volta (os dois no menu do perfil). O painel explica isso quando não há suporte.
 
 ## Os testes
 

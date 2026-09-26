@@ -51,6 +51,19 @@ const botao=w=>w.document.querySelector('.card-crono [data-acao="ir-para-sessao"
   w=abrir(seed({cronometro:{inicio:Date.now()-60000,disciplina:"",assunto:"",destinoTipo:null,destinoId:null}})); await espera(400);
   ok("rodando para uma sessão nova, não há botão", !botao(w));
 
+  /* ---- a sessão escolhida continua escolhida; só outro dia zera (25/09) ---- */
+  w=abrir(seed()); await espera(400);
+  escolher(w,"registro:r2"); await espera(150);
+  const tela=JSON.parse(w.localStorage.getItem("plataforma-estudos:tela"));
+  ok("a escolha do cronômetro fica guardada", tela.cronoDestino==="registro:r2", tela.cronoDestino);
+  w=abrir(seed(), {cronoDestino:"registro:r2"}); await espera(400);
+  ok("fechando e abrindo no mesmo dia, a sessão continua escolhida",
+     w.document.querySelector("#cronoDestino").value==="registro:r2" && !!botao(w) && botao(w).dataset.id==="r2");
+  const ontem=iso(new Date(Date.now()-864e5));
+  w=abrir(seed(), {cronoDestino:"registro:r2", gravadoEm:ontem}); await espera(400);
+  ok("em outro dia, o cronômetro recomeça do zero", !w.document.querySelector("#cronoDestino").value && !botao(w),
+     w.document.querySelector("#cronoDestino").value);
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\ndo cronômetro até a sessão funcionando");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

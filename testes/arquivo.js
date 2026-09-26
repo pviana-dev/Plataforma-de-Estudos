@@ -19,7 +19,7 @@ setTimeout(()=>{
   setTimeout(()=>{
     const m=doc.getElementById("modalCorpo").textContent;
     ok("o painel explica a limitação e aponta o caminho manual",
-       /não deixa a página escrever/.test(m) && /exportar/.test(m), m.slice(0,140));
+       /não deixa a página escrever/.test(m) && /Baixar backup/.test(m), m.slice(0,140));
 
     /* ---- 2. navegador COM a API: arquivo falso em memória ---- */
     let disco = JSON.stringify({...seed, registros:[...seed.registros,

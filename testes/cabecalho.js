@@ -13,45 +13,31 @@ function abrir(prova){
 }
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{try{
-  /* ---- fogo cresce com a urgência ---- */
+  /* ---- a contagem sem os fogos (25/09): número e rótulo, letra maior; urgência na cor ---- */
   let w=abrir(mais(40)); await espera(300);
   let reg=w.document.querySelector("#regressiva");
-  const fogos=r=>[...r.querySelectorAll(".fogo")];
-  ok("com prova distante, um fogo de cada lado",
-     fogos(reg).length===2 && fogos(reg).every(f=>f.textContent==="🔥"),
-     fogos(reg).map(f=>f.textContent));
-  ok("o fogo ladeia a contagem, nas duas pontas da caixa",
-     reg.firstElementChild.classList.contains("fogo") &&
-     reg.lastElementChild.classList.contains("fogo"),
-     [reg.firstElementChild.className, reg.lastElementChild.className]);
-  ok("com o número e o rótulo no meio",
-     /^🔥\d+\s*dias para a prova🔥$/.test(reg.textContent.trim()), reg.textContent.trim());
-  ok("e não é lido pelo leitor de tela",
-     fogos(reg).every(f=>f.getAttribute("aria-hidden")==="true"));
-
+  ok("com prova distante: só o número e o rótulo, sem fogo", /^40\s*dias para a prova$/.test(reg.textContent.trim()) &&
+     !reg.querySelector(".fogo") && !/🔥/.test(reg.textContent), reg.textContent.trim());
+  ok("a letra cresceu no espaço dos fogos (número 32px, rótulo 15px)",
+     /\.regressiva b\{font-size:32px/.test(html) && /\.regressiva span\{font-size:15px/.test(html));
   w=abrir(mais(12)); await espera(300);
   reg=w.document.querySelector("#regressiva");
-  ok("na última quinzena, dois fogos de cada lado", (reg.textContent.match(/🔥/g)||[]).length===4, reg.textContent);
-
+  ok("na última quinzena, ainda sem fogo", !/🔥/.test(reg.textContent) && !reg.className.includes("urgente"), reg.textContent);
   w=abrir(mais(5)); await espera(300);
   reg=w.document.querySelector("#regressiva");
-  ok("na última semana, três de cada lado", (reg.textContent.match(/🔥/g)||[]).length===6, reg.textContent);
-  ok("e a contagem segue vermelha de urgente", reg.className.includes("urgente"), reg.className);
-
+  ok("na última semana, sem fogo e vermelha de urgente", !/🔥/.test(reg.textContent) && reg.className.includes("urgente"), reg.className);
   w=abrir(iso(hoje)); await espera(300);
   reg=w.document.querySelector("#regressiva");
-  ok("no dia da prova ainda pega fogo", /hoje/.test(reg.textContent) && /🔥/.test(reg.textContent), reg.textContent);
-
+  ok("no dia da prova, 'hoje', sem fogo", /hoje/.test(reg.textContent) && !/🔥/.test(reg.textContent), reg.textContent);
   w=abrir(mais(-3)); await espera(300);
   reg=w.document.querySelector("#regressiva");
-  ok("depois da prova, sem fogo", !/🔥/.test(reg.textContent), reg.textContent);
-
+  ok("depois da prova, os dias desde ela", /desde a prova/.test(reg.textContent), reg.textContent);
   w=abrir(""); await espera(300);
   reg=w.document.querySelector("#regressiva");
-  ok("no estudo contínuo, sem fogo", !/🔥/.test(reg.textContent), reg.textContent);
+  ok("sem data de prova, a contagem nem aparece", reg.hidden, reg.textContent);
 
   /* ---- nome e abas maiores ---- */
-  ok("o nome da plataforma cresceu", /\.brand h1\{font-size:25px/.test(html));
+  ok("o nome da plataforma cresceu (29px desde 25/09)", /\.brand h1\{font-size:29px/.test(html));
   ok("as abas ganharam caixa maior", /\.aba\{[^}]*?padding:10px 19px[^}]*?font-size:14\.5px/s.test(html));
   ok("e o texto da aba não selecionada saiu do cinza de desabilitado",
      /\.aba\{[^}]*?color:var\(--text-2\)/s.test(html));

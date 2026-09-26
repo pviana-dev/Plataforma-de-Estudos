@@ -57,6 +57,8 @@ grant select, insert, update on public.dados to authenticated;
 --   · SEMPRE que os dados ENCOLHEM (menos sessões, anotações, conteúdos ou
 --     baterias de questões do que antes) — é a cara de uma gravação por cima com
 --     dado velho, e também de uma exclusão que você pode querer desfazer;
+--   · SEMPRE que chega um BACKUP ENVIADO pelo menu do perfil (o app marca o
+--     envio em `importadoEm`): ele troca tudo de uma vez;
 --   · e, no dia a dia, no máximo uma a cada 6 horas.
 -- Ficam as dos últimos 30 dias, até 200 por conta (cabe folgado no plano
 -- gratuito). Recuperar é pelo SQL Editor (receita no fim do arquivo).
@@ -101,6 +103,7 @@ set search_path = ''
 as $$
 begin
   if public.itens_do_conteudo(new.conteudo) < public.itens_do_conteudo(old.conteudo)
+     or (new.conteudo ->> 'importadoEm') is distinct from (old.conteudo ->> 'importadoEm')
      or not exists (
        select 1 from public.dados_historico h
         where h.usuario = old.id

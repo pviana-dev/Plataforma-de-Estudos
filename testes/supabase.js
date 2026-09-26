@@ -97,6 +97,22 @@ ok("dados que encolhem (aparelho vazio por cima) guardam a versão boa na hora, 
 for (let i = 0; i < 205; i++){ await como(A, () => upsert(A, { registros: Array(i % 2 ? 3 : 2).fill(0) })); }
 ok("no máximo 200 versões por conta", (await q("select count(*)::int n from public.dados_historico where usuario=$1", [A]))[0].n <= 200,
    (await q("select count(*)::int n from public.dados_historico where usuario=$1", [A]))[0].n);
+// --- alteração 01: backup enviado guarda a versão anterior, mesmo dentro das 6 horas e sem encolher ---
+await db.exec(fs.readFileSync(__dirname + "/../supabase/alteracao-01-backup-enviado.sql", "utf8"));
+ok("a alteração 01 roda por cima da estrutura", true);
+await q("update public.dados_historico set arquivado_em = now() - interval '7 hours' where usuario=$1", [A]);
+await como(A, () => upsert(A, { registros: [1, 2, 3] }));                // uma versão normal (abre a janela de 6 h)
+const antesEnvio = (await q("select count(*)::int n from public.dados_historico where usuario=$1", [A]))[0].n;
+await como(A, () => upsert(A, { registros: [1, 2, 3, 4], importadoEm: 111 }));   // enviou um backup MAIOR, 1 minuto depois
+const depoisEnvio = (await q("select count(*)::int n from public.dados_historico where usuario=$1", [A]))[0].n;
+const guardada = (await q("select conteudo from public.dados_historico where usuario=$1 order by id desc limit 1", [A]))[0];
+ok("enviar um backup guarda a versão da nuvem na hora (maior, dentro das 6 h)",
+   depoisEnvio === antesEnvio + 1 && guardada.conteudo.registros.length === 3, { antesEnvio, depoisEnvio, guardada });
+await como(A, () => upsert(A, { registros: [1, 2, 3, 4, 5], importadoEm: 111 }));  // edição comum depois do envio
+ok("editar depois do envio (mesma marca) não guarda de novo",
+   (await q("select count(*)::int n from public.dados_historico where usuario=$1", [A]))[0].n === depoisEnvio);
+ok("e a função continua fechada para quem está de fora",
+   (await como(A, () => tenta(() => q("select public.arquivar_versao_anterior()")))).startsWith("erro"));
 console.log(falhas ? "\n" + falhas + " FALHA(S)" : "\nestrutura do Supabase conferida");
 
 process.exit(falhas ? 1 : 0);
