@@ -157,6 +157,18 @@ function abrir(srv, sessao, fetchQuebrado){
   t.campo("senha","novasenha9"); await t.enviar(500);
   ok("a nova vale", t.tela().hidden);
 
+  /* ---- 5b. cadastro fechado no Supabase ---- */
+  srv=servidorFalso(); srv.cadastroFechado=true; srv.conta("ana@exemplo.com","senhaboa1"); t=abrir(srv); await espera(400);
+  await t.ir("primeiro"); t.campo("email","novo@exemplo.com"); await t.enviar();
+  ok("cadastro fechado: e-mail novo vê o aviso de falar com o administrador (não 'código inválido')",
+     /ainda não tem acesso ao app/.test(t.texto()) && /entre em contato com o administrador/.test(t.texto()) &&
+     !/Código inválido/.test(t.texto()) && !t.$('#formAcesso [name="codigo"]'), t.texto().slice(0,300));
+  t.campo("email","ana@exemplo.com"); await t.enviar();
+  ok("cadastro fechado: quem já tem conta recebe o código normalmente", !!t.$('#formAcesso [name="codigo"]'));
+  t=abrir(srv); await espera(400);
+  t.campo("email","ana@exemplo.com"); t.campo("senha","senhaboa1"); await t.enviar(500);
+  ok("cadastro fechado: quem já tem conta entra com a senha normalmente", t.tela().hidden);
+
   /* ---- 7. conta que entrou ANTES das senhas ---- */
   srv=servidorFalso(); const pedro=srv.conta("pedro@exemplo.com");     // sem senha
   t=abrir(srv,{access_token:"tok-"+pedro.id,refresh_token:"r",email:"pedro@exemplo.com",uid:pedro.id}); await espera(500);

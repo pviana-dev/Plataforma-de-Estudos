@@ -23,6 +23,8 @@ module.exports = function servidorFalso(){
     if (/\/auth\/v1\/otp/.test(url)){
       if (!est.usuarios[corpo.email]){
         if (!corpo.create_user) return resp(422, { msg: "Signups not allowed for otp" });
+        // cadastro fechado no painel do Supabase (est.cadastroFechado): a resposta real
+        if (est.cadastroFechado) return resp(422, { code: 422, error_code: "otp_disabled", msg: "Signups not allowed for otp" });
         est.conta(corpo.email);
       }
       return resp(200, {});

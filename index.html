@@ -8313,9 +8313,10 @@ async function chamarNuvem(caminho, opcoes, comToken){
     if (await renovarSessao()) return chamarNuvem(caminho, opcoes, comToken);   // uma segunda chance
   }
   if (!r.ok){
-    let msg = r.status + " " + r.statusText;
-    try { const e = JSON.parse(await r.text()); msg = e.msg || e.message || e.error_description || msg; } catch(x){}
+    let msg = r.status + " " + r.statusText, codigo = "";
+    try { const e = JSON.parse(await r.text()); msg = e.msg || e.message || e.error_description || msg; codigo = e.error_code || ""; } catch(x){}
     const erro = new Error(msg); erro.status = r.status;     // quem chama distingue "recusado" de "sem conexão"
+    erro.codigo = codigo;                                     // o código do Supabase (ex.: "otp_disabled")
     throw erro;
   }
   /* Resposta sem corpo é normal: gravar devolve "201 Created" VAZIO (return=minimal),
@@ -8702,6 +8703,11 @@ function traduzirErroAcesso(e){
   if (e instanceof TypeError || /failed to fetch|load failed|networkerror|network request/i.test(m))
     return "Sem conexão com a internet. Confira e tente de novo.";
   if (/invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
+  /* CADASTRO FECHADO no Supabase e o e-mail ainda não tem conta. Vem ANTES da
+     regra do código: a mensagem ("Signups not allowed for otp") tem "otp" e
+     virava "Código inválido". Quem já tem conta não passa por aqui. */
+  if (/^(otp|signup)_disabled$/.test((e && e.codigo) || "") || /signups? not allowed/i.test(m))
+    return "Este e-mail ainda não tem acesso ao app. Caso deseje ter acesso, entre em contato com o administrador.";
   if (/email not confirmed/i.test(m)) return "Este e-mail ainda não foi confirmado — use “Primeiro acesso”.";
   if (/expired|invalid.*token|token.*invalid|otp/i.test(m)) return "Código inválido ou vencido. Peça outro.";
   let x = m.match(/at least (\d+) characters/i);
@@ -8712,7 +8718,7 @@ function traduzirErroAcesso(e){
   x = m.match(/after (\d+) seconds?/i);
   if (x) return "Espere " + x[1] + " segundos para pedir outro código.";
   if (/rate limit/i.test(m)) return "Muitas tentativas. Espere alguns minutos e tente de novo.";
-  if (/signups? not allowed|user not found/i.test(m)) return "Este e-mail não tem conta. Fale com quem administra a plataforma.";
+  if (/user not found/i.test(m)) return "Este e-mail não tem conta. Fale com quem administra a plataforma.";
   if (/error sending/i.test(m)) return "Não foi possível enviar o e-mail agora. Tente de novo em instantes.";
   return m;
 }
