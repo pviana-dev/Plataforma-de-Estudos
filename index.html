@@ -1689,7 +1689,30 @@ function migrarPlanoManual(d){
    mesma ordem. Antes a importação pulava metade delas: um backup antigo entrava
    sem fichas de conteúdo (e sem agenda) até o próximo F5, e aí a conversão da
    escala de dificuldade rodava sobre números já cortados — Difícil virava Médio. */
+/* IDS SÓ COM LETRAS, NÚMEROS, "_" E "-" (checagem de segurança, 27/09). Os ids vão
+   para atributos do HTML; um backup montado de propósito com aspas num id
+   ("x\" onmouseover=…") rodaria código ao ser restaurado. O app nunca cria id
+   assim (uid()), então dado de verdade passa intacto; o que tiver outro caractere
+   vira "_" — a MESMA troca em todo lugar, para as ligações (registroId, diaProva,
+   o mapa de dias do vestibular…) continuarem apontando para o item certo.
+   Função declarada e sem nada de fora: roda na carga, antes do resto existir. */
+function limparIds(d){
+  const seguro = v => typeof v === "string" ? v.replace(/[^A-Za-z0-9_-]/g, "_") : v;
+  const ehId = k => k === "id" || k === "diaProva" || /Id$/.test(k);
+  const andar = o => {
+    if (Array.isArray(o)){ o.forEach(andar); return; }
+    if (!o || typeof o !== "object") return;
+    Object.keys(o).forEach(k => {
+      if (ehId(k)) o[k] = seguro(o[k]);
+      else andar(o[k]);
+    });
+  };
+  andar(d);
+  const mapa = d && d.vestibular && d.vestibular.disciplinas;      // disciplina → id do dia
+  if (mapa && typeof mapa === "object") Object.keys(mapa).forEach(k => { mapa[k] = seguro(mapa[k]); });
+}
 function prepararDados(d){
+  limparIds(d);
   /* A escala da dificuldade é convertida no dado CRU: normalizarRegistros
      já limita o valor a 1..3, e converter depois disso leria um "3" novo
      (difícil) como o "3" velho (médio), rebaixando tudo. */
@@ -3080,7 +3103,7 @@ function render(){
       if (atrasadas) pino = '<span class="pin alerta">'+atrasadas+'</span>';
       else if (pendentesHoje) pino = '<span class="pin">'+pendentesHoje+'</span>';
     }
-    return '<button class="aba" role="tab" data-aba="'+a.id+'" aria-selected="'+(ui.aba===a.id)+'">'+a.nome+pino+'</button>';
+    return '<button class="aba" role="tab" data-aba="'+esc(a.id)+'" aria-selected="'+(ui.aba===a.id)+'">'+a.nome+pino+'</button>';
   }).join("");
 
   pintarChipNuvem();
@@ -3216,7 +3239,7 @@ function formLancamento(l){
         esc(x.a) + '</option>').join("") + '</optgroup>').join("") +
     (ligada && !jaNaLista ? '<option value="'+esc(ligada.id)+'" selected>' + esc(rotuloAssuntos(ligada)) +
        ' (sessão de ' + D.br(ligada.data) + ')</option>' : '');
-  return '<form id="formLancamento"'+(l ? ' data-id="'+l.id+'"' : '')+'>' +
+  return '<form id="formLancamento"'+(l ? ' data-id="'+esc(l.id)+'"' : '')+'>' +
     '<div class="campos">' +
       '<div class="campo largo"><span id="rotSessaoLanc">Conteúdo *</span><select name="registroId" aria-labelledby="rotSessaoLanc" required>' +
         (alvo ? "" : '<option value="">Escolha o conteúdo…</option>') + opcoes +
@@ -3227,7 +3250,7 @@ function formLancamento(l){
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">'+(l ? "Salvar" : "Lançar questões")+'</button>' +
     '<button class="btn ghost" type="button" data-acao="cancelar-lancamento">Cancelar</button>' +
-    (l ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-lancamento" data-id="'+l.id+'">Excluir</button>' : '') +
+    (l ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-lancamento" data-id="'+esc(l.id)+'">Excluir</button>' : '') +
     '<span class="erro-form" id="erroLancamento"></span></div></form>';
 }
 function enviarLancamento(ev){
@@ -3567,7 +3590,7 @@ function opcoesDestino(){
   let h = '<option value=""'+(ui.cronoDestino ? "" : " selected")+'>Escolha para onde vai o tempo…</option>' +
           '<option value="novo"'+(ui.cronoDestino === "novo" ? " selected" : "")+'>Nova sessão</option>';
   if (regs.length) h += '<optgroup label="Somar a uma sessão de hoje">' +
-    regs.map(([v,t]) => '<option value="'+v+'"'+(ui.cronoDestino===v?" selected":"")+'>'+esc(t)+'</option>').join("") + '</optgroup>';
+    regs.map(([v,t]) => '<option value="'+esc(v)+'"'+(ui.cronoDestino===v?" selected":"")+'>'+esc(t)+'</option>').join("") + '</optgroup>';
   /* ESTUDAR UM CONTEÚDO JÁ ESCOLHIDO (revisão de UX, 26/09): o que a agenda pede
      hoje e o que está no Falta estudar. Antes só dava "Nova sessão" e o conteúdo
      era escolhido no fim; agora o cronômetro já nasce sabendo o que é. */
@@ -3871,7 +3894,7 @@ function itemRevisao(x, quando, opcoes){
   /* O corpo do item vira o atalho para o cronograma quando quem monta a lista
      pede — é o card de hoje, que é um resumo: o original mora mais abaixo. */
   const salto = o.saltavel
-    ? ' data-acao="ir-para-card" data-id="'+x.rev.id+'" role="link" tabindex="0"' +
+    ? ' data-acao="ir-para-card" data-id="'+esc(x.rev.id)+'" role="link" tabindex="0"' +
       ' title="Ver este item no cronograma abaixo"'
     : '';
   /* Editar de onde se está olhando. Os mesmos botões do card por assunto: o
@@ -3882,13 +3905,13 @@ function itemRevisao(x, quando, opcoes){
   const acoes = o.editavel && !bloq
     ? (x.rev.sessaoId ? '<button class="act" data-acao="abrir-sessao" data-id="'+esc(x.rev.sessaoId)+'" ' +
         'title="As horas ficam na sessão — clique para editá-las">ver sessão</button>' : '') +
-      '<button class="act" data-acao="editar-revisao" data-id="'+x.rev.id+'">editar</button>'
+      '<button class="act" data-acao="editar-revisao" data-id="'+esc(x.rev.id)+'">editar</button>'
     : '';
   return '<div class="item rev-linha '+x.status+(emAndamento(x.rev) ? " em-andamento" : "")+(bloq ? " bloqueada" : "")+'"' +
     (o.editavel ? ' id="rev-'+esc(x.rev.id)+'"' : '') + (bloq ? ' aria-disabled="true"' : '') + '>' +
     '<div class="rev-topo">' +
       (o.leitura ? '' :
-      '<button class="check" role="checkbox" aria-checked="'+feita+'" data-acao="'+(feita ? "reabrir" : "concluir")+'" data-id="'+x.rev.id+'" ' +
+      '<button class="check" role="checkbox" aria-checked="'+feita+'" data-acao="'+(feita ? "reabrir" : "concluir")+'" data-id="'+esc(x.rev.id)+'" ' +
       (bloq ? 'disabled ' : '') +
       'title="'+(feita ? "Desmarcar este item" : "Marcar como feito")+'" ' +
       // o nome do item vai junto: o leitor de tela dizia só "caixa de seleção, não marcada"
@@ -4026,9 +4049,9 @@ function formRegistroHtml(){
       '<button class="btn ghost" type="button" data-acao="'+(ed ? "cancelar-edicao" : "toggle-form-registro")+'">Cancelar</button>' +
       // continuar o conteúdo também cabe aqui: é onde você está quando relê a sessão
       (ed && ed.data !== D.hoje()
-        ? '<button class="btn ghost" type="button" data-acao="continuar-sessao" data-id="'+ed.id+'" ' +
+        ? '<button class="btn ghost" type="button" data-acao="continuar-sessao" data-id="'+esc(ed.id)+'" ' +
           'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ Continuar<span class="so-largo"> hoje</span></button>' : '') +
-      (ed ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-registro" data-id="'+ed.id+'">Excluir</button>' : '') +
+      (ed ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-registro" data-id="'+esc(ed.id)+'">Excluir</button>' : '') +
       '<span class="erro-form" id="erroForm"></span></div></form>';
 
   return h;
@@ -4191,7 +4214,7 @@ function telaHistorico(){
             ' <span class="meta">'+hhmm(minutosDoDia(r.data))+' no dia</span></td></tr>';
     }
     return sep + '<tr class="linha-clicavel'+(emEdicao === r.id ? " editando-linha" : "")+'"' +
-      ' data-acao="editar-registro" data-id="'+r.id+'" title="Clique para abrir esta sessão">' +
+      ' data-acao="editar-registro" data-id="'+esc(r.id)+'" title="Clique para abrir esta sessão">' +
       '<td class="num col-curta col-nowrap s-data">'+D.br(r.data)+'</td><td class="col-curta s-disc">'+esc(r.disciplina)+'</td>' +
       /* Tempo vem antes do conteúdo: assim a Dificuldade encosta na coluna larga
          e sobra folga para o rótulo dela caber numa linha só. */
@@ -4209,7 +4232,7 @@ function telaHistorico(){
          sessão de terça — antes ele custava escolher tudo de novo. */
       // sessão de hoje não precisa de "continuar": continuar nela é somar horas ali
       '<td class="col-acao s-acao">' + (r.data < D.hoje()
-        ? '<button class="act" data-acao="continuar-sessao" data-id="'+r.id+'" ' +
+        ? '<button class="act" data-acao="continuar-sessao" data-id="'+esc(r.id)+'" ' +
           'title="Abrir uma sessão de hoje com este mesmo conteúdo">▶ continuar</button>'
         : '') + '</td></tr>';
   }).join("");
@@ -4402,7 +4425,7 @@ function cardAtrasadas(det){
       '<div class="corpo"><div class="titulo">'+esc(x.ctx.rotulo)+'</div>' +
       '<div class="meta">'+esc(x.ctx.disciplina)+' · estava marcada para '+D.brFull(x.rev.data)+
         ' · ' + plural(D.dif(x.rev.data, D.hoje()), "dia", "dias") + ' de atraso</div></div>' +
-      '<button class="btn mini" data-acao="remarcar-revisao" data-id="'+x.rev.id+'">remarcar</button>' +
+      '<button class="btn mini" data-acao="remarcar-revisao" data-id="'+esc(x.rev.id)+'">remarcar</button>' +
       '</div>').join("") + '</div>';
 }
 
@@ -5276,7 +5299,7 @@ function linhaRevisao(x){
   // a âncora do salto vindo do card de hoje (ver "ir-para-card")
   return '<div class="item rev-linha '+x.status+(bloq ? " bloqueada" : "")+'" id="rev-'+esc(rev.id)+'"'+(bloq ? ' aria-disabled="true"' : '')+'>' +
     '<div class="rev-topo">' +
-      '<button class="check" role="checkbox" aria-checked="'+rev.feita+'" data-acao="'+(rev.feita?"reabrir":"concluir")+'" data-id="'+rev.id+'" ' +
+      '<button class="check" role="checkbox" aria-checked="'+rev.feita+'" data-acao="'+(rev.feita?"reabrir":"concluir")+'" data-id="'+esc(rev.id)+'" ' +
       (bloq ? 'disabled ' : '') +
       'title="'+(rev.feita?"Desmarcar":"Confirmar que já fiz")+'" aria-label="'+esc((rev.feita?"Desmarcar ":"Confirmar que já fiz: ") + nome)+'">✓</button>' +
       '<div class="corpo"><div class="titulo" style="font-size:13.5px">' +
@@ -5288,7 +5311,7 @@ function linhaRevisao(x){
         '</div></div>' +
       (bloq ? '' : (rev.sessaoId ? '<button class="act" data-acao="abrir-sessao" data-id="'+esc(rev.sessaoId)+'" ' +
         'title="As horas ficam na sessão — clique para editá-las">ver sessão</button>' : '') +
-      '<button class="act" data-acao="editar-revisao" data-id="'+rev.id+'">editar</button>') +
+      '<button class="act" data-acao="editar-revisao" data-id="'+esc(rev.id)+'">editar</button>') +
     '</div>' + descricaoAtividade(rev) + '</div>';
 }
 
@@ -5303,7 +5326,7 @@ function formRevisao(rev){
   const volta = ehRetomada(rev);
 
   // dentro da tela sobreposta o próprio modal já é a moldura: nada de caixa dentro de caixa
-  return '<form id="formRevisao"'+(rev ? ' data-id="'+rev.id+'"' : '')+'>' +
+  return '<form id="formRevisao"'+(rev ? ' data-id="'+esc(rev.id)+'"' : '')+'>' +
     // o que é um card de continuar está na Ajuda (Continuar e revisar); aqui só o formulário
     (rev && rev.registroId
       ? '<div class="linha" style="margin-bottom:10px"><span class="badge">ligada a uma sessão de estudo</span></div>' : '') +
@@ -5322,7 +5345,7 @@ function formRevisao(rev){
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">'+(novo ? "Adicionar revisão" : "Salvar")+'</button>' +
     '<button class="btn ghost" type="button" data-acao="cancelar-revisao">Cancelar</button>' +
-    (rev ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-revisao" data-id="'+rev.id+'">Excluir</button>' : '') +
+    (rev ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-revisao" data-id="'+esc(rev.id)+'">Excluir</button>' : '') +
     '<span class="erro-form" id="erroRevisao"></span></div></form>';
 }
 
@@ -5794,10 +5817,10 @@ function linhaAprendizado(e, comData, editando){
         (e.oQueErrei ? '<div class="detalhe"><b>O que me confundiu:</b> '+textoFormatado(e.oQueErrei)+'</div>' : '') +
       '</div>' +
       (comData ? '<span class="apr-data">'+D.br(D.iso(new Date(e.criadoEm)))+'</span>' : '') +
-      '<button class="act estrela'+(e.importante ? " on" : "")+'" data-acao="erro-estrela" data-id="'+e.id+'" ' +
+      '<button class="act estrela'+(e.importante ? " on" : "")+'" data-acao="erro-estrela" data-id="'+esc(e.id)+'" ' +
         'title="'+(e.importante ? ESTRELA().tirar : ESTRELA().marcar)+'" aria-label="'+esc(e.importante ? ESTRELA().tirar : ESTRELA().marcar)+'" ' +
         'aria-pressed="'+!!e.importante+'">' + (e.importante ? "★" : "☆") + '</button>' +
-      '<button class="act" data-acao="editar-erro" data-id="'+e.id+'">editar</button>' +
+      '<button class="act" data-acao="editar-erro" data-id="'+esc(e.id)+'">editar</button>' +
     '</div>' +
     (pe ? '<div class="apr-pe">' + pe + '</div>' : '') +
   '</div>';
@@ -5998,7 +6021,7 @@ function formEdicaoErro(e){
      fazem sentido banca, tipo do erro e "refeita e acertada". Por isso esses
      três campos ficam guardados atrás de uma pergunta, que começa em "Não". */
   const daQuestao = !!(e.fonte || e.categoria || e.refeita);
-  return '<form id="formEdicaoErro" data-id="'+e.id+'"><div class="campos">' +
+  return '<form id="formEdicaoErro" data-id="'+esc(e.id)+'"><div class="campos">' +
     campo("Anotação", barraFormato("eEnsinamento", (e.ensinamento||"").length) +
           '<textarea id="eEnsinamento" name="ensinamento" class="cresce" ' +
           'maxlength="'+CONFIG.MAX_ANOTACAO+'" ' +
@@ -6017,7 +6040,7 @@ function formEdicaoErro(e){
         campo("De onde veio — banca, ENEM, vestibular, simulado (opcional)",
               '<input name="fonte" value="'+esc(e.fonte||"")+'" placeholder="CESPE 2026 Q42 · ENEM 2024 Q135 · simulado 3">', true) +
         campo("Tipo do erro (opcional)", '<select name="categoria"><option value="">— sem classificar —</option>' +
-          CONFIG.CATEGORIAS_ERRO.map(c => '<option value="'+c.id+'"'+(e.categoria===c.id?" selected":"")+'>'+esc(c.nome)+'</option>').join("") + '</select>') +
+          CONFIG.CATEGORIAS_ERRO.map(c => '<option value="'+esc(c.id)+'"'+(e.categoria===c.id?" selected":"")+'>'+esc(c.nome)+'</option>').join("") + '</select>') +
         campoOpcoes("Situação da questão", [
           { nome: "refeita", marcado: e.refeita, texto: "✓ Refiz depois e acertei" }
         ]) +
@@ -6029,7 +6052,7 @@ function formEdicaoErro(e){
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">Salvar</button>' +
     '<button class="btn ghost" type="button" data-acao="cancelar-edicao-erro">Cancelar</button>' +
-    '<button class="act excluir excluir-tela" type="button" data-acao="excluir-erro" data-id="'+e.id+'">Excluir</button>' +
+    '<button class="act excluir excluir-tela" type="button" data-acao="excluir-erro" data-id="'+esc(e.id)+'">Excluir</button>' +
     '<span class="erro-form" id="erroEdicao"></span></div></form>';
 }
 
