@@ -6792,6 +6792,18 @@ function registrarRevisao(rev){
   ui.editandoRegistro = null; ui.formAberto = true; ui.foco = null;
   redesenharTelaForm();
 }
+/** a revisão que a continuação de uma sessão de revisão vai cumprir: a do
+    mesmo conteúdo ainda por fazer — primeiro a de hoje/atrasada, senão a
+    próxima (adiantar é permitido). Cards de "continuar conteúdo" não contam:
+    esses são cumpridos por estudo. */
+function revisaoParaContinuar(reg){
+  const meus = new Set(assuntosDe(reg).map(a => a.toLowerCase()));
+  const cands = revisoesDetalhadas().filter(x =>
+    !x.rev.feita && !ehRetomada(x.rev) && !sessaoDaRevisao(x.rev) && !bloqueadaPelaProva(x.rev) &&
+    x.ctx.disciplina === reg.disciplina && x.ctx.assuntos.some(a => meus.has(a.toLowerCase())));
+  const hoje = D.hoje();
+  return (cands.find(x => x.rev.data <= hoje) || cands[0] || {}).rev || null;
+}
 /** a sessão daquele conteúdo naquele dia (a que deve receber o tempo) */
 function sessaoDoDia(ctx, data, exceto){
   if (!ctx) return null;
@@ -9119,6 +9131,17 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       if (hojeMesmo){
         ui.editandoRegistro = hojeMesmo.id; ui.formAberto = false;
         toast("Já há uma sessão deste conteúdo hoje — o tempo entra nela.");
+      } else if (ehRevisaoSessao(r)){
+        /* Continuar uma REVISÃO é outra revisão, não estudo (pedido do Pedro,
+           27/09 — antes a nova nascia como estudo). Revisão precisa de um item
+           da agenda para cumprir: vai o deste conteúdo que estiver na vez. Sem
+           nenhum, o formulário abre como revisão pedindo a escolha. */
+        const rev = revisaoParaContinuar(r);
+        ui.prefill = { data: D.hoje(), tipo: "revisao", revisaoId: rev ? rev.id : "",
+                       disciplina: "", assuntos: [], minutos: "", questoes: "", acertos: "",
+                       dificuldade: dificuldadeDe(r), anotacoes: rev ? (rev.nota || "").trim() : "" };
+        ui.editandoRegistro = null; ui.formAberto = true;
+        if (!rev) toast("Não há revisão deste conteúdo na agenda — escolha qual esta sessão cumpre.");
       } else {
         /* A sessão nova HERDA da sessão de origem o que é do conteúdo e do jeito de
            estudar — disciplina, conteúdos, dificuldade e o "sem revisão" (pedido do
