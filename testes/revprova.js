@@ -111,7 +111,9 @@ function submeter(w){ w.document.querySelector("#formRevProva").dispatchEvent(ne
   const erroSessao=await novaSessao(w, hoje);
   ok("(uma sessão de LAI registrada hoje)", !erroSessao && db(w).registros.length===3, erroSessao);
   lista=daLAI(w);
-  ok("estudar o conteúdo hoje não move as revisões escolhidas", JSON.stringify(lista.filter(r=>r.planoProva).map(r=>off(r.data)))==="[5,12]",
+  /* conteúdo concluído se registra como revisão (27/09): a sessão de hoje adianta a de +5; a de +12 fica */
+  ok("revisar o conteúdo hoje não move as revisões escolhidas", JSON.stringify(lista.filter(r=>r.planoProva).map(r=>off(r.data)))==="[12]" &&
+     db(w).revisoes.some(r=>r.planoProva && r.feita && off(r.data)===5),
      lista.map(r=>off(r.data)+(r.planoProva?"P":"")));
   ok("e nenhuma automática volta a nascer antes da prova", !lista.some(r=>!r.manual && r.data<=dia(20)), lista.map(r=>off(r.data)));
   /* abrir a página de novo (garantirAgenda) não duplica nada */
@@ -137,7 +139,7 @@ function submeter(w){ w.document.querySelector("#formRevProva").dispatchEvent(ne
   ok("o modo se chama “Personalizar”", /Personalizar/.test(f.querySelector('[name="modo"][value="eu"]').parentElement.textContent) &&
      !/Eu escolho/.test(f.textContent));
   datas=[...f.querySelectorAll('[name="dataRev"]')].map(i=>i.value);
-  ok("reaberta, a janela vem em “Personalizar” com as datas atuais", (f.querySelector('[name="modo"]:checked')||{}).value==="eu" && JSON.stringify(datas.map(off))==="[5,12]", datas.map(off));
+  ok("reaberta, a janela vem em “Personalizar” com as datas atuais", (f.querySelector('[name="modo"]:checked')||{}).value==="eu" && JSON.stringify(datas.map(off))==="[12]", datas.map(off));   // a de +5 já foi feita na seção 4
 
   /* ---- 6. voltar ao automático ---- */
   const auto=f.querySelector('[name="modo"][value="auto"]'); auto.checked=true; auto.dispatchEvent(new w2.Event("change",{bubbles:true}));

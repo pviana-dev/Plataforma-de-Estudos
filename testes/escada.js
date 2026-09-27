@@ -130,11 +130,12 @@ async function novaSessao(w, data, conteudos, dificuldade){
     registros:[sess("r1",{data:dia(-3)})],
     revisoes:[rev("b1","r1",dia(-2),{feita:true,feitaEm:dia(-2)}), rev("b2","r1",dia(4))]}), "registros");
   await espera(400);
-  const b2antes=off(escada(w).find(r=>r.id==="b2").data);
+  /* Conteúdo concluído não se estuda mais, se revisa (27/09): a sessão de hoje
+     abre como revisão e adianta a próxima, em vez de ser "contato fora da agenda". */
   await novaSessao(w, hoje, ["LAI"]);
-  l=escada(w);
-  ok("estudar o conteúdo fora da agenda empurra a próxima (distância 6 → +6)",
-     b2antes===4 && off(l.find(r=>r.id==="b2").data)===6, [b2antes, mostra(l)]);
+  const b2=db(w).revisoes.find(r=>r.id==="b2"), sHoje=db(w).registros.find(r=>r.data===hoje);
+  ok("sessão de conteúdo concluído fora da agenda vira revisão e adianta a próxima",
+     sHoje && sHoje.tipo==="revisao" && b2.feita && b2.sessaoId===sHoje.id, [sHoje, b2]);
 
   /* ---- 6. garantia: concluído sem revisão ganha a escada inteira ---- */
   w=abrir(base({conteudos:[ficha("LAI",{concluidoEm:hoje})], registros:[sess("r1",{data:dia(-2)})]}));

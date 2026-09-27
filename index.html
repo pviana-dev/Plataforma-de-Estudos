@@ -4018,8 +4018,16 @@ function formRegistroHtml(){
     if (ctxPre) base = Object.assign({}, base, { disciplina: ctxPre.disciplina, assuntos: ctxPre.assuntos.slice() });
   }
   // rascunho = o que estava na tela antes de trocar o tipo/revisão
-  const v = ui.rascunho ? Object.assign({}, base, ui.rascunho) : base;
+  let v = ui.rascunho ? Object.assign({}, base, ui.rascunho) : base;
   ui.rascunho = null;
+  // conteúdo já concluído chega aqui como estudo (cronômetro, mural, rascunho…): abre como revisão
+  if (!ehTipoRevisao(v.tipo) && sessaoDeConcluido(v, ed)){
+    const ligada = v.revisaoId ? acharRevisao(v.revisaoId) : null;
+    const rev = ligada && !ehRetomada(ligada) ? ligada : revisaoParaContinuar(v);
+    const ctxRev = rev ? contextoRevisao(rev) : null;
+    v = Object.assign({}, v, { tipo: "revisao", revisaoId: rev ? rev.id : "" },
+                      ctxRev ? { disciplina: ctxRev.disciplina, assuntos: ctxRev.assuntos.slice() } : {});
+  }
 
   let h = "";
   const eRevisao = ehTipoRevisao(v.tipo);
@@ -4340,13 +4348,15 @@ function campoTipoSessao(v, ed){
   const travado = ed && ed.tipo === "estudo" && ed.data !== D.hoje();
   // estudo/revisão não volta a ser só estudo: ela cumpre uma revisão e as horas já estão lá
   const semEstudo = ed && ed.tipo === "misto";
+  const concluido = sessaoDeConcluido(v, ed);
   const opcao = (valor, rotulo, desligado) =>
     '<label class="opcao'+(desligado ? " fixa" : "")+'">' +
       '<input type="radio" name="tipo" value="'+valor+'" id="tipo'+valor[0].toUpperCase()+valor.slice(1)+'"' +
       (atual === valor ? " checked" : "") + (desligado ? " disabled" : "") + '>' +
       '<span>'+rotulo+'</span></label>';
   const avisos = [
-    semEstudo ? "estudo/revisão só volta a ser revisão: ela cumpre uma revisão que já está marcada" : ""
+    semEstudo ? "estudo/revisão só volta a ser revisão: ela cumpre uma revisão que já está marcada" : "",
+    concluido ? "conteúdo concluído: para estudar de novo, reabra o conteúdo" : ""
   ].filter(Boolean);
   /* Os três tipos respondem "o que eu fiz nesta sessão" — e só isso. Se o
      CONTEÚDO está aberto ou fechado é outra pergunta, que a fase responde.
@@ -4354,7 +4364,7 @@ function campoTipoSessao(v, ed){
      mudou: conteúdo aberto se continua com Estudo, fechando a volta.        */
   return '<div class="campo largo"><span>Esta sessão é *</span><div class="opcoes">' +
     opcao("estudo",  "Estudo — conteúdo novo ou continuação",
-                     (travado && atual !== "estudo") || semEstudo) +
+                     (travado && atual !== "estudo") || semEstudo || concluido) +
     opcao("revisao", "Revisão — conteúdo que já fechei", travado && atual === "estudo") +
     /* Estudo/Revisão saiu de cena: com a fase do conteúdo respondendo "isto
        ainda está aberto?", ele virou rótulo sem função. Só aparece em sessão
@@ -4552,6 +4562,7 @@ function adicionarAssuntoForm(){
     }
   }
   inp.value = ""; inp.focus();
+  conferirConcluidoNoForm(form);
 }
 /* O REMENDO NO LUGAR, depois de renomear a ficha com a sessão aberta. Tudo o
    que já está na tela e ainda fala o nome velho é acertado: as etiquetas (o
@@ -6594,6 +6605,9 @@ async function enviarRegistro(ev){
   const disciplina = herda ? ctxRev.disciplina : lerDisciplina(f);
   if (!disciplina){ erro.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
   if (!listaAssuntos.length){ erro.textContent = "Adicione ao menos um assunto."; return; }
+  if (!ehTipoRevisao(tipo) && sessaoDeConcluido({ disciplina, assuntos: listaAssuntos, data: dado.data }, anterior0)){
+    erro.textContent = "Conteúdo concluído se registra como revisão — para estudar de novo, reabra o conteúdo."; return;
+  }
   if (anterior0 && anterior0.tipo === "estudo" && ehTipoRevisao(tipo)){
     if (anterior0.data !== D.hoje()){
       erro.textContent = "Só uma sessão registrada hoje pode virar revisão."; return;
@@ -6796,6 +6810,30 @@ function registrarRevisao(rev){
     mesmo conteúdo ainda por fazer — primeiro a de hoje/atrasada, senão a
     próxima (adiantar é permitido). Cards de "continuar conteúdo" não contam:
     esses são cumpridos por estudo. */
+/* CONTEÚDO CONCLUÍDO NÃO SE ESTUDA, SE REVISA (pedido do Pedro, 27/09). A sessão
+   nova — ou a revisão sendo editada — cujos conteúdos já estavam todos concluídos
+   no dia dela não pode ser Estudo. Ficam de fora: a sessão do próprio dia da
+   conclusão (é a que fechou o conteúdo), a de antes dela (estudo esquecido) e a
+   sessão de estudo já registrada, que continua como foi. Para estudar de novo,
+   reabre-se o conteúdo. */
+function sessaoDeConcluido(v, ed){
+  if (ed && ed.tipo === "estudo") return false;
+  const lista = assuntosDe(v), dia = v.data || D.hoje();
+  if (!v.disciplina || !lista.length) return false;
+  return lista.every(a => { const c = acharConteudo(v.disciplina, a);
+    return !!c && c.fase === "concluido" && (!c.concluidoEm || dia > c.concluidoEm); });
+}
+/** o formulário de estudo passou a falar só de conteúdo concluído: vira revisão */
+function conferirConcluidoNoForm(form){
+  const est = form && form.querySelector('[name="tipo"]:checked');
+  if (!est || est.value !== "estudo") return;
+  const dataEl = form.querySelector('[name="data"]');
+  const ed = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
+  if (!sessaoDeConcluido({ disciplina: disciplinaDoForm(form), assuntos: lerAssuntosForm(form),
+                           data: dataEl ? dataEl.value : "" }, ed)) return;
+  guardarRascunhoRegistro(); redesenharTelaForm();          // formRegistroHtml faz a troca
+  toast("Conteúdo concluído: a sessão passa a ser revisão.");
+}
 function revisaoParaContinuar(reg){
   const meus = new Set(assuntosDe(reg).map(a => a.toLowerCase()));
   const cands = revisoesDetalhadas().filter(x =>
@@ -9398,8 +9436,9 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       toast("Conteúdo reaberto — a agenda volta a chamar para estudar.");
       break; }
     case "remover-assunto": {
-      const t = alvo.closest(".tag"); if (t) t.remove();
+      const t = alvo.closest(".tag"), form = t && t.closest("form"); if (t) t.remove();
       const c = document.getElementById("campoAssunto"); if (c) c.focus();
+      if (form && form.id === "formRegistro") conferirConcluidoNoForm(form);
       return;
     }
     case "nova-revisao":

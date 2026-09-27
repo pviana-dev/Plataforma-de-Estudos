@@ -66,8 +66,43 @@ const tipoMarcado=w=>{const r=w.document.querySelector('#modalCaixa [name="tipo"
   ok("sem revisão na agenda ainda abre como revisão", tipoMarcado(w)==="revisao", tipoMarcado(w));
 
   /* ---- estudo continua estudo ---- */
-  w=abrir(base({registros:[sess("r1")]})); await espera(450);
+  seed=base({registros:[sess("r1")]}); Object.assign(seed.conteudos[0],{fase:"andamento",concluidoEm:null});
+  w=abrir(seed); await espera(450);
   await continuar(w,"r1");
   ok("continuar um estudo segue abrindo como estudo", tipoMarcado(w)==="estudo", tipoMarcado(w));
+
+  /* ---- conteúdo concluído não aceita Estudo ---- */
+  w=abrir(base({registros:[sess("r1")], revisoes:[rev("v2","r1",dia(-1))]})); await espera(450);
+  await continuar(w,"r1");     // o r1 é de estudo, mas o conteúdo já foi concluído depois dele
+  let est=w.document.querySelector("#tipoEstudo");
+  ok("sessão nova de conteúdo concluído abre como revisão", tipoMarcado(w)==="revisao", tipoMarcado(w));
+  ok("com a opção Estudo desabilitada", est && est.disabled);
+  ok("e ligada à revisão do conteúdo", w.document.querySelector("#revisaoAlvo").value==="v2");
+  ok("explicando como estudar de novo", /reabra o conteúdo/.test(w.document.querySelector("#modalCaixa").textContent));
+
+  // sessão nova escolhendo o conteúdo à mão: vira revisão ao adicionar
+  w=abrir(base({registros:[sess("r1")], revisoes:[rev("v2","r1",dia(-1))]})); await espera(450);
+  let doc=w.document;
+  doc.querySelector('[data-acao="toggle-form-registro"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(400);
+  ok("o formulário vazio começa em estudo", tipoMarcado(w)==="estudo", tipoMarcado(w));
+  const sel=doc.querySelector("#modalCaixa select.sel-disciplina"); sel.value="Legislação";
+  sel.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(300);
+  const ca=doc.querySelector("#campoAssunto"); ca.value="LAI"; ca.dispatchEvent(new w.Event("change",{bubbles:true}));
+  if(!doc.querySelector('#listaAssuntosForm [data-assunto="LAI"]')) doc.querySelector('[data-acao="add-assunto"]')&&doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  if(!doc.querySelector('#listaAssuntosForm [data-assunto="LAI"]')) ca.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));
+  await espera(400);
+  ok("escolher um conteúdo concluído troca para revisão", tipoMarcado(w)==="revisao", tipoMarcado(w));
+
+  // o dia em que o conteúdo foi concluído ainda aceita estudo (é a sessão que o fechou)
+  seed=base({registros:[sess("r1")]}); seed.conteudos[0].concluidoEm=hoje;
+  w=abrir(seed); await espera(450);
+  await continuar(w,"r1");
+  ok("no dia da conclusão, estudo continua valendo", tipoMarcado(w)==="estudo" && !w.document.querySelector("#tipoEstudo").disabled, tipoMarcado(w));
+
+  // sessão de estudo já registrada continua editável como estudo
+  w=abrir(base({registros:[sess("r1",{data:dia(-1)})]})); await espera(450);
+  w.document.querySelector('[data-acao="editar-registro"][data-id="r1"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(400);
+  ok("editar uma sessão de estudo antiga não força revisão", tipoMarcado(w)==="estudo", tipoMarcado(w));
 }catch(e){console.log("ERRO",e);falhas++;}
 console.log(falhas?falhas+" falha(s)":"tudo ok"); process.exit(falhas?1:0);})();
