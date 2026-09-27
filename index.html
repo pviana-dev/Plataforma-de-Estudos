@@ -1901,14 +1901,14 @@ function excluirErro(id){
    · Trava dura: nenhuma revisão cai na data da prova ou depois.
    ========================================================================== */
 /* O OBJETIVO DE ESTUDO. Três modos, escolhidos no "?" do topo:
-   "livre"      → sem objetivo: estudo contínuo, sem contagem e sem prazo;
+   "livre"      → estudo contínuo: sem contagem e sem prazo;
    "concurso"   → uma prova, em db.dataProva (vazia = "data a definir");
    "vestibular" → um ou mais dias de prova (ENEM, vestibulares), cada um com
                   nome e data, em db.vestibular.dias.
    A configuração de cada modo fica guardada à parte: trocar de modo muda só
    db.objetivo, e voltar ao modo anterior encontra tudo como estava.         */
 const OBJETIVOS = [
-  { id:"livre",      nome:"Sem objetivo",      desc:"Estudo contínuo: revisões em intervalos crescentes, sem prazo." },
+  { id:"livre",      nome:"Estudo contínuo",   desc:"Revisões em intervalos crescentes, sem data de prova." },
   { id:"concurso",   nome:"Concurso",          desc:"Uma prova: o cronograma se ajusta até a véspera." },
   { id:"vestibular", nome:"Vestibular / ENEM", desc:"Um ou mais dias de prova, cada um com nome e data." }
 ];
@@ -1947,7 +1947,7 @@ const nomeDoDia = d => (d && d.nome || "").trim() || "a prova";
 
 /* Sem data de prova a plataforma vira "estudo contínuo": nada de contagem
    regressiva e nada de comprimir o cronograma — as revisões usam os intervalos
-   clássicos e o horizonte anda junto com hoje. Vale para "sem objetivo" e para
+   clássicos e o horizonte anda junto com hoje. Vale para "estudo contínuo" e para
    concurso ou vestibular com a data ainda a definir. */
 const semProva = () => !ultimaProva();
 /** a prova ainda está à frente? (depois dela o cronograma muda de regra) */
@@ -3097,7 +3097,7 @@ function render(){
   reg.className = "regressiva" + (dias === null ? " neutra" : dias <= 7 ? " urgente" : "");
   /* Os fogos (🔥) saíram da contagem (pedido do Pedro, 25/09): o espaço deles virou
      número maior. A urgência continua na cor — a caixa fica vermelha na última semana. */
-  /* SEM DATA DE PROVA (sem objetivo, ou concurso/vestibular com a data a definir), a
+  /* SEM DATA DE PROVA (estudo contínuo, ou concurso/vestibular com a data a definir), a
      contagem SOME — não há o que contar (pedido do Pedro, 25/09; antes dizia
      "Estudo contínuo · sem data de prova"). */
   reg.hidden = dias === null;
@@ -6872,7 +6872,7 @@ function modalPosProva(){
     '<div class="campos">' +
       '<div class="campo largo"><span>Você continua estudando?</span><div class="opcoes">' +
         '<label class="opcao"><input type="radio" name="rumo" value="continuo" checked>' +
-          '<span>Sim, continuo — sem objetivo marcado</span></label>' +
+          '<span>Sim, continuo — em estudo contínuo</span></label>' +
         '<label class="opcao"><input type="radio" name="rumo" value="outra">' +
           '<span>Sim, tenho outra prova</span></label>' +
         '<label class="opcao"><input type="radio" name="rumo" value="encerrei">' +
@@ -6887,7 +6887,7 @@ function modalPosProva(){
         '</div></div>' +
       '</div>' +
     '</div>' +
-    '<p class="sub" style="margin-top:10px">Escolhendo <b>continuo</b>, o objetivo passa a ser <b>Sem objetivo</b> ' +
+    '<p class="sub" style="margin-top:10px">Escolhendo <b>continuo</b>, o objetivo passa a ser <b>Estudo contínuo</b> ' +
       '(as datas ficam guardadas nos ajustes) e as revisões voltam em intervalos crescentes — as primeiras, ' +
       'espalhadas pelos dias seguintes para não caírem todas juntas. Escolhendo <b>encerrei</b>, ' +
       'nada é apagado — o sistema só para de agendar, e você pode religar quando quiser.</p>' +
@@ -6922,7 +6922,7 @@ function salvarPosProva(){
   persistir(); fecharModal(); render();
   toast(escolha === "encerrei" ? "Agendamento encerrado — nada foi apagado."
        : escolha === "outra"   ? "Nova prova em " + D.brFull(nova) + " — cronograma refeito."
-                               : "Sem objetivo — revisões em intervalos crescentes.");
+                               : "Estudo contínuo — revisões em intervalos crescentes.");
 }
 
 /** os itens pendentes que o silêncio escondeu e já venceram — lidos ainda no
@@ -7882,7 +7882,7 @@ function limparLigacoes(){
 }
 /** frase curta do que ficou valendo, para o aviso depois de salvar */
 function fraseObjetivo(){
-  if (objetivo() === "livre") return "Sem objetivo — revisões em intervalos crescentes.";
+  if (objetivo() === "livre") return "Estudo contínuo — revisões em intervalos crescentes.";
   const dias = diasDeProva();
   if (!dias.length) return nomeObjetivo() + " com data a definir — a agenda segue sem prazo por enquanto.";
   if (objetivo() === "concurso") return "Prova em " + D.brFull(dias[0].data) + " — cronograma refeito.";
@@ -7913,7 +7913,7 @@ function baixarDanificado(){
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-/* PRIMEIRA ABERTURA: para que a pessoa estuda. O modo já fica "sem objetivo"
+/* PRIMEIRA ABERTURA: para que a pessoa estuda. O modo já fica "estudo contínuo"
    antes de a pergunta abrir — fechar a caixa é uma resposta, e ela não volta. */
 function modalObjetivo(){
   abrirModal("Para que você estuda?",
@@ -8009,7 +8009,7 @@ function modalAjuda(){
     ["comeco", "Comece por aqui",
       '<p>A plataforma organiza o que você estuda e diz <b>quando voltar</b> a cada conteúdo. O caminho de um dia comum:</p>' +
       '<ol class="aj-passos">' +
-        '<li><b>Diga para que estuda.</b> Na <b>engrenagem</b> do topo: objetivo (sem objetivo, concurso ou vestibular), ' +
+        '<li><b>Diga para que estuda.</b> Na <b>engrenagem</b> do topo: objetivo (estudo contínuo, concurso ou vestibular), ' +
           'data da prova, meta diária e até quando pretende estudar.</li>' +
         '<li><b>Cadastre o que vai estudar.</b> Na aba ' + aba("Disciplinas") + ': as disciplinas e os conteúdos de cada uma ' +
           '(dá para colar a lista do edital, um por linha ou numerada — 1. Crase 2. Regência).</li>' +
@@ -8126,7 +8126,7 @@ function modalAjuda(){
         'use o <b>Espaçado</b> (1, 3, 7, 16 e 35 dias). Cada data vira um card, todos com o mesmo conteúdo.</p>'],
     ["ajustes", "Ajustes",
       '<dl class="aj-abas">' +
-        '<div class="aj-item"><dt>Objetivo</dt><dd>Sem objetivo, concurso (uma prova) ou vestibular (vários dias de prova, quantos ' +
+        '<div class="aj-item"><dt>Objetivo</dt><dd>Estudo contínuo, concurso (uma prova) ou vestibular (vários dias de prova, quantos ' +
           'forem). Sem data, a prova fica “data a definir” e a agenda segue sem prazo até ela entrar. Com dois dias de prova ou ' +
           'mais, dá para ligar disciplinas e conteúdos a um dia, na aba Disciplinas — é opcional.</dd></div>' +
         '<div class="aj-item"><dt>Meta diária</dt><dd>Os minutos por dia que contam para a meta e para a sequência de dias.</dd></div>' +

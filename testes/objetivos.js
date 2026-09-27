@@ -62,7 +62,7 @@ const sessaoDe=(w,r)=>db(w).registros.find(x=>x.id===r.registroId);
   // desde 25/09: sem data de prova, a contagem some e o card das datas mostra só hoje
   ok("sem data de prova, a contagem some e o card mostra só hoje",
      $(w,"#regressiva").hidden && !topo(w).trim() && /^Hoje\d/.test($(w,"#chipData").textContent.trim()) &&
-     !/Prova|Sem objetivo/.test($(w,"#chipData").textContent), [topo(w), $(w,"#chipData").textContent]);
+     !/Prova|Estudo contínuo/.test($(w,"#chipData").textContent), [topo(w), $(w,"#chipData").textContent]);
 
   /* ---- 2. primeira abertura ---- */
   w=abrir(null, true); await espera(300);

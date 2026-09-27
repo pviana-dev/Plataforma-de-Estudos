@@ -50,7 +50,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
   const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   ok("sem data, a contagem de dias até a prova some", $("#regressiva").hidden && !$("#regressiva").textContent.trim(),
      $("#regressiva").textContent);
-  ok("e o card das datas mostra só hoje", /Hoje/.test($("#chipData").textContent) && !/Prova|Sem objetivo/.test($("#chipData").textContent),
+  ok("e o card das datas mostra só hoje", /Hoje/.test($("#chipData").textContent) && !/Prova|Estudo contínuo/.test($("#chipData").textContent),
      $("#chipData").textContent);
   click(doc.querySelector('[data-aba="registros"]')); await espera(200);
   click(doc.querySelector('[data-acao="editar-registro"]')); await espera(200);
