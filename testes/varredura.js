@@ -114,7 +114,9 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   const s7=base(); s7.conteudos=[ficha("LAI")]; s7.registros=[reg("r1",dia(-1),["LAI"],{questoes:10,acertos:10})];
   s7.lancamentos=[{id:"l1",registroId:"r1",data:dia(-1),questoes:10,acertos:0,criadoEm:1}];
   w=abrir(s7,"painel"); await espera(400);
-  click(w,w.document.querySelector('.dia-cab [data-acao="sel-dia"]')); await espera(200);
+  // o Progresso já abre no panorama (R5); se algum dia estiver escolhido, volta a todos
+  const limparDia=w.document.querySelector('.dia-cab [data-acao="sel-dia"]');
+  if (limparDia){ click(w,limparDia); await espera(200); }
   const barra=[...w.document.querySelectorAll("#view svg text")].map(t=>t.textContent).filter(t=>/%/.test(t));
   click(w,w.document.querySelector(`.cal-dia[data-dia="${dia(-1)}"]`)); await espera(200);
   const doDia=[...w.document.querySelectorAll(".dia-numeros b")].map(b=>b.textContent);
@@ -169,7 +171,7 @@ const ficha=(nome,extra)=>Object.assign({id:"c"+nome,disciplina:"Legislação",n
   click(w,w.document.querySelector('tr[data-id="r1"] td')); await espera(300);
   const cx=[...w.document.querySelectorAll('#modalCaixa [name=questoes], #modalCaixa [name=acertos]')];
   ok("12. editar sessão sem questões: caixas vazias, com o exemplo apagado (sem o 0)",
-     cx.length===2 && cx.every(i=>i.value==="") && cx[0].placeholder==="20", cx.map(i=>i.value));
+     cx.length===2 && cx.every(i=>i.value==="") && cx[0].placeholder==="ex.: 20", cx.map(i=>i.value));
 
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nvarredura de 24/09: defeitos corrigidos");
   process.exit(falhas?1:0);

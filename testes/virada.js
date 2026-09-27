@@ -19,13 +19,10 @@ function abrir(tela){
   let w=abrir({ aba:"painel", diaSel:ontem, mesCal:ontem.slice(0,7), gravadoEm:ontem });
   await espera(400);
   let doc=w.document, $=s=>doc.querySelector(s);
-  ok("guardado ontem no 'hoje', abre no dia de hoje",
-     /'+/.test("") || $(".dia-info .dia-cab b").textContent.includes(hoje.split("-").reverse().join("/")),
-     $(".dia-info .dia-cab b").textContent);
-  ok("e o card diz que é hoje", /hoje/.test($(".dia-info .dia-rot").textContent),
-     $(".dia-info .dia-rot").textContent);
-  ok("o calendário marca o dia de hoje como selecionado",
-     doc.querySelector('.cal-dia[data-dia="'+hoje+'"]').classList.contains("sel"));
+  /* desde 27/09 (R5) o Progresso abre no panorama: o "hoje" de ontem não pula para o hoje novo */
+  ok("guardado ontem no 'hoje', abre no panorama", /Nenhum dia escolhido/.test($(".dia-info").textContent),
+     $(".dia-info").textContent.slice(0,60));
+  ok("e nenhum dia aparece selecionado no calendário", !doc.querySelector(".cal-dia.sel"));
   ok("o estado regravado já vem com a data de hoje",
      JSON.parse(w.localStorage.getItem("plataforma-estudos:tela")).gravadoEm===hoje,
      JSON.parse(w.localStorage.getItem("plataforma-estudos:tela")).gravadoEm);
@@ -43,8 +40,11 @@ function abrir(tela){
   doc=w.document; $=s=>doc.querySelector(s);
   doc.querySelector('[data-aba="painel"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   await espera(300);
-  ok("primeira visita abre no dia de hoje",
-     $(".dia-info .dia-cab b").textContent.includes(hoje.split("-").reverse().join("/")),
+  ok("primeira visita abre no panorama", /Nenhum dia escolhido/.test($(".dia-info").textContent));
+  // escolhido o dia de hoje, ele acompanha a virada do relógio
+  doc.querySelector('.cal-dia[data-dia="'+hoje+'"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  await espera(250);
+  ok("tocando em hoje, o dia aparece", $(".dia-info .dia-cab b").textContent.includes(hoje.split("-").reverse().join("/")),
      $(".dia-info .dia-cab b").textContent);
 
   /* ---- a virada do dia com a aba aberta ---- */

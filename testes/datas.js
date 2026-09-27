@@ -33,6 +33,7 @@ const curto=iso(new Date()).slice(8)+"/"+iso(new Date()).slice(5,7);
   ok("e os filtros passaram ao chrome verde", /\.filtros\{[^}]*--chrome/.test(css));
 
   click(doc.querySelector('[data-aba="painel"]')); await espera(300);
+  click(doc.querySelector('.cal-dia[data-dia="'+hoje+'"]')); await espera(250);   // o Progresso abre no panorama (R5): escolhe hoje
   const cab=$(".dia-info .dia-cab").textContent.replace(/\s+/g," ").trim();
   console.log("  detalhe do dia: \""+cab+"\"");
   ok("no Painel a data também não se repete", (cab.match(/\d\d\/\d\d/g)||[]).length===1, cab);

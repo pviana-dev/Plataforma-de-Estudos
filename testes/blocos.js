@@ -73,6 +73,7 @@ const linhaDe=id=>[...doc.querySelectorAll("tbody tr")].find(tr=>tr.dataset.id==
 
   /* ---- painel: o detalhe do dia mostra as faixas daquele dia ---- */
   click(doc.querySelector('[data-aba="painel"]')); await espera(300);
+  click(doc.querySelector('.cal-dia[data-dia="'+hoje+'"]')); await espera(250);   // o Progresso abre no panorama (R5): escolhe hoje
   const info=$(".dia-info").textContent.replace(/\s+/g," ");
   ok("o detalhe do dia lista as faixas do dia", /11:00–13:00 · 15:00–18:00/.test(info), info.slice(0,220));
   ok("e mostra só o bloco daquele dia na sessão de ontem",

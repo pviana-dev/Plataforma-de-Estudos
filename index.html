@@ -597,6 +597,11 @@ html[data-tema="escuro"] .aviso{background:#3a2e26;border-color:#5a4632;color:#e
   transform:translateY(14px);background:var(--text);color:var(--bg);
   padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:60}
 .toast.show{opacity:.96;transform:translateY(0)}
+/* aviso com botão (R4, 27/09): o botão é o mesmo atalho do app (.act.atalho); só o aviso
+   VISÍVEL recebe toque — escondido, ele não pode virar uma área invisível clicável */
+.toast.com-acao{display:flex;align-items:center;gap:12px}
+.toast.com-acao.show{pointer-events:auto}
+.toast .toast-acao{flex:none;font-weight:600}
 .overlay{position:fixed;inset:0;background:rgba(30,32,30,.42);display:grid;place-items:center;padding:18px;z-index:50;
   grid-template-columns:minmax(0,1fr)}
 /* A coluna da grade não cresce com o conteúdo, e os campos podem encolher
@@ -2214,6 +2219,12 @@ function fimDoEstudoPrevisto(estudoAte, revisarAte){
   return (revisarAte === undefined ? db.revisarAte : revisarAte) || "";
 }
 /** o padrão: dificuldade × tempo de estudo previsto (`fim` só para a tela prever antes de salvar) */
+/* EXEMPLO QUE NÃO PARECE VALOR (revisão de UX R1, 27/09). Número ou nome cinza dentro
+   da caixa, do tamanho de um digitado, passava por preenchido. Exemplo vira "ex.: 60";
+   o que vale se a caixa ficar em branco diz "padrão:" — ou vai para o lado, quando
+   a caixa é estreita demais (os dias até continuar). */
+const padraoDoNome = nome => nome ? "padrão: " + nome : "";
+const textoPadraoVolta = n => "dias · padrão " + n;
 function diasDaVoltaPadrao(nivel, fim){
   if (fim === undefined) fim = fimDoEstudoPrevisto();
   const faltam = fim ? D.dif(D.hoje(), fim) : Infinity;
@@ -2951,17 +2962,26 @@ const ui = {
   focoRevisao: "",                  // salto do card de hoje para o lugar dele na lista (não é estado de tela)
   focoSessao: "",                   // salto do cronômetro para a linha da sessão na aba Sessões (idem)
   cDisciplina: "",                  // filtro da aba Disciplinas
-  diaSel: D.hoje(),                 // o painel já abre mostrando o dia de hoje
+  diaSel: null,                     // o Progresso abre no panorama; o dia aparece ao tocar nele (R5, 27/09)
   formAberto: false,
   pDisciplina: "",
   verTodoMural: false
 };
 
 let tToast = null;
-function toast(msg){
-  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
-  // aviso longo fica mais tempo: 2,6 s mal dava para ler duas linhas no celular
-  const ms = Math.min(7000, Math.max(2600, String(msg).length * 55));
+/** acao (opcional): { rotulo, fazer } — um botão de atalho dentro do aviso */
+function toast(msg, acao){
+  const t = $("#toast"); t.textContent = msg; t.classList.toggle("com-acao", !!acao);
+  if (acao){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "act atalho toast-acao"; b.textContent = acao.rotulo;
+    b.addEventListener("click", () => { clearTimeout(tToast); t.classList.remove("show"); acao.fazer(); });
+    const texto = document.createElement("span"); texto.textContent = msg;
+    t.replaceChildren(texto, b);
+  }
+  t.classList.add("show");
+  // aviso longo fica mais tempo: 2,6 s mal dava para ler duas linhas no celular; com botão, tempo de tocar nele
+  const ms = acao ? 7000 : Math.min(7000, Math.max(2600, String(msg).length * 55));
   clearTimeout(tToast); tToast = setTimeout(() => t.classList.remove("show"), ms);
 }
 
@@ -3036,8 +3056,10 @@ function restaurarTela(){
      ontem. Por isso o retrato guarda também o dia em que foi tirado — se o dia
      escolhido ERA o de então, ele acompanha o relógio; um dia escolhido de
      propósito (outro qualquer) continua onde estava. */
+  /* Desde 27/09 (revisão de UX, pedido do Pedro) o Progresso abre no PANORAMA: o
+     "hoje" guardado num dia que já passou volta ao panorama em vez de seguir o relógio. */
   const ontem = salvo.gravadoEm || "";
-  if (ontem && ui.diaSel === ontem) ui.diaSel = D.hoje();
+  if (ontem && ontem !== D.hoje() && ui.diaSel === ontem) ui.diaSel = null;
   /* A SESSÃO ESCOLHIDA NO CRONÔMETRO continua escolhida — ao fechar e abrir, depois de
      encerrar — e só recomeça do zero em OUTRO DIA (pedido do Pedro, 25/09): o
      cronômetro só soma em sessão de hoje, então a escolha de ontem não vale mais. */
@@ -3245,8 +3267,8 @@ function formLancamento(l){
         (alvo ? "" : '<option value="">Escolha o conteúdo…</option>') + opcoes +
       '</select></div>' +
       campo("Data das questões *", '<input type="date" name="data" value="'+(l ? l.data : D.hoje())+'" max="'+D.hoje()+'" required>') +
-      campo("Questões feitas *", '<input type="number" name="questoes" min="1" max="999" value="'+(l ? l.questoes : "")+'" placeholder="20" required>') +
-      campo("Acertos", '<input type="number" name="acertos" min="0" max="999" value="'+(l && l.acertos != null ? l.acertos : "")+'" placeholder="14">') +
+      campo("Questões feitas *", '<input type="number" name="questoes" min="1" max="999" value="'+(l ? l.questoes : "")+'" placeholder="ex.: 20" required>') +
+      campo("Acertos", '<input type="number" name="acertos" min="0" max="999" value="'+(l && l.acertos != null ? l.acertos : "")+'" placeholder="ex.: 14">') +
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">'+(l ? "Salvar" : "Lançar questões")+'</button>' +
     '<button class="btn ghost" type="button" data-acao="cancelar-lancamento">Cancelar</button>' +
@@ -3974,8 +3996,8 @@ function infoDaSessao(reg){
 function camposQuestoes(questoes, acertos){
   const q = Number(questoes) > 0 ? Number(questoes) : "";
   const a = q !== "" && acertos !== null && acertos !== undefined && acertos !== "" ? Number(acertos) || 0 : "";
-  return campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+q+'" placeholder="20">') +
-         campo("Acertos", '<input type="number" name="acertos" min="0" value="'+a+'" placeholder="14">');
+  return campo("Questões feitas (opcional)", '<input type="number" name="questoes" min="0" value="'+q+'" placeholder="ex.: 20">') +
+         campo("Acertos", '<input type="number" name="acertos" min="0" value="'+a+'" placeholder="ex.: 14">');
 }
 /** O formulário do registro vive na tela sobreposta (modal), não dentro do card. */
 function formRegistroHtml(){
@@ -4033,7 +4055,7 @@ function formRegistroHtml(){
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
                      eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
       // sem tempo, a caixa vem vazia com o exemplo apagado — igual às questões
-      campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(Number(v.minutos) > 0 ? Number(v.minutos) : "")+'" placeholder="60">') +
+      campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(Number(v.minutos) > 0 ? Number(v.minutos) : "")+'" placeholder="ex.: 60">') +
       camposQuestoes(v.questoes, v.acertos) +
       (() => {
         // sessão nova de conteúdo já estudado: a dificuldade vem da última sessão dele
@@ -4945,12 +4967,12 @@ function graficoQuestoes(itens){
 /* ---------- TELA: ROTINA DE REVISÕES ---------- */
 function telaRevisoes(){
   const det = revisoesDetalhadas();
-  const pendentes = det.filter(x => !x.rev.feita);
   const atrasadas = det.filter(x => x.status === "atrasada");
   const feitas = det.filter(x => x.rev.feita);
+  /* O "Na agenda" (tudo o que está marcado, até o fim) saiu do topo (revisão de UX R2,
+     27/09, pedido do Pedro): ao lado de uma lista que mostra só as próximas, o número
+     não batia com o que se via e a pessoa procurava o que faltava. */
   let h = '<div class="tiles" style="margin-bottom:16px">' +
-    // "Faltam até a prova" contava também o que vem depois dela (a prova não corta a escada)
-    tile("Na agenda", String(pendentes.length), "itens agendados", "", "accent") +
     tile("Atrasados", String(atrasadas.length), atrasadas.length ? "⚠ prioridade máxima" : "✓ nada atrasado",
          "", atrasadas.length ? "critico" : "bom") +
     tile("Já concluídos", String(feitas.length), "de " + det.length + " no total", "", feitas.length ? "bom" : "") +
@@ -5335,7 +5357,7 @@ function formRevisao(rev){
             : campo("Data " + t.doItem + " *", '<input type="date" name="data" value="'+rev.data+'" required>')) +
       campo("Nome " + t.doItem + " (opcional)",
             '<input name="rotulo" maxlength="60" value="'+esc(rev && rev.rotulo ? rev.rotulo : "")+'" ' +
-            'placeholder="'+esc(volta ? t.nomePadrao : rev ? "Revisão " + (ordemVisivel(rev) || 1) : "Revisão 1")+'" autocomplete="off">',
+            'placeholder="'+esc(padraoDoNome(volta ? t.nomePadrao : rev ? "Revisão " + (ordemVisivel(rev) || 1) : "Revisão 1"))+'" autocomplete="off">',
             false) +
       campo("Disciplina *", seletorDisciplina(disciplina)) +
       camposAssuntos(lista, t.conteudos, "", false, disciplina) +
@@ -6038,7 +6060,7 @@ function formEdicaoErro(e){
     '<div class="campo largo painel-questao'+(daQuestao ? " aberto" : "")+'" id="painelQuestao">' +
       '<div class="interno"><div class="campos">' +
         campo("De onde veio — banca, ENEM, vestibular, simulado (opcional)",
-              '<input name="fonte" value="'+esc(e.fonte||"")+'" placeholder="CESPE 2026 Q42 · ENEM 2024 Q135 · simulado 3">', true) +
+              '<input name="fonte" value="'+esc(e.fonte||"")+'" placeholder="ex.: CESPE 2026 Q42 · ENEM 2024 Q135 · simulado 3">', true) +
         campo("Tipo do erro (opcional)", '<select name="categoria"><option value="">— sem classificar —</option>' +
           CONFIG.CATEGORIAS_ERRO.map(c => '<option value="'+esc(c.id)+'"'+(e.categoria===c.id?" selected":"")+'>'+esc(c.nome)+'</option>').join("") + '</select>') +
         campoOpcoes("Situação da questão", [
@@ -6440,7 +6462,7 @@ function painelDoDia(regs, revs){
   if (!dia){
     return '<div class="dia-info vazia">' +
       '<span class="dia-rot">Nenhum dia escolhido</span>' +
-      '<p class="dia-vazio">Clique num dia do calendário para ver o que você estudou nele — e para o ' +
+      '<p class="dia-vazio">Clique num dia do calendário para ver o que você estudou nele — e para a ' +
       'aba inteira passar a mostrar só aquele dia.</p></div>';
   }
   const det = detalhesDoDia(dia, regs, revs);
@@ -7894,8 +7916,8 @@ function modalAjustes(){
         '<div style="display:flex;flex-direction:column;gap:6px">' +
         [3,2,1].map(n => '<div class="dias-volta"><span id="rotVolta' + n + '">' + esc(CONFIG.DIFICULDADES[n].nome) + '</span>' +
           '<input type="number" name="volta' + n + '" aria-labelledby="rotVolta' + n + '" min="1" max="' + CONFIG.VOLTA_MAX_ESCOLHA + '" ' +
-          'value="' + esc(String((db.diasRetomada || {})[n] || "")) + '" placeholder="' + diasDaVoltaPadrao(n) + '">' +
-          '<span class="ajuda-campo" style="margin:0">dias</span></div>').join("") +
+          'value="' + esc(String((db.diasRetomada || {})[n] || "")) + '">' +
+          '<span class="ajuda-campo" style="margin:0" id="padraoVolta' + n + '">' + textoPadraoVolta(diasDaVoltaPadrao(n)) + '</span></div>').join("") +
         '</div></div>' +
       campoOpcoes("Agendamento", [{ nome:"automatico", marcado: agendaAutomatica(),
         texto:"Criar os agendamentos automaticamente (revisões e cards de continuar)" }]
@@ -8122,7 +8144,7 @@ function atualizarDiasPadraoAjustes(){
   const f = document.getElementById("formAjustes"); if (!f) return;
   const val = n => (f.querySelector('[name="'+n+'"]') || {}).value || "";
   const fim = fimDoEstudoPrevisto(val("estudoAte"), val("revisarAte"));
-  [1,2,3].forEach(n => { const cx = f.querySelector('[name="volta'+n+'"]'); if (cx) cx.placeholder = diasDaVoltaPadrao(n, fim); });
+  [1,2,3].forEach(n => { const el = document.getElementById("padraoVolta"+n); if (el) el.textContent = textoPadraoVolta(diasDaVoltaPadrao(n, fim)); });
 }
 function ligarAjustes(){
       ligarCamposObjetivo();
@@ -8674,7 +8696,7 @@ function htmlAcesso(){
     titulo = "Digite o código";
     texto = "Enviamos um código de 6 dígitos para " + (a.email || "o seu e-mail") + ". Veja também a caixa de spam.";
     corpo = campo("Código", '<input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="10" ' +
-      'required placeholder="123456">', true) + rodape("Continuar");
+      'required placeholder="6 dígitos">', true) + rodape("Continuar");
     links = link("reenviar", "Reenviar o código") + link("entrar", "Voltar para entrar");
   } else {                                    // "senha": criar ou trocar
     const conta = a.motivo === "conta", redefinir = a.motivo === "redefinir";
@@ -9020,17 +9042,24 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
     if (!ev.target.closest("[data-acao],[data-aba]")){ render(); return; }
   }
   const aba = ev.target.closest("[data-aba]");
-  if (aba){ ui.aba = aba.dataset.aba; ui.foco = null; ui.formAberto = false; render(); return; }
+  if (aba){
+    // entrar no Progresso é querer o panorama: o dia escolhido antes não fica preso (R5, 27/09)
+    if (aba.dataset.aba === "painel" && ui.aba !== "painel") ui.diaSel = null;
+    ui.aba = aba.dataset.aba; ui.foco = null; ui.formAberto = false; render(); return;
+  }
   const alvo = ev.target.closest("[data-acao]");
   if (!alvo) return;
   const id = alvo.dataset.id;
   switch (alvo.dataset.acao){
     case "abrir-ajustes": ev.preventDefault(); modalAjustes(); break;
     /* o card das datas só INFORMA onde se muda a data (pedido do Pedro, 25/09): antes
-       ele abria os Ajustes, e tocar nele por engano no celular jogava a pessoa lá */
+       ele abria os Ajustes, e tocar nele por engano no celular jogava a pessoa lá.
+       O aviso ganhou o atalho "Abrir Ajustes" (R4, 27/09): o toque por engano continua
+       sem mudar nada, e quem queria mudar a data não perde o toque. */
     case "info-datas":
-      toast(semProva() ? "Para marcar a data da prova, use Ajustes (⚙)."
-                       : "A data da prova pode ser alterada em Ajustes (⚙).");
+      toast(semProva() ? "Para marcar a data da prova, use os Ajustes."
+                       : "A data da prova pode ser alterada nos Ajustes.",
+            { rotulo: "Abrir Ajustes", fazer: modalAjustes });
       break;
     case "abrir-ajuda": ev.preventDefault(); modalAjuda(); break;
     case "ajuda-ir": ev.preventDefault(); irParaAjuda(alvo.dataset.alvo); break;   // sumário da ajuda

@@ -36,8 +36,6 @@ const cel=d=>doc.querySelector('.cal-dia[data-dia="'+d+'"]');
   ok("hoje tem marcação própria", cel(hoje).classList.contains("hoje"));
   ok("dia com estudo (e não selecionado) ganha tom de fundo",
      /background:var\(--seq/.test(cel(dia(-2)).getAttribute("style")||""), cel(dia(-2)).getAttribute("style"));
-  ok("o dia selecionado usa o círculo cheio, sem tom por cima",
-     cel(hoje).classList.contains("sel") && !cel(hoje).getAttribute("style"), cel(hoje).getAttribute("style"));
   ok("dia com revisão marcada ganha pontinho", !!cel(dia(3)) && !!cel(dia(3)).querySelector(".pt"));
   ok("revisão atrasada pinta o ponto de vermelho",
      (cel(dia(-1)).querySelector(".pt").getAttribute("style")||"").includes("critico"),
@@ -45,7 +43,11 @@ const cel=d=>doc.querySelector('.cal-dia[data-dia="'+d+'"]');
   ok("o dia da prova é marcado", !!doc.querySelector('.cal-dia.prova') || dias.length>0);
 
   /* ---- selecionar ---- */
-  ok("hoje já vem selecionado", cel(hoje).classList.contains("sel"));
+  ok("abre no panorama: nenhum dia selecionado", !doc.querySelector(".cal-dia.sel"));
+  click(cel(hoje)); await espera(300);
+  ok("tocar em hoje seleciona", cel(hoje).classList.contains("sel"));
+  ok("o dia selecionado usa o círculo cheio, sem tom por cima",
+     cel(hoje).classList.contains("sel") && !cel(hoje).getAttribute("style"), cel(hoje).getAttribute("style"));
   click(cel(dia(-2))); await espera(300);
   ok("clicar em outro dia move a seleção", cel(dia(-2)).classList.contains("sel"));
   ok("e o painel acompanha", /15\/09|\d\d\/\d\d/.test($(".marca-filtro").textContent), $(".marca-filtro").textContent);

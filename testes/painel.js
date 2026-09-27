@@ -15,8 +15,10 @@ const click=el=>el.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
 setTimeout(()=>{
   click(doc.querySelector('[data-aba="painel"]'));
   setTimeout(()=>{
+    ok("o Progresso abre no panorama, sem dia escolhido", /Nenhum dia escolhido/.test($(".dia-info").textContent));
+    click($('.cal-dia[data-dia="'+hoje+'"]'));
     const info=$(".dia-info").textContent;
-    ok("o painel já abre com um dia selecionado", !/Nenhum dia escolhido/.test(info), info.slice(0,60));
+    ok("tocando em hoje, o dia aparece", !/Nenhum dia escolhido/.test(info), info.slice(0,60));
     const [a,m,d]=hoje.split("-");
     ok("e o dia é o de hoje", $(".dia-info .dia-cab b").textContent.includes(d+"/"+m+"/"+a),
        $(".dia-info .dia-cab b").textContent);

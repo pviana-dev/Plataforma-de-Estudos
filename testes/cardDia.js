@@ -17,6 +17,7 @@ const css=[...doc.querySelectorAll("style")].map(s=>s.textContent).join("");
 
 (async()=>{try{
   click(doc.querySelector('[data-aba="painel"]')); await espera(350);
+  click(doc.querySelector('.cal-dia[data-dia="'+hoje+'"]')); await espera(250);   // o Progresso abre no panorama (R5): escolhe hoje
   const c=$(".dia-info");
   console.log("  card do dia: "+c.textContent.replace(/\s+/g," ").slice(0,150));
 

@@ -31,8 +31,12 @@ const txt=c=>c.textContent.replace(/\s+/g," ");
      cal.querySelector(".cal-cab b").textContent);
   ok("a legenda explica os pontinhos", /revisão marcada/.test(txt(cal)), txt(cal).slice(-120));
 
-  /* ---- com o dia de hoje selecionado (padrão) ---- */
-  ok("o painel já abre com hoje escolhido", !!$(".marca-filtro"), txt(card("% de acerto")).slice(0,80));
+  /* ---- abre no panorama (R5, 27/09): a taxa é a acumulada ---- */
+  ok("o Progresso abre no panorama, sem filtro de dia", !$(".marca-filtro"), txt(card("% de acerto")).slice(0,80));
+  ok("e a taxa é a acumulada (Legislação 43%)", /43%/.test(card("% de acerto por disciplina").innerHTML));
+  /* ---- tocando no dia de hoje ---- */
+  click(doc.querySelector('.cal-dia[data-dia="'+hoje+'"]')); await espera(300);
+  ok("tocar em hoje filtra o dia", !!$(".marca-filtro"), txt(card("% de acerto")).slice(0,80));
   const taxa=card("% de acerto por disciplina");
   console.log("  taxa por disciplina (hoje): "+txt(taxa).slice(0,120));
   ok("a taxa mostra só o dia (Legislação 90%)", /90%/.test(taxa.innerHTML), txt(taxa));

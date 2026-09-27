@@ -44,7 +44,7 @@ const salvo=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")).revi
   click([...doc.querySelectorAll('[data-acao="editar-revisao"]')][1]); await espera(300);
   const campo=$('#formRevisao [name="rotulo"]');
   ok("o formulário tem o campo de nome", !!campo);
-  ok("e mostra o nome automático como sugestão", campo.getAttribute("placeholder")==="Revisão 2",
+  ok("e mostra o nome automático como sugestão", campo.getAttribute("placeholder")==="padrão: Revisão 2",
      campo.getAttribute("placeholder"));
   campo.value="Revisão da véspera";
   $("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);

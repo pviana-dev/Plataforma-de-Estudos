@@ -57,17 +57,19 @@ const voltas=w=>["r3","r2","r1"].map(id=>{ const v=db(w).revisoes.find(r=>r.reto
   const doc=w.document;
   doc.getElementById("btnAjustes").dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(250);
   const campo=n=>doc.querySelector('#formAjustes [name="volta'+n+'"]');
+  // o padrão fica no texto ao lado da caixa ("dias · padrão 4"), que fica vazia de verdade (revisão de UX R1)
+  const padrao=n=>(doc.getElementById("padraoVolta"+n)||{}).textContent;
   ok("os ajustes têm um campo de dias por dificuldade", !!campo(1) && !!campo(2) && !!campo(3));
-  ok("em branco, mostrando o padrão", !campo(1).value && campo(1).placeholder==="4" && campo(3).placeholder==="1",
-     [campo(1).value, campo(1).placeholder, campo(3).placeholder]);
+  ok("em branco, mostrando o padrão ao lado", !campo(1).value && !campo(1).placeholder &&
+     padrao(1)==="dias · padrão 4" && padrao(3)==="dias · padrão 1", [campo(1).value, padrao(1), padrao(3)]);
   const nomes=[...doc.querySelectorAll("#formAjustes [name]")].map(e=>e.name);
   ok("a meta diária vem antes do revisar até", nomes.indexOf("meta")>=0 && nomes.indexOf("meta")<nomes.indexOf("revisarAte"), nomes);
   const cxPrev=doc.querySelector('#formAjustes [name="estudoAte"]');
   cxPrev.value=dia(20); cxPrev.dispatchEvent(new w.Event("input",{bubbles:true}));
-  ok("mudando o tempo previsto, o número apagado já mostra o que vai valer (fácil 2, médio 1)",
-     campo(1).placeholder==="2" && campo(2).placeholder==="1", [campo(1).placeholder, campo(2).placeholder]);
+  ok("mudando o tempo previsto, o padrão ao lado já mostra o que vai valer (fácil 2, médio 1)",
+     padrao(1)==="dias · padrão 2" && padrao(2)==="dias · padrão 1", [padrao(1), padrao(2)]);
   cxPrev.value=""; cxPrev.dispatchEvent(new w.Event("input",{bubbles:true}));
-  ok("e volta quando apaga", campo(1).placeholder==="4", campo(1).placeholder);
+  ok("e volta quando apaga", padrao(1)==="dias · padrão 4", padrao(1));
   campo(1).value="6"; campo(3).value="2";
   doc.querySelector("#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
   ok("o que você escolhe fica gravado", db(w).diasRetomada[1]===6 && db(w).diasRetomada[3]===2 && !db(w).diasRetomada[2],

@@ -54,7 +54,7 @@ const fechar=async()=>{ click($('[data-acao="fechar-modal"]')); await espera(300
   // a explicação do card de continuar foi para a Ajuda (revisão de UX, 26/09: tela limpa)
   ok("a tela não repete a explicação do card de continuar", !/não uma revisão/.test(corpo), corpo.slice(0,220));
   ok("o nome sugerido é 'Continuar', não 'Revisão 1'",
-     $('#modalCaixa [name="rotulo"]').placeholder==="Continuar",
+     $('#modalCaixa [name="rotulo"]').placeholder==="padrão: Continuar",
      $('#modalCaixa [name="rotulo"]').placeholder);
   ok("o botão de apagar diz só 'Excluir' (26/09: nenhum excluir diz o que exclui)",
      $('#modalCaixa [data-acao="excluir-revisao"]').textContent.trim()==="Excluir",
