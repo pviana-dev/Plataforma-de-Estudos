@@ -308,6 +308,8 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 .uma-coluna .dia-prova{flex-direction:column;align-items:stretch}   /* nome e data do dia de prova, um embaixo do outro */
 .uma-coluna .dia-prova .excluir{align-self:flex-start}
 .ajuda-campo{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.35}
+/* conteúdo travado até haver disciplina (Registrar sessão) */
+#campoAssunto:disabled,[data-acao="add-assunto"]:disabled{opacity:.55;cursor:not-allowed}
 /* revisões até a prova: a lista de datas escolhidas */
 .intro-rev-prova{margin:0 0 12px;line-height:1.5}
 #formRevProva .campos + .intro-rev-prova{margin-top:14px}
@@ -4128,7 +4130,7 @@ function formRegistroHtml(){
                 '<input type="hidden" name="disciplina" value="'+esc(v.disciplina||"")+'">')
         : campo("Disciplina *", seletorDisciplina(v.disciplina))) +
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
-                     eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
+                     eRevisao ? "" : undefined, eRevisao, v.disciplina || "", true) +
       campoEstudarJunto(v, ed) +
       // sem tempo, a caixa vem vazia com o exemplo apagado — igual às questões
       campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(Number(v.minutos) > 0 ? Number(v.minutos) : "")+'" placeholder="ex.: 60">') +
@@ -4355,10 +4357,13 @@ function ligarSeletoresDisciplina(){
     sel.dataset.pronto = "1";
     const inp = sel.parentElement.querySelector(".nova-disciplina");
     if (!inp) return;
+    // nova disciplina sendo digitada: o conteúdo destrava assim que ela tem nome
+    if (sel.closest("#formRegistro")) inp.addEventListener("input", () => travarConteudos(sel.closest("form")));
     sel.addEventListener("change", () => {
       const criar = sel.value === "__nova";
       inp.hidden = !criar;
       if (criar) inp.focus(); else inp.value = "";
+      if (criar && sel.closest("#formRegistro")) travarConteudos(sel.closest("form"));
       /* Trocou a disciplina: a lista de conteúdos é outra. Redesenha o
          formulário (guardando o que já estava digitado) para o campo de
          conteúdo passar a mostrar só o que é daquela disciplina. */
@@ -4369,6 +4374,18 @@ function ligarSeletoresDisciplina(){
       if (!criar && campo) campo.innerHTML = opcoesDeConteudo(sel.value, lerAssuntosForm(sel.closest("form")));
     });
   });
+}
+/** o conteúdo da sessão só se escolhe com a disciplina definida (escolhida ou digitada) */
+function travarConteudos(form){
+  const campo = form && form.querySelector("#campoAssunto");
+  if (!campo) return;
+  const disc = disciplinaDoForm(form), travar = !disc;
+  const botao = form.querySelector('[data-acao="add-assunto"]'), aviso = form.querySelector("#avisoDisciplinaPrimeiro");
+  if (campo.disabled !== travar || !travar) campo.innerHTML = opcoesDeConteudo(disc, lerAssuntosForm(form));
+  campo.disabled = travar;
+  if (botao) botao.disabled = travar;
+  if (aviso) aviso.hidden = !travar;
+  if (travar){ const nome = form.querySelector("#novoConteudoNome"); if (nome){ nome.value = ""; nome.hidden = true; } }
 }
 /** lê a disciplina escolhida (ou digitada, se for nova) e a cadastra */
 function lerDisciplina(form){
@@ -4620,7 +4637,7 @@ function opcoesDeConteudo(disc, lista){
                      : "Disciplina primeiro") + '</option>' +
     opcoes + '<option value="__novo">＋ Criar novo conteúdo</option>';
 }
-function camposAssuntos(lista, rotulo, dica, travado, disciplina){
+function camposAssuntos(lista, rotulo, dica, travado, disciplina, disciplinaPrimeiro){
   // sem frase-guia por padrão (tiradas a pedido do Pedro, 24/09); travado = o conteúdo vem da revisão
   const ajuda = dica || "";
   if (travado) return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos revisados")+'</span>' +
@@ -4633,11 +4650,15 @@ function camposAssuntos(lista, rotulo, dica, travado, disciplina){
      ligeiramente diferente — era assim que nasciam "LAI", "LAI " e "Lei de
      acesso", três fichas para a mesma coisa.                                */
   const disc = disciplina || "";
+  /* A DISCIPLINA VEM PRIMEIRO (pedido do Pedro, 28/09): sem ela, o conteúdo
+     fica travado — conteúdo pertence a uma disciplina. Ver travarConteudos. */
+  const trava = disc || !disciplinaPrimeiro ? "" : " disabled";
   return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos da sessão *")+'</span>' +
     '<div id="listaAssuntosForm" class="tags" style="margin-bottom:7px">' + lista.map(tagAssunto).join("") + '</div>' +
     '<div class="linha" style="gap:7px;flex-wrap:nowrap">' +
-      '<select id="campoAssunto" style="flex:1">' + opcoesDeConteudo(disc, lista) + '</select>' +
-      '<button class="btn mini ghost" type="button" data-acao="add-assunto">+ adicionar</button></div>' +
+      '<select id="campoAssunto" style="flex:1"'+trava+'>' + opcoesDeConteudo(disc, lista) + '</select>' +
+      '<button class="btn mini ghost" type="button" data-acao="add-assunto"'+trava+'>+ adicionar</button></div>' +
+    (disciplinaPrimeiro ? '<span class="ajuda-campo" id="avisoDisciplinaPrimeiro"'+(disc ? " hidden" : "")+'>Escolha a disciplina primeiro.</span>' : '') +
     '<input id="novoConteudoNome" class="nova-disciplina" hidden placeholder="Nome do novo conteúdo" style="margin-top:6px">' +
     (ajuda ? '<span style="font-size:11.5px;color:var(--muted);margin-top:4px">'+esc(ajuda)+'</span>' : '') +
     '</div>';
@@ -4662,6 +4683,10 @@ function adicionarAssuntoForm(){
   if (!inp || !lista) return;
   const novoNome = document.getElementById("novoConteudoNome");
   const disc = disciplinaDoForm(inp.closest("form")) || "";
+  if (!disc && inp.closest("#formRegistro")){                // a disciplina vem primeiro
+    const sel = inp.closest("form").querySelector("select.sel-disciplina"); if (sel) sel.focus();
+    return;
+  }
   let v = inp.value.trim();
   if (v === "__novo"){                                   // criar ficha nova, ali mesmo
     const nome = novoNome ? novoNome.value.trim() : "";
