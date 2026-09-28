@@ -1709,6 +1709,7 @@ function limparIds(d){
     if (!o || typeof o !== "object") return;
     Object.keys(o).forEach(k => {
       if (ehId(k)) o[k] = seguro(o[k]);
+      else if (/Ids$/.test(k) && Array.isArray(o[k])) o[k] = o[k].map(seguro);   // listas de ids (juntasIds)
       else andar(o[k]);
     });
   };
@@ -2121,11 +2122,73 @@ function ligarSessaoRevisao(reg, rev){
 }
 /** desfaz o vínculo; a sessão e as horas dela continuam intactas */
 function desligarSessaoRevisao(reg){
+  soltarJuntas(reg);
   const rev = revisaoDaSessao(reg);
   delete reg.revisaoId;
   if (!rev) return;
   delete rev.sessaoId;
   rev.feita = false; rev.feitaEm = null;
+}
+/* SESSÃO COM VÁRIOS CONTEÚDOS (pedido do Pedro, 28/09). Estudar A e B juntos
+   cumpre o item vencido de CADA um: o principal fica em reg.revisaoId e os
+   outros em reg.juntasIds. Cada item continua apontando para uma sessão só
+   (sessaoId), e o tempo continua morando nela — conta uma vez só. Antes a
+   sessão cumpria só o item de A, e o de B ficava em aberto na agenda. */
+const juntasDaSessao = reg =>
+  (reg && Array.isArray(reg.juntasIds) ? reg.juntasIds : []).map(acharRevisao).filter(Boolean);
+/** todos os itens que a sessão cumpre: o principal e os que foram junto */
+function revisoesDaSessao(reg){
+  const p = revisaoDaSessao(reg);
+  return (p ? [p] : []).concat(juntasDaSessao(reg));
+}
+/** solta os itens que foram junto (o principal fica); a sessão e as horas continuam */
+function soltarJuntas(reg){
+  if (!reg) return;
+  juntasDaSessao(reg).forEach(rev => {
+    if (rev.sessaoId !== reg.id) return;
+    delete rev.sessaoId; rev.feita = false; rev.feitaEm = null;
+  });
+  delete reg.juntasIds;
+}
+/** um item está saindo: a sessão que o cumpria perde só o vínculo com ele */
+function esquecerRevisaoNaSessao(reg, revId){
+  if (!reg) return;
+  if (reg.revisaoId === revId) delete reg.revisaoId;
+  if (Array.isArray(reg.juntasIds)){
+    reg.juntasIds = reg.juntasIds.filter(id => id !== revId);
+    if (!reg.juntasIds.length) delete reg.juntasIds;
+  }
+}
+/** Com o item principal ligado, cumpre também o item vencido de cada OUTRO
+    conteúdo da sessão (o mais antigo, um por conteúdo — a mesma regra do
+    resolverLembrete). Devolve quantos entraram agora e não estavam antes. */
+function cumprirJuntas(reg, antes){
+  const jaEstavam = new Set(antes || reg.juntasIds || []);
+  soltarJuntas(reg);
+  const principal = revisaoDaSessao(reg);
+  if (!principal) return 0;
+  const coberto = new Set(((contextoRevisao(principal) || {}).assuntos || []).map(a => a.toLowerCase()));
+  const novas = [];
+  db.revisoes.filter(r => !r.feita && !r.sessaoId && r.data <= reg.data && !bloqueadaPelaProva(r))
+    .sort(porData).forEach(r => {
+      const ctx = contextoRevisao(r);
+      if (!ctx || ctx.disciplina !== reg.disciplina || !(ctx.assuntos || []).length) return;
+      if (!ctx.assuntos.every(a => temAssunto(reg, chaveAssunto(ctx.disciplina, a)))) return;
+      if (ctx.assuntos.every(a => coberto.has(a.toLowerCase()))) return;   // esse conteúdo já foi cumprido
+      ctx.assuntos.forEach(a => coberto.add(a.toLowerCase()));
+      r.sessaoId = reg.id; r.feita = true; r.feitaEm = reg.data;
+      novas.push(r.id);
+    });
+  if (novas.length) reg.juntasIds = novas;
+  return novas.filter(id => !jaEstavam.has(id)).length;
+}
+/** "junto com B": o item foi cumprido por uma sessão que cumpriu outros também */
+function juntoCom(rev){
+  const s = sessaoDaRevisao(rev);
+  if (!s) return "";
+  const outros = revisoesDaSessao(s).filter(r => r.id !== rev.id)
+    .map(r => (contextoRevisao(r) || {}).rotulo).filter(Boolean);
+  return outros.length ? "junto com " + outros.join(", ") : "";
 }
 /** remarca uma revisão atrasada, guardando a data em que ela estava marcada */
 function remarcarRevisao(rev, data){
@@ -2648,8 +2711,7 @@ function contatoComConteudos(fichas, data, opcoes){
 
 
 function reabrirRevisao(rev){
-  const s = sessaoDaRevisao(rev);
-  if (s) delete s.revisaoId;                 // a sessão e as horas dela continuam
+  esquecerRevisaoNaSessao(sessaoDaRevisao(rev), rev.id);   // a sessão e as horas dela continuam
   delete rev.sessaoId;
   rev.feita = false; rev.feitaEm = null; rev.minutos = null; rev.questoes = null; rev.acertos = null; rev.dificuldade = null;
   persistir();
@@ -3940,6 +4002,7 @@ function itemRevisao(x, quando, opcoes){
       'aria-label="'+esc((feita ? "Desmarcar " : "Marcar como feito: ") + x.ctx.rotulo)+'">✓</button>') +
       '<div class="corpo'+(o.saltavel ? " saltavel" : "")+'"'+salto+'><div class="titulo">'+esc(x.ctx.rotulo)+'</div>' +
       '<div class="meta">'+esc(x.ctx.sub)+(quando ? ' · '+esc(quando) : '')+' · '+esc(nome.toLowerCase())+
+        (feita && juntoCom(x.rev) ? ' · ' + esc(juntoCom(x.rev)) : '') +
         (bloq ? ' · <span class="selo-bloq">bloqueada até ' + D.br(bloq) + '</span>' : '') +
         (o.saltavel ? ' <span class="leva-a">ver no cronograma ↓</span>' : '')+'</div></div>' +
       acoes +
@@ -3979,6 +4042,10 @@ function infoDaSessao(reg){
     revLig ? esc(contextoRevisao(revLig) ? contextoRevisao(revLig).rotulo : "") +
              ' <span class="meta">de ' + D.brFull(revLig.data) + '</span>'
            : '<span class="meta">a revisão foi excluída — a sessão continua valendo</span>');
+  const juntas = juntasDaSessao(reg);
+  if (juntas.length) h += linha("Cumpriu também",
+    juntas.map(r => esc((contextoRevisao(r) || {}).rotulo || "")).join(", ") +
+    ' <span class="meta">· o tempo conta uma vez só</span>');
   if (reg.criadoEm) h += linha("Registrada em",
     D.brFull(D.iso(new Date(reg.criadoEm))) + ' <span class="meta">às ' + horaDe(reg.criadoEm) + '</span>');
   h += linha("Na agenda", revs.length
@@ -4062,6 +4129,7 @@ function formRegistroHtml(){
         : campo("Disciplina *", seletorDisciplina(v.disciplina))) +
       camposAssuntos(assuntosDe(v), eRevisao ? "Conteúdos revisados" : undefined,
                      eRevisao ? "" : undefined, eRevisao, v.disciplina || "") +
+      campoEstudarJunto(v, ed) +
       // sem tempo, a caixa vem vazia com o exemplo apagado — igual às questões
       campo("Tempo (min)", '<input type="number" name="minutos" min="0" max="1440" value="'+(Number(v.minutos) > 0 ? Number(v.minutos) : "")+'" placeholder="ex.: 60">') +
       camposQuestoes(v.questoes, v.acertos) +
@@ -4374,6 +4442,64 @@ function campoTipoSessao(v, ed){
       : "") +
     (avisos.length ? '<span class="dica-fmt">'+esc(avisos.join(" · "))+'</span>' : '') +
     '</div><div id="painelRevisao">' + htmlPainelRevisao(v, ed) + '</div></div>';
+}
+/* ESTUDAR JUNTO (28/09). Outros itens da mesma disciplina, de hoje ou
+   atrasados, que a sessão pode cumprir junto com o principal. Marcar a caixa
+   só põe o conteúdo do item na sessão: quem cumpre é a regra de sempre
+   (cumprirJuntas), que vale também para quem adiciona o conteúdo à mão. */
+function itensParaJuntar(v, ed){
+  const disc = v.disciplina || "";
+  if (!disc) return [];
+  const dia = v.data || D.hoje();
+  const eRev = ehTipoRevisao(v.tipo);
+  const principal = acharRevisao(v.revisaoId || (ed && ed.revisaoId) || "");
+  const doPrincipal = new Set((((principal && contextoRevisao(principal)) || {}).assuntos || []).map(a => a.toLowerCase()));
+  return db.revisoes
+    .filter(r => r !== principal && r.data <= dia && !bloqueadaPelaProva(r) &&
+                 ((!r.feita && !r.sessaoId) || (ed && r.sessaoId === ed.id)) &&
+                 (!eRev || !ehRetomada(r)))                      // revisão junta com revisão
+    .map(r => ({ rev: r, ctx: contextoRevisao(r) }))
+    .filter(x => x.ctx && x.ctx.disciplina === disc && (x.ctx.assuntos || []).length &&
+                 !x.ctx.assuntos.every(a => doPrincipal.has(a.toLowerCase())))   // o mesmo conteúdo do principal não
+    .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
+}
+function campoEstudarJunto(v, ed){
+  const itens = itensParaJuntar(v, ed);
+  if (!itens.length) return "";
+  const tem = new Set(assuntosDe(v).map(a => a.toLowerCase()));
+  return '<div class="campo largo"><span>Estudar junto (também na agenda de hoje)</span><div class="opcoes">' +
+    itens.map(x => '<label class="opcao"><input type="checkbox" name="juntar" value="'+esc(x.rev.id)+'"' +
+        (x.ctx.assuntos.every(a => tem.has(a.toLowerCase())) ? " checked" : "") + '>' +
+      '<span>' + esc(x.ctx.rotulo) + (x.rev.data < D.hoje() ? ' · atrasado de ' + D.br(x.rev.data) : '') +
+      '</span></label>').join("") +
+    '</div></div>';
+}
+/** marcou ou desmarcou "Estudar junto": o conteúdo do item entra ou sai da sessão, sem redesenhar */
+function alternarJuntar(caixa){
+  const form = caixa.closest("form"), lista = document.getElementById("listaAssuntosForm");
+  const rev = acharRevisao(caixa.value), ctx = rev ? contextoRevisao(rev) : null;
+  if (!form || !lista || !ctx) return;
+  const travado = !form.querySelector("#campoAssunto");       // revisão: o conteúdo vem do item
+  const achar = nome => [...lista.querySelectorAll("[data-assunto]")]
+    .find(t => t.dataset.assunto.toLowerCase() === nome.toLowerCase());
+  if (caixa.checked){
+    ctx.assuntos.forEach(nome => {
+      if (achar(nome)) return;
+      lista.insertAdjacentHTML("beforeend", travado
+        ? '<span class="tag fixo" data-assunto="'+esc(nome)+'">'+esc(nome)+'</span>' : tagAssunto(nome));
+      const op = [...form.querySelectorAll("#campoAssunto option")].find(o => o.value.toLowerCase() === nome.toLowerCase());
+      if (op) op.remove();
+    });
+  } else {
+    // sai o que só este item trazia: o conteúdo do principal e o das outras caixas marcadas ficam
+    const fica = new Set();
+    const alvo = form.querySelector("#revisaoAlvo");
+    [alvo && alvo.value, ...[...form.querySelectorAll('input[name="juntar"]:checked')].map(i => i.value)]
+      .forEach(id => { const r = id && acharRevisao(id), c = r && contextoRevisao(r);
+                       if (c) c.assuntos.forEach(a => fica.add(a.toLowerCase())); });
+    ctx.assuntos.forEach(nome => { const t = achar(nome); if (t && !fica.has(nome.toLowerCase())) t.remove(); });
+  }
+  if (!travado) conferirConcluidoNoForm(form);
 }
 /** as revisões que esta sessão pode cumprir */
 function revisoesDisponiveis(v, ed){
@@ -5324,6 +5450,8 @@ function linhaRevisao(x){
   const num = numerosDaRevisao(rev);           // tempo e questões vêm da sessão
   const partes = [];
   if (num.minutos) partes.push(hhmm(num.minutos));
+  const junto = juntoCom(rev);                 // a mesma sessão cumpriu outros itens: o tempo é dela, dividido
+  if (junto) partes.push(junto);
   if (num.questoes) partes.push(num.acertos+"/"+num.questoes+" questões");
   if (rev.dataOriginal) partes.push("estava marcada para " + D.br(rev.dataOriginal));
   const extra = partes.length ? " · " + partes.join(" · ") : "";
@@ -6602,6 +6730,11 @@ async function enviarRegistro(ev){
   }
   const herda = ehTipoRevisao(tipo) && ctxRev;      // revisão de verdade: conteúdo travado
   const listaAssuntos = herda ? ctxRev.assuntos.slice() : lerAssuntosForm(f);
+  // "Estudar junto": o conteúdo de cada item marcado entra na sessão (na revisão, é o único jeito de entrar)
+  f.querySelectorAll('input[name="juntar"]:checked').forEach(i => {
+    const r = acharRevisao(i.value), c = r && contextoRevisao(r);
+    if (c) c.assuntos.forEach(a => { if (!listaAssuntos.some(x => x.toLowerCase() === a.toLowerCase())) listaAssuntos.push(a); });
+  });
   const disciplina = herda ? ctxRev.disciplina : lerDisciplina(f);
   if (!disciplina){ erro.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
   if (!listaAssuntos.length){ erro.textContent = "Adicione ao menos um assunto."; return; }
@@ -6681,7 +6814,13 @@ async function enviarRegistro(ev){
   const planoMudou = salvarRegistro(reg);
   // vínculo com a revisão: marca a caixa dela, ou solta se deixou de ser revisão
   const salvo = acharRegistro(reg.id);
-  if (revAlvo) ligarSessaoRevisao(salvo, revAlvo);
+  const juntasAntes = (salvo.juntasIds || []).slice();
+  if (revAlvo){
+    ligarSessaoRevisao(salvo, revAlvo);
+    // os outros conteúdos da sessão cumprem o item deles; o próximo nasce daqui, como no resolverLembrete
+    if (cumprirJuntas(salvo, juntasAntes) && !ehRevisaoSessao(salvo) && planoDe(salvo) !== "sem")
+      gerarRevisoes(salvo, { base: salvo.data });
+  }
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
   else resolverLembrete(salvo);          // estudou o conteúdo? o lembrete vencido se dá por cumprido
   /* Sessão de conteúdo CONCLUÍDO é contato — cumprindo item da agenda (em dia,
@@ -7258,6 +7397,7 @@ function resolverLembrete(reg){
   if (!candidatos.length) return null;
   const alvo = candidatos[0];            // uma sessão fecha um lembrete: o mais antigo
   ligarSessaoRevisao(reg, alvo);
+  cumprirJuntas(reg);                    // e o dos outros conteúdos da sessão
   gerarRevisoes(reg, { base: reg.data });                    // e o próximo nasce daqui
   return alvo;
 }
@@ -7370,7 +7510,7 @@ function excluirConteudo(disc, nome){
   const ids = new Set(saindo.map(r => r.id));
   /* A sessão que cumpriu uma dessas revisões continua lá; o que ela perde é o
      vínculo, que apontaria para um item que não existe mais. */
-  saindo.forEach(rev => { const sv = sessaoDaRevisao(rev); if (sv) delete sv.revisaoId; });
+  saindo.forEach(rev => esquecerRevisaoNaSessao(sessaoDaRevisao(rev), rev.id));
   db.revisoes = db.revisoes.filter(r => !ids.has(r.id));
   /* O card que fala também de outro conteúdo fica — mas sem o nome do que saiu:
      "LAI · Licitações" passa a ser "Licitações". O que já foi feito é história
@@ -8079,8 +8219,9 @@ function modalAjuda(){
       '<ul class="aj-lista">' +
         '<li><b>O conteúdo é um só no sistema todo.</b> O mesmo "LAI" do cadastro aparece nas sessões, na agenda, nas anotações ' +
           'e nas questões. Por isso ele se <b>escolhe</b> numa lista, em vez de ser digitado.</li>' +
-        '<li><b>Registrar uma sessão mexe na agenda sozinho:</b> cumpre o item vencido daquele conteúdo e marca o próximo — ' +
-          'você não registra a mesma coisa duas vezes.</li>' +
+        '<li><b>Registrar uma sessão mexe na agenda sozinho:</b> cumpre o item vencido de cada conteúdo dela e marca o próximo — ' +
+          'você não registra a mesma coisa duas vezes. Dois conteúdos com card para hoje? Estude os dois numa sessão só ' +
+          '(no formulário, <b>Estudar junto</b>): os dois cards ficam feitos e o tempo conta uma vez.</li>' +
         '<li><b>A fase mora no conteúdo.</b> Em andamento, a agenda chama para <b>continuar</b>; concluído, para <b>revisar</b>. ' +
           'Concluir em ' + aba("Disciplinas") + ', no card da ' + aba("Agenda") + ' ou no formulário da sessão dá no mesmo.</li>' +
         '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') é automático: todo conteúdo cadastrado sem sessão está nele, e sai na primeira sessão.</li>' +
@@ -9502,8 +9643,7 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       if (await confirmar({ titulo: "Excluir", botao: "Excluir", perigo: true,
                   texto: "Excluir " + tx.esta + "? A sessão de estudo " + tx.ligada + ", se houver, continua como está." +
                   (ehRetomada(rv) ? "\n\nO conteúdo continua em andamento, então um novo card de continuar é marcado no lugar." : "") })){
-        const sv = rv ? sessaoDaRevisao(rv) : null;
-        if (sv) delete sv.revisaoId;             // a sessão sobrevive, só perde o vínculo
+        if (rv) esquecerRevisaoNaSessao(sessaoDaRevisao(rv), rv.id);   // a sessão sobrevive, só perde o vínculo
         db.revisoes = db.revisoes.filter(r => r.id !== id);
         garantirAgenda();                        // conteúdo aberto não fica sem próxima volta
         ui.editandoRevisao = null; persistir(); render();
@@ -9557,6 +9697,7 @@ document.addEventListener("change", ev => {
           (outros.length ? ". Vale também para " + outros.join(", ") + ", da mesma sessão." : "."));
     return;
   }
+  if (ev.target.matches && ev.target.matches('#formRegistro input[name="juntar"]')){ alternarJuntar(ev.target); return; }
   // escolheu a data: tira o foco para o calendário do navegador fechar sozinho
   if (ev.target.matches && ev.target.matches('input[type="date"]')) ev.target.blur();
   // "＋ Criar novo conteúdo" abre o campo do nome, ali mesmo
