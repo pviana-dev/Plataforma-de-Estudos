@@ -59,7 +59,7 @@ const db=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   const linhaSem=[...wSem.document.querySelectorAll("tbody tr[data-id]")][0];
   const celConteudo=[...linhaSem.querySelectorAll("td")][3];
   ok("sessão sem cronograma avisa junto do conteúdo",
-     /sem revisão/.test(celConteudo.textContent), celConteudo.textContent.replace(/\s+/g," "));
+     /sem cronograma/.test(celConteudo.textContent), celConteudo.textContent.replace(/\s+/g," "));
   /* plano feito à mão já teve etiqueta "manual" aqui; ela saiu por aparecer em
      quase toda linha sem mudar nada do que se faz na lista */
   const wMan=abrir(base({registros:[sess("r5",{plano:"manual"})]}));

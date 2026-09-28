@@ -2332,7 +2332,7 @@ function voltaEmAberto(reg, opcoes){
     return !!dono && conteudoAberto(dono) && chaveSessao(dono) === chave;
   }) || null;
 }
-const ROTULO_PLANO = { sem: "sem revisão", manual: "revisão manual" };
+const ROTULO_PLANO = { sem: "sem cronograma", manual: "revisão manual" };
 
 function gerarRevisoes(reg, opcoes){
   if (planoDe(reg) === "sem"){                                 // sem cronograma: limpa o que era automático
@@ -4118,7 +4118,7 @@ function formRegistroHtml(){
       '<button class="btn mini ghost" type="button" data-acao="descartar-prefill">Descartar</button></div>';
   }
   h += (eRevisao ? '' : planoAtual === "sem"
-        ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão está <b>sem cronograma de revisão</b> — serve para o conteúdo que você estuda todo dia. Desmarque a caixa para voltar a agendar revisões.</p>'
+        ? '<p class="sub" style="color:var(--accent-ink)">Esta sessão está <b>sem cronograma</b>: não gera revisões nem retomadas — serve para o conteúdo que você estuda todo dia. Desmarque a caixa para voltar a agendar.</p>'
         : '') +
     '<form id="formRegistro" novalidate>' +
     (v.inicio ? '<input type="hidden" name="inicio" value="'+esc(v.inicio)+'"><input type="hidden" name="fim" value="'+esc(v.fim||"")+'">' : '') +
@@ -4300,7 +4300,7 @@ function telaHistorico(){
        esta sessão não gera plano. Ele vai junto do nome do conteúdo, e só
        aparece quando é o caso.                                             */
     const marcaPlano = ehRevisaoSessao(r) ? ''
-      : plano === "sem"    ? ' <span class="badge" title="Esta sessão não gera cronograma de revisões">sem revisão</span>'
+      : plano === "sem"    ? ' <span class="badge" title="Esta sessão não gera revisões nem retomadas">sem cronograma</span>'
       : '';
       /* "manual" saiu daqui: plano feito à mão é o caso mais comum depois de
          mexer numa data, e a etiqueta aparecia em quase toda linha sem mudar
@@ -4582,7 +4582,7 @@ function campoIntegracao(v){
   return (estado ? '<div class="campo largo"><span>Fase dos conteúdos</span>' + estado + '</div>' : '') +
     '<div class="campo largo"><span>Revisões</span><div class="opcoes">' +
     '<label class="opcao"><input type="checkbox" name="semRevisao"'+(planoDe(v) === "sem" ? " checked" : "")+'>' +
-      '<span>Sem revisão — só registrar o estudo</span></label>' +
+      '<span>Sem cronograma — só registrar o estudo</span></label>' +
     '</div></div>';
 }
 const rotuloSessao = r => rotuloAssuntos(r) + " · " + D.br(r.data);
@@ -8196,7 +8196,7 @@ function modalAjuda(){
         '<div class="aj-item"><dt>' + aba("Sessões") + '</dt><dd>Tudo o que você estudou. <b>+ Registrar sessão</b> abre o formulário (data, disciplina, ' +
           'conteúdos, tempo, questões, dificuldade e descrição) — escolhido um conteúdo que já foi estudado, a dificuldade ' +
           'vem da última sessão dele. Clique numa linha para editar; <b>▶ continuar</b> abre uma ' +
-          'sessão nova do mesmo conteúdo, com a mesma dificuldade e o mesmo "sem revisão" (a descrição fica em branco). ' +
+          'sessão nova do mesmo conteúdo, com a mesma dificuldade e o mesmo "sem cronograma" (a descrição fica em branco). ' +
           'Estudou vários conteúdos? Adicione um de cada vez; o que diferencia duas sessões do mesmo conteúdo é a ' +
           '<b>descrição</b>. Só uma sessão <b>de hoje</b> pode virar revisão.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Agenda") + '</dt><dd>O que fazer e quando: <b>continuar</b> (conteúdo em andamento) e <b>revisar</b> ' +
