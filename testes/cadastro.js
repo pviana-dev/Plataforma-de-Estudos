@@ -67,7 +67,7 @@ const opcoesConteudo=()=>[...doc.querySelectorAll("#campoAssunto option")].map(o
   sel.value="__novo"; change(sel); await espera(150);
   ok("escolher criar abre o campo do nome", !$("#novoConteudoNome").hidden);
   $("#novoConteudoNome").value="Improbidade";
-  click($('[data-acao="add-assunto"]')); await espera(250);
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})(); await espera(250);
   ok("o conteúdo novo entra como etiqueta",
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].some(t=>t.dataset.assunto==="Improbidade"),
      [...doc.querySelectorAll("#listaAssuntosForm .tag")].map(t=>t.dataset.assunto));

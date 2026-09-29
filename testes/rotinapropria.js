@@ -40,7 +40,7 @@ async function abrirNovaRevisao(w, conteudo){
   const sel=w.document.querySelector("#campoAssunto");
   const op=[...sel.options].find(o=>o.value===conteudo); if(!op) throw new Error("sem opção "+conteudo+": "+[...sel.options].map(o=>o.value).join("|"));
   sel.value=op.value;
-  click(w, w.document.querySelector('[data-acao="add-assunto"]'));
+  (()=>{const _c=w.document.querySelector("#campoAssunto"),_n=w.document.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   return f;
 }
 

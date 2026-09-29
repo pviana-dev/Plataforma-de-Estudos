@@ -38,7 +38,7 @@ function porConteudo(doc, w, nome){
   const sel=doc.querySelector("#campoAssunto");
   const achada=[...sel.options].find(o=>o.value.toLowerCase()===nome.toLowerCase());
   sel.value=achada.value;
-  click(w, doc.querySelector('[data-acao="add-assunto"]'));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
 }
 /** a pessoa registra uma sessão de estudo nova pelo formulário (é contato com o conteúdo) */
 async function novaSessao(w, data){

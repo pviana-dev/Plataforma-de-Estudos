@@ -29,7 +29,7 @@ async function trocarConteudo(w, de, para){
   if (tag) click(tag.querySelector('[data-acao="remover-assunto"]'));
   await espera(150);
   const sel=doc.querySelector("#campoAssunto"); sel.value=para;
-  click(doc.querySelector('[data-acao="add-assunto"]')); await espera(200);
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})(); await espera(200);
   doc.querySelector("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   await espera(450);
 }

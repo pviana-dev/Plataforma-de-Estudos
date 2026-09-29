@@ -43,14 +43,14 @@ const volta=w=>db(w).revisoes.filter(r=>!r.feita).map(r=>Math.round(
   // conteúdo NOVO, nunca estudado: não há de onde herdar, a escolha é obrigatória
   const ca=doc.querySelector("#campoAssunto"); ca.value="__novo"; ca.dispatchEvent(new w.Event("change",{bubbles:true}));
   await espera(100); doc.querySelector("#novoConteudoNome").value="Improbidade";
-  doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   ok("conteúdo nunca estudado não traz dificuldade", doc.querySelector('#modalCaixa [name="dificuldade"]').value==="");
   $0.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(300);
   ok("e salvar sem escolher é recusado, com o aviso", /Escolha a dificuldade/.test(doc.querySelector("#erroForm").textContent),
      doc.querySelector("#erroForm").textContent);
   // conteúdo JÁ estudado (LAI teve sessão, dificuldade média): ao escolher, a dificuldade vem dele
   const ca2=doc.querySelector("#campoAssunto"); ca2.value=[...ca2.options].find(o=>o.value==="LAI").value;
-  doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   ok("escolhido um conteúdo já estudado, a dificuldade vem da última sessão dele (médio)",
      doc.querySelector('#modalCaixa [name="dificuldade"]').value==="2", doc.querySelector('#modalCaixa [name="dificuldade"]').value);
   ok("e a tela avisa de onde ela veio", /última sessão deste conteúdo/.test(doc.querySelector("#dicaDificuldade").textContent));

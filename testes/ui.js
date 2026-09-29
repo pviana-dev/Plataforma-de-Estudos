@@ -13,8 +13,7 @@ function porConteudo(doc, w, nome){
     const campo=doc.querySelector("#novoConteudoNome"); if (!campo) return false;
     campo.value=nome;
   }
-  const bt=doc.querySelector('[data-acao="add-assunto"]');
-  bt.dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   return true;
 }
 

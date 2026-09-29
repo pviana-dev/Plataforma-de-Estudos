@@ -128,7 +128,7 @@ const dados=w=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1"));
   await espera(50);
   const sel=doc.querySelector("#campoAssunto");
   sel.value=[...sel.options].find(o=>o.value==="LAI").value;
-  doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   { const _d=$("#formRegistro [name=dificuldade]"); if (_d && !_d.value) _d.value="2"; }   // obrigatória, sem padrão
   $("#formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(450);
   const d6=dados(w), novas=d6.registros.filter(r=>r.id!=="r1").sort((a,b)=>a.data.localeCompare(b.data));

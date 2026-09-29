@@ -88,7 +88,6 @@ const tipoMarcado=w=>{const r=w.document.querySelector('#modalCaixa [name="tipo"
   const sel=doc.querySelector("#modalCaixa select.sel-disciplina"); sel.value="Legislação";
   sel.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(300);
   const ca=doc.querySelector("#campoAssunto"); ca.value="LAI"; ca.dispatchEvent(new w.Event("change",{bubbles:true}));
-  if(!doc.querySelector('#listaAssuntosForm [data-assunto="LAI"]')) doc.querySelector('[data-acao="add-assunto"]')&&doc.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   if(!doc.querySelector('#listaAssuntosForm [data-assunto="LAI"]')) ca.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));
   await espera(400);
   ok("escolher um conteúdo concluído troca para revisão", tipoMarcado(w)==="revisao", tipoMarcado(w));

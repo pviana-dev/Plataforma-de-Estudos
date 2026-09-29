@@ -43,7 +43,7 @@ const db=()=>JSON.parse(w.localStorage.getItem("plataforma-estudos:v1")||"{}");
   campoAssunto.value="__novo";
   campoAssunto.dispatchEvent(new w.Event("change",{bubbles:true})); await espera(150);
   $("#modalCaixa #novoConteudoNome").value="LAI";
-  click($('#modalCaixa [data-acao="add-assunto"]')); await espera(200);
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})(); await espera(200);
   $('#modalCaixa [name="minutos"]').value="60";
   $('#modalCaixa [name="questoes"]').value="10";
   $('#modalCaixa [name="acertos"]').value="7";

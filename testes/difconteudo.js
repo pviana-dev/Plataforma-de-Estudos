@@ -70,7 +70,7 @@ const muda=(w,el,v)=>{ el.value=v; el.dispatchEvent(new w.Event("change",{bubble
   const f=w.document.querySelector("#formRegistro");
   muda(w,f.querySelector("select.sel-disciplina"),"Legislação"); await espera(250);
   const cs=w.document.querySelector("#campoAssunto"); cs.value="LAI";
-  w.document.querySelector('[data-acao="add-assunto"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(200);
+  (()=>{const _c=w.document.querySelector("#campoAssunto"),_n=w.document.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})(); await espera(200);
   ok("3. uma sessão nova de LAI já vem com Difícil", w.document.querySelector('#formRegistro [name="dificuldade"]').value==="3",
      w.document.querySelector('#formRegistro [name="dificuldade"]').value);
 

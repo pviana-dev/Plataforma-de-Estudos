@@ -21,11 +21,11 @@ function abrir(disciplinas){
   let w=abrir(["Legislação"]); await espera(450);
   let doc=w.document, $=s=>doc.querySelector(s);
   $('[data-acao="toggle-form-registro"]').dispatchEvent(new w.MouseEvent("click",{bubbles:true})); await espera(300);
-  ok("sem disciplina, o conteúdo vem travado", $("#campoAssunto").disabled && $('#formRegistro [data-acao="add-assunto"]').disabled);
+  ok("sem disciplina, o conteúdo vem travado", $("#campoAssunto").disabled);
   ok("e o formulário diz o porquê", !$("#avisoDisciplinaPrimeiro").hidden && /disciplina primeiro/i.test($("#avisoDisciplinaPrimeiro").textContent));
   $("#formRegistro .sel-disciplina").value="Legislação";
   $("#formRegistro .sel-disciplina").dispatchEvent(new w.Event("change",{bubbles:true})); await espera(300);
-  ok("escolhida a disciplina, o conteúdo destrava", !$("#campoAssunto").disabled && !$('#formRegistro [data-acao="add-assunto"]').disabled);
+  ok("escolhida a disciplina, o conteúdo destrava", !$("#campoAssunto").disabled);
   ok("com os conteúdos dela", [...$("#campoAssunto").options].some(o=>o.value==="LAI"));
   ok("e o aviso some", $("#avisoDisciplinaPrimeiro").hidden);
 
@@ -35,8 +35,7 @@ function abrir(disciplinas){
   const f=doc.querySelector("#formRegistro"), nova=f.querySelector(".nova-disciplina");
   ok("nova disciplina ainda sem nome: conteúdo travado", doc.querySelector("#campoAssunto").disabled);
   nova.value="Português"; nova.dispatchEvent(new w.Event("input",{bubbles:true}));
-  ok("digitado o nome, o conteúdo destrava", !doc.querySelector("#campoAssunto").disabled &&
-     !f.querySelector('[data-acao="add-assunto"]').disabled);
+  ok("digitado o nome, o conteúdo destrava", !doc.querySelector("#campoAssunto").disabled);
   nova.value=""; nova.dispatchEvent(new w.Event("input",{bubbles:true}));
   ok("apagado o nome, trava de novo", doc.querySelector("#campoAssunto").disabled);
 

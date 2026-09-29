@@ -309,7 +309,7 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 .uma-coluna .dia-prova .excluir{align-self:flex-start}
 .ajuda-campo{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.35}
 /* conteúdo travado até haver disciplina (Registrar sessão) */
-#campoAssunto:disabled,[data-acao="add-assunto"]:disabled{opacity:.55;cursor:not-allowed}
+#campoAssunto:disabled{opacity:.55;cursor:not-allowed}
 /* revisões até a prova: a lista de datas escolhidas */
 .intro-rev-prova{margin:0 0 12px;line-height:1.5}
 #formRevProva .campos + .intro-rev-prova{margin-top:14px}
@@ -3265,6 +3265,10 @@ function ligarFormularios(){
   ligar("#campoAssunto", "keydown", ev => {
     if (ev.key === "Enter" && !ev.sugConsumida){ ev.preventDefault(); adicionarAssuntoForm(); }
   });
+  // Enter no nome do conteúdo novo cria e adiciona (não envia o formulário)
+  ligar("#novoConteudoNome", "keydown", ev => {
+    if (ev.key === "Enter"){ ev.preventDefault(); adicionarAssuntoForm(); }
+  });
   // tipo e revisão mudam a cara do formulário inteiro: remonta a tela sobreposta
   ["tipoEstudo", "tipoRevisao", "tipoMisto", "revisaoAlvo"].forEach(id =>
     ligar("#" + id, "change", () => { guardarRascunhoRegistro(); redesenharTelaForm(); }));
@@ -4380,10 +4384,9 @@ function travarConteudos(form){
   const campo = form && form.querySelector("#campoAssunto");
   if (!campo) return;
   const disc = disciplinaDoForm(form), travar = !disc;
-  const botao = form.querySelector('[data-acao="add-assunto"]'), aviso = form.querySelector("#avisoDisciplinaPrimeiro");
+  const aviso = form.querySelector("#avisoDisciplinaPrimeiro");
   if (campo.disabled !== travar || !travar) campo.innerHTML = opcoesDeConteudo(disc, lerAssuntosForm(form));
   campo.disabled = travar;
-  if (botao) botao.disabled = travar;
   if (aviso) aviso.hidden = !travar;
   if (travar){ const nome = form.querySelector("#novoConteudoNome"); if (nome){ nome.value = ""; nome.hidden = true; } }
 }
@@ -4655,9 +4658,9 @@ function camposAssuntos(lista, rotulo, dica, travado, disciplina, disciplinaPrim
   const trava = disc || !disciplinaPrimeiro ? "" : " disabled";
   return '<div class="campo largo"><span>'+esc(rotulo || "Conteúdos da sessão *")+'</span>' +
     '<div id="listaAssuntosForm" class="tags" style="margin-bottom:7px">' + lista.map(tagAssunto).join("") + '</div>' +
-    '<div class="linha" style="gap:7px;flex-wrap:nowrap">' +
-      '<select id="campoAssunto" style="flex:1"'+trava+'>' + opcoesDeConteudo(disc, lista) + '</select>' +
-      '<button class="btn mini ghost" type="button" data-acao="add-assunto"'+trava+'>+ adicionar</button></div>' +
+    /* sem botão "+ adicionar" (pedido do Pedro, 29/09): escolher na lista já põe
+       o conteúdo na sessão; o novo entra com Enter ou ao sair do campo do nome */
+    '<select id="campoAssunto"'+trava+'>' + opcoesDeConteudo(disc, lista) + '</select>' +
     (disciplinaPrimeiro ? '<span class="ajuda-campo" id="avisoDisciplinaPrimeiro"'+(disc ? " hidden" : "")+'>Escolha a disciplina primeiro.</span>' : '') +
     '<input id="novoConteudoNome" class="nova-disciplina" hidden placeholder="Nome do novo conteúdo" style="margin-top:6px">' +
     (ajuda ? '<span style="font-size:11.5px;color:var(--muted);margin-top:4px">'+esc(ajuda)+'</span>' : '') +
@@ -4678,6 +4681,20 @@ function dificuldadeHerdada(disc, nomes){
     .filter(f => f && (sessoesDaFicha(f).length || f.dificuldade)).map(dificuldadeDaFicha);
   return niveis.length ? Math.max(...niveis) : null;
 }
+/* A DIFICULDADE VEM DA ABA DISCIPLINAS (pedido do Pedro, 29/09): escolhido um
+   conteúdo na sessão — já na lista, antes mesmo do "+ adicionar" —, o campo
+   passa a mostrar a dele (dificuldadeDaFicha, a mesma da aba Disciplinas),
+   mesmo que já houvesse outra escolhida. Editando uma sessão, só preenche o
+   campo vazio: a dificuldade de uma sessão já salva é dela. */
+function puxarDificuldadeNoForm(form){
+  const sel = form && form.id === "formRegistro" && form.querySelector('[name="dificuldade"]');
+  if (!sel || (ui.editandoRegistro && sel.value)) return;
+  const disc = disciplinaDoForm(form) || "", nomes = lerAssuntosForm(form);
+  const d = dificuldadeHerdada(disc, nomes);
+  if (!d) return;
+  sel.value = String(d); sel.classList.remove("campo-errado");
+  const dica = document.getElementById("dicaDificuldade"); if (dica) dica.textContent = textoHerdada(disc, nomes);
+}
 function adicionarAssuntoForm(){
   const inp = document.getElementById("campoAssunto"), lista = document.getElementById("listaAssuntosForm");
   if (!inp || !lista) return;
@@ -4692,7 +4709,14 @@ function adicionarAssuntoForm(){
     const nome = novoNome ? novoNome.value.trim() : "";
     if (!nome){ if (novoNome){ novoNome.hidden = false; novoNome.focus(); } return; }
     // disciplina ainda não existe (está sendo criada agora): a ficha nasce no salvamento
-    if (disc){ registrarConteudo(disc, nome); persistir(); }
+    /* nasce já no cadastro (aba Disciplinas), com a dificuldade escolhida aqui —
+       se ainda estiver em branco, ela entra no salvamento (enviarRegistro) */
+    if (disc){
+      const ficha = registrarConteudo(disc, nome);
+      const selDif = inp.closest("form").querySelector('[name="dificuldade"]');
+      if (ficha && !ficha.dificuldade && selDif && selDif.value) ficha.dificuldade = tresNiveis(selDif.value);
+      persistir();
+    }
     v = nome;
     if (novoNome){ novoNome.value = ""; novoNome.hidden = true; }
   }
@@ -4703,15 +4727,8 @@ function adicionarAssuntoForm(){
     const op = [...inp.options].find(o => o.value.toLowerCase() === v.toLowerCase());
     if (op) op.remove();                                  // sai da lista: já está na sessão
   }
-  // formulário de sessão com a dificuldade ainda em branco: herda a do conteúdo, se ele já foi estudado
-  const form = inp.closest("form"), sel = form && form.querySelector('[name="dificuldade"]');
-  if (sel && !sel.value){
-    const d = dificuldadeHerdada(disc, lerAssuntosForm(form));
-    if (d){
-      sel.value = String(d); sel.classList.remove("campo-errado");
-      const dica = document.getElementById("dicaDificuldade"); if (dica) dica.textContent = textoHerdada(disc, lerAssuntosForm(form));
-    }
-  }
+  const form = inp.closest("form");
+  puxarDificuldadeNoForm(form);
   inp.value = ""; inp.focus();
   conferirConcluidoNoForm(form);
 }
@@ -6837,6 +6854,9 @@ async function enviarRegistro(ev){
   // fechar não pode ser confundida com a volta em aberto que a continuação move
   if (revAlvo) reg.revisaoId = revAlvo.id;
   const planoMudou = salvarRegistro(reg);
+  /* a ficha de cada conteúdo guarda a dificuldade de agora — o conteúdo criado
+     nesta sessão chega à aba Disciplinas com a escolhida aqui */
+  listaAssuntos.forEach(a => { const fc = acharConteudo(reg.disciplina, a); if (fc) fc.dificuldade = dificuldadeDaFicha(fc); });
   // vínculo com a revisão: marca a caixa dela, ou solta se deixou de ser revisão
   const salvo = acharRegistro(reg.id);
   const juntasAntes = (salvo.juntasIds || []).slice();
@@ -9456,7 +9476,6 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       if (delta && D.soma(base + "-01", delta * 28).slice(0,7) === base)      // meses de 31 dias
         ui.mesAgenda = D.soma(base + "-01", delta * 32).slice(0,7);
       render(); break; }
-    case "add-assunto": adicionarAssuntoForm(); return;      // sem redesenhar: preserva o que já foi digitado
     case "estudo-previsto": {                                // atalho: hoje + N meses, na caixa dos ajustes
       const cx = document.getElementById("campoEstudoAte"); if (!cx) return;
       const dt = new Date(D.hoje() + "T12:00"); dt.setMonth(dt.getMonth() + Number(alvo.dataset.meses || 0));
@@ -9729,6 +9748,13 @@ document.addEventListener("change", ev => {
   if (ev.target.id === "campoAssunto"){
     const cx = document.getElementById("novoConteudoNome");
     if (cx){ cx.hidden = ev.target.value !== "__novo"; if (!cx.hidden) cx.focus(); }
+    // escolher já adiciona — sem redesenhar: preserva o que já foi digitado
+    if (ev.target.value && ev.target.value !== "__novo") adicionarAssuntoForm();
+    return;
+  }
+  // o nome do conteúdo novo, ao sair do campo (no celular, é o "ok" do teclado)
+  if (ev.target.id === "novoConteudoNome"){
+    if (ev.target.value.trim()) adicionarAssuntoForm();
     return;
   }
   /* Trocou a disciplina da anotação: a lista de conteúdos é outra. Refeita no

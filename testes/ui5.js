@@ -59,7 +59,7 @@ const passo=(fn,ms=250)=>new Promise(r=>setTimeout(()=>{fn();r();},ms));
     doc.getElementById("fBusca") && (doc.getElementById("fBusca").value="x");
   });
   await passo(()=>{
-    click(doc.querySelector('#modalCorpo [data-acao="add-assunto"]'));   // ação que não redesenha
+    (()=>{const _c=$("#modalCorpo #campoAssunto");_c.dispatchEvent(new w.Event("change",{bubbles:true}));})();   // ação que não redesenha
     ok("o que foi digitado continua lá", $("#modalCorpo [name=minutos]").value==="75");
     $("#modalCorpo #formRegistro").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
   });

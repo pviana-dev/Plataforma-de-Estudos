@@ -48,7 +48,7 @@ function porConteudo(doc, w, nome){
   if (achada) sel.value=achada.value;
   else { sel.value="__novo"; sel.dispatchEvent(new w.Event("change",{bubbles:true}));
          doc.querySelector("#novoConteudoNome").value=nome; }
-  click(w, doc.querySelector('[data-acao="add-assunto"]'));
+  (()=>{const _c=doc.querySelector("#campoAssunto"),_n=doc.querySelector("#novoConteudoNome");if(_c.value==="__novo")_n.dispatchEvent(new w.KeyboardEvent("keydown",{key:"Enter",bubbles:true}));else _c.dispatchEvent(new w.Event("change",{bubbles:true}));})();
   return true;
 }
 /** a pessoa marca uma revisão à mão, pela agenda */
