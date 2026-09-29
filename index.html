@@ -4532,9 +4532,39 @@ function revisoesDisponiveis(v, ed){
     .filter(x => x.status !== "futura" || x.rev.id === atual)  // só hoje e atrasadas
     .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
 }
+/* LIGAR NA EDIÇÃO (pedido do Pedro, 29/09). Registrou a sessão e o card de
+   hoje ficou em aberto (outro conteúdo, "sem cronograma"…)? Editando a sessão,
+   dá para dizer que ela cumpriu o card. Só sessão de hoje e card de hoje: mexer
+   no passado reescreveria a agenda que já andou. O conteúdo do card entra na
+   sessão, por isso só cards da mesma disciplina. */
+const ligaNaEdicao = (v, ed) => !!ed && !ed.revisaoId && !ui.ligarRevisao && !ehTipoRevisao(v.tipo);
+function cardsDeHojeParaLigar(v, ed){
+  const hoje = D.hoje(), disc = v.disciplina || ed.disciplina;
+  if (ed.data !== hoje || (v.data || ed.data) !== hoje) return [];
+  return revisoesDisponiveis(v, ed)
+    .filter(x => x.rev.data === hoje && !x.rev.feita && !x.rev.sessaoId && !bloqueadaPelaProva(x.rev) &&
+                 x.ctx.disciplina === disc);
+}
 function htmlPainelRevisao(v, ed){
   /* O vínculo não depende mais do tipo: qualquer sessão pode cumprir um item
      da agenda. O tipo é rótulo do que foi feito; o vínculo é outra coisa. */
+  if (ligaNaEdicao(v, ed)){
+    const lista = cardsDeHojeParaLigar(v, ed);
+    if (!lista.length) return "";
+    const rev = acharRevisao(v.revisaoId || ""), ctx = rev ? contextoRevisao(rev) : null;
+    const tem = new Set(assuntosDe(v).map(a => a.toLowerCase()));
+    const faltam = ctx ? ctx.assuntos.filter(a => !tem.has(a.toLowerCase())) : [];
+    return '<div class="painel-rev">' +
+      '<div class="campo"><span id="rotRevisaoAlvo">Esta sessão cumpre um card de hoje?</span>' +
+        '<select name="revisaoAlvo" id="revisaoAlvo" aria-labelledby="rotRevisaoAlvo">' +
+          '<option value="">Não — nenhum card</option>' +
+          lista.map(x => '<option value="'+esc(x.rev.id)+'"'+(rev && x.rev.id === rev.id ? " selected" : "")+'>' +
+            esc(x.ctx.rotulo) + " · " + esc(nomeRevisao(x.rev).toLowerCase()) + '</option>').join("") +
+        '</select></div>' +
+      (faltam.length ? '<p class="sub" style="margin:8px 0 0">O conteúdo do card entra na sessão: <b>' +
+        esc(faltam.join(", ")) + '</b></p>' : '') +
+      '</div>';
+  }
   const temAlvo = !!(v.revisaoId || (ed && ed.revisaoId));
   if (!ehTipoRevisao(v.tipo) && !temAlvo) return "";
   const atual = (ed && ed.revisaoId) || v.revisaoId || "";
@@ -6779,6 +6809,16 @@ async function enviarRegistro(ev){
   });
   const disciplina = herda ? ctxRev.disciplina : lerDisciplina(f);
   if (!disciplina){ erro.textContent = "Escolha a disciplina (ou crie uma nova)."; return; }
+  // editando, a sessão escolheu um card de hoje para cumprir: só hoje com hoje, e o conteúdo dele entra
+  if (revAlvo && anterior0 && ligaNaEdicao({ tipo }, anterior0)){
+    if (anterior0.data !== D.hoje() || dado.data !== D.hoje() || revAlvo.data !== D.hoje()){
+      erro.textContent = "Só uma sessão de hoje pode cumprir um card, e só um card de hoje."; return;
+    }
+    if (ctxRev.disciplina !== disciplina){
+      erro.textContent = "O card é de " + ctxRev.disciplina + " — a sessão precisa ser da mesma disciplina."; return;
+    }
+    ctxRev.assuntos.forEach(a => { if (!listaAssuntos.some(x => x.toLowerCase() === a.toLowerCase())) listaAssuntos.push(a); });
+  }
   if (!listaAssuntos.length){ erro.textContent = "Adicione ao menos um assunto."; return; }
   if (!ehTipoRevisao(tipo) && sessaoDeConcluido({ disciplina, assuntos: listaAssuntos, data: dado.data }, anterior0)){
     erro.textContent = "Conteúdo concluído se registra como revisão — para estudar de novo, reabra o conteúdo."; return;
