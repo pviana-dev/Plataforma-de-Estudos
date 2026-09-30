@@ -2163,9 +2163,14 @@ function esquecerRevisaoNaSessao(reg, revId){
 }
 /** Com o item principal ligado, cumpre também o item vencido de cada OUTRO
     conteúdo da sessão (o mais antigo, um por conteúdo — a mesma regra do
-    resolverLembrete). Devolve quantos entraram agora e não estavam antes. */
-function cumprirJuntas(reg, antes){
+    resolverLembrete). `escolhidos` são os cards que você marcou em "Estudar
+    junto": esses entram mesmo sendo do MESMO conteúdo do principal (o card
+    duplicado), que a regra automática deixaria de fora — a escada de um
+    conteúdo continua sendo cumprida um degrau por sessão, não de uma vez.
+    Devolve quantos entraram agora e não estavam antes. */
+function cumprirJuntas(reg, antes, escolhidos){
   const jaEstavam = new Set(antes || reg.juntasIds || []);
+  const pedidos = new Set(escolhidos || []);
   soltarJuntas(reg);
   const principal = revisaoDaSessao(reg);
   if (!principal) return 0;
@@ -2176,7 +2181,8 @@ function cumprirJuntas(reg, antes){
       const ctx = contextoRevisao(r);
       if (!ctx || ctx.disciplina !== reg.disciplina || !(ctx.assuntos || []).length) return;
       if (!ctx.assuntos.every(a => temAssunto(reg, chaveAssunto(ctx.disciplina, a)))) return;
-      if (ctx.assuntos.every(a => coberto.has(a.toLowerCase()))) return;   // esse conteúdo já foi cumprido
+      // esse conteúdo já foi cumprido — só entra se você marcou este card
+      if (!pedidos.has(r.id) && ctx.assuntos.every(a => coberto.has(a.toLowerCase()))) return;
       ctx.assuntos.forEach(a => coberto.add(a.toLowerCase()));
       r.sessaoId = reg.id; r.feita = true; r.feitaEm = reg.data;
       novas.push(r.id);
@@ -2188,8 +2194,15 @@ function cumprirJuntas(reg, antes){
 function juntoCom(rev){
   const s = sessaoDaRevisao(rev);
   if (!s) return "";
-  const outros = revisoesDaSessao(s).filter(r => r.id !== rev.id)
-    .map(r => (contextoRevisao(r) || {}).rotulo).filter(Boolean);
+  const meu = (contextoRevisao(rev) || {}).rotulo || "";
+  const outros = [];
+  revisoesDaSessao(s).filter(r => r.id !== rev.id).forEach(r => {
+    const rot = (contextoRevisao(r) || {}).rotulo;
+    if (!rot) return;
+    // card duplicado: o rótulo sozinho se repetiria ("junto com A" no card A) — a data distingue
+    const txt = rot === meu ? rot + " de " + D.br(r.data) : rot;
+    if (!outros.includes(txt)) outros.push(txt);
+  });
   return outros.length ? "junto com " + outros.join(", ") : "";
 }
 /** remarca uma revisão atrasada, guardando a data em que ela estava marcada */
@@ -3286,6 +3299,9 @@ function guardarRascunhoRegistro(){
   const edRasc = ui.editandoRegistro ? acharRegistro(ui.editandoRegistro) : null;
   ui.rascunho = {
     tipo, revisaoId: rev ? rev.id : "",
+    // as caixas de "Estudar junto" marcadas: no card duplicado, a caixa é a única
+    // coisa que distingue "cumpre os dois" de "cumpre só um"
+    juntas: [...f.querySelectorAll('input[name="juntar"]:checked')].map(i => i.value),
     data: val("data") || D.hoje(),
     disciplina: ehTipoRevisao(tipo) && ctx ? ctx.disciplina : disciplinaDoForm(f),
     // conteúdo pertence a uma disciplina: trocando a disciplina, a lista recomeça
@@ -4049,9 +4065,17 @@ function infoDaSessao(reg){
              ' <span class="meta">de ' + D.brFull(revLig.data) + '</span>'
            : '<span class="meta">a revisão foi excluída — a sessão continua valendo</span>');
   const juntas = juntasDaSessao(reg);
-  if (juntas.length) h += linha("Cumpriu também",
-    juntas.map(r => esc((contextoRevisao(r) || {}).rotulo || "")).join(", ") +
-    ' <span class="meta">· o tempo conta uma vez só</span>');
+  if (juntas.length){
+    // rótulo repetido = dois cards do mesmo conteúdo; aí a data diz qual é qual
+    const quantos = {};
+    revisoesDaSessao(reg).forEach(r => { const k = (contextoRevisao(r) || {}).rotulo || "";
+                                        quantos[k] = (quantos[k] || 0) + 1; });
+    h += linha("Cumpriu também",
+      juntas.map(r => { const rot = (contextoRevisao(r) || {}).rotulo || "";
+                        return esc(rot) + (quantos[rot] > 1 ? ' <span class="meta">de ' + D.br(r.data) + '</span>' : ""); })
+        .join(", ") +
+      ' <span class="meta">· o tempo conta uma vez só</span>');
+  }
   if (reg.criadoEm) h += linha("Registrada em",
     D.brFull(D.iso(new Date(reg.criadoEm))) + ' <span class="meta">às ' + horaDe(reg.criadoEm) + '</span>');
   h += linha("Na agenda", revs.length
@@ -4466,7 +4490,13 @@ function campoTipoSessao(v, ed){
 /* ESTUDAR JUNTO (28/09). Outros itens da mesma disciplina, de hoje ou
    atrasados, que a sessão pode cumprir junto com o principal. Marcar a caixa
    só põe o conteúdo do item na sessão: quem cumpre é a regra de sempre
-   (cumprirJuntas), que vale também para quem adiciona o conteúdo à mão. */
+   (cumprirJuntas), que vale também para quem adiciona o conteúdo à mão.
+   CARD DUPLICADO DO MESMO CONTEÚDO (pedido do Pedro, 30/09). Ficaram dois
+   cards iguais — o de ontem que você não conseguiu marcar e o de hoje — e a
+   lista escondia o outro, porque o conteúdo dele já estava na sessão. Agora
+   ele aparece (marcado com a data, para você saber qual é) e, como o conteúdo
+   sozinho não distingue um card do outro, quem manda aqui é a CAIXA: só o que
+   você marca é cumprido junto. `mesmo` = é o conteúdo do principal. */
 function itensParaJuntar(v, ed){
   const disc = v.disciplina || "";
   if (!disc) return [];
@@ -4479,18 +4509,24 @@ function itensParaJuntar(v, ed){
                  ((!r.feita && !r.sessaoId) || (ed && r.sessaoId === ed.id)) &&
                  (!eRev || !ehRetomada(r)))                      // revisão junta com revisão
     .map(r => ({ rev: r, ctx: contextoRevisao(r) }))
-    .filter(x => x.ctx && x.ctx.disciplina === disc && (x.ctx.assuntos || []).length &&
-                 !x.ctx.assuntos.every(a => doPrincipal.has(a.toLowerCase())))   // o mesmo conteúdo do principal não
+    .filter(x => x.ctx && x.ctx.disciplina === disc && (x.ctx.assuntos || []).length)
+    .map(x => Object.assign(x, { mesmo: x.ctx.assuntos.every(a => doPrincipal.has(a.toLowerCase())) }))
     .sort((a,b) => a.rev.data.localeCompare(b.rev.data));
 }
 function campoEstudarJunto(v, ed){
   const itens = itensParaJuntar(v, ed);
   if (!itens.length) return "";
   const tem = new Set(assuntosDe(v).map(a => a.toLowerCase()));
+  /* Quem já vem marcado: o que você marcou antes do redesenho (v.juntas), ou o
+     que esta sessão já cumpre (editando). O card do MESMO conteúdo nunca vem
+     marcado sozinho — o conteúdo já está na sessão por causa do principal. */
+  const marcadas = new Set(v.juntas || (ed && ed.juntasIds) || []);
   return '<div class="campo largo"><span>Estudar junto (também na agenda de hoje)</span><div class="opcoes">' +
     itens.map(x => '<label class="opcao"><input type="checkbox" name="juntar" value="'+esc(x.rev.id)+'"' +
-        (x.ctx.assuntos.every(a => tem.has(a.toLowerCase())) ? " checked" : "") + '>' +
-      '<span>' + esc(x.ctx.rotulo) + (x.rev.data < D.hoje() ? ' · atrasado de ' + D.br(x.rev.data) : '') +
+        (marcadas.has(x.rev.id) || (!x.mesmo && x.ctx.assuntos.every(a => tem.has(a.toLowerCase()))) ? " checked" : "") + '>' +
+      '<span>' + esc(x.ctx.rotulo) +
+        (x.mesmo ? ' · o mesmo conteúdo, card ' + (x.rev.data < D.hoje() ? 'atrasado de ' : 'de ') + D.br(x.rev.data)
+                 : x.rev.data < D.hoje() ? ' · atrasado de ' + D.br(x.rev.data) : '') +
       '</span></label>').join("") +
     '</div></div>';
 }
@@ -6803,8 +6839,9 @@ async function enviarRegistro(ev){
   const herda = ehTipoRevisao(tipo) && ctxRev;      // revisão de verdade: conteúdo travado
   const listaAssuntos = herda ? ctxRev.assuntos.slice() : lerAssuntosForm(f);
   // "Estudar junto": o conteúdo de cada item marcado entra na sessão (na revisão, é o único jeito de entrar)
-  f.querySelectorAll('input[name="juntar"]:checked').forEach(i => {
-    const r = acharRevisao(i.value), c = r && contextoRevisao(r);
+  const juntarIds = [...f.querySelectorAll('input[name="juntar"]:checked')].map(i => i.value);
+  juntarIds.forEach(id => {
+    const r = acharRevisao(id), c = r && contextoRevisao(r);
     if (c) c.assuntos.forEach(a => { if (!listaAssuntos.some(x => x.toLowerCase() === a.toLowerCase())) listaAssuntos.push(a); });
   });
   const disciplina = herda ? ctxRev.disciplina : lerDisciplina(f);
@@ -6903,11 +6940,11 @@ async function enviarRegistro(ev){
   if (revAlvo){
     ligarSessaoRevisao(salvo, revAlvo);
     // os outros conteúdos da sessão cumprem o item deles; o próximo nasce daqui, como no resolverLembrete
-    if (cumprirJuntas(salvo, juntasAntes) && !ehRevisaoSessao(salvo) && planoDe(salvo) !== "sem")
+    if (cumprirJuntas(salvo, juntasAntes, juntarIds) && !ehRevisaoSessao(salvo) && planoDe(salvo) !== "sem")
       gerarRevisoes(salvo, { base: salvo.data });
   }
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
-  else resolverLembrete(salvo);          // estudou o conteúdo? o lembrete vencido se dá por cumprido
+  else resolverLembrete(salvo, juntarIds);   // estudou o conteúdo? o lembrete vencido se dá por cumprido
   /* Sessão de conteúdo CONCLUÍDO é contato — cumprindo item da agenda (em dia,
      atrasado ou adiantado) ou fora dela: a escada anda a partir deste dia.
      Só quando a sessão é nova ou mudou de dia ou de conteúdo: corrigir a
@@ -7467,7 +7504,7 @@ async function pedirNomeDoConteudo(disc, antigo, extra){
    partir deste dia — sem você registrar a mesma coisa duas vezes.
    Só entra o que já venceu: estudar hoje não consome uma revisão marcada para
    daqui a três semanas, que ainda tem função.                               */
-function resolverLembrete(reg){
+function resolverLembrete(reg, escolhidos){
   if (!reg || ehRevisaoSessao(reg) || planoDe(reg) === "sem") return null;
   /* O item é cumprido quando a sessão cobre TODOS os conteúdos dele — conta o
      conteúdo, não a sessão dona. Vale também para a revisão marcada à mão:
@@ -7482,7 +7519,7 @@ function resolverLembrete(reg){
   if (!candidatos.length) return null;
   const alvo = candidatos[0];            // uma sessão fecha um lembrete: o mais antigo
   ligarSessaoRevisao(reg, alvo);
-  cumprirJuntas(reg);                    // e o dos outros conteúdos da sessão
+  cumprirJuntas(reg, null, escolhidos);  // e o dos outros conteúdos da sessão
   gerarRevisoes(reg, { base: reg.data });                    // e o próximo nasce daqui
   return alvo;
 }

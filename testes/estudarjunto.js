@@ -116,6 +116,58 @@ function abertas(w){
   if (bt){ click(w,bt); await espera(400); }
   ok("só com o card de A, nada de \"Estudar junto\"", !!bt && !doc.querySelector('input[name="juntar"]'));
 
+  /* ---- 6. CARD DUPLICADO (30/09): dois cards do MESMO conteúdo A, o de ontem
+       (que ninguém conseguiu marcar) e o de hoje. Um deles vira a sessão; o
+       outro tem de aparecer em "Estudar junto" e ser cumprido junto. ---- */
+  const seed6 = () => {
+    const s = { versao:1, tema:"claro", dataProva:"", objetivo:"livre", metaDiariaMin:120,
+      disciplinas:["Legislação"], lancamentos:[], grupos:[],
+      conteudos:[{id:"cA",disciplina:"Legislação",nome:"A",fase:"andamento",criadoEm:1},
+                 {id:"cB",disciplina:"Legislação",nome:"B",fase:"andamento",criadoEm:2}],
+      conteudosMigrados:true, fasesMigradas:true, dificuldadesMigradas:true,
+      registros:[sess("r1",["A"],dia(-5)), sess("r1b",["A"],dia(-4)), sess("r2",["B"],dia(-3))],
+      revisoes:[ Object.assign(volta("vA1","r1","A"), {data:dia(-1)}),
+                 volta("vA2","r1b","A"), volta("vB","r2","B") ],
+      erros:[], cronometro:null };
+    return s;
+  };
+  const abrirSeed = (seed, aba) => new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
+    beforeParse(x){ x.__semLogin=true; x.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(seed));
+      x.localStorage.setItem("plataforma-estudos:tela",JSON.stringify({aba,gravadoEm:hoje}));
+      x.__confirmarNativo=true; x.confirm=()=>true; }}).window;
+
+  w=abrirSeed(seed6(),"revisoes"); await espera(500); doc=w.document;
+  ok("os dois cards de A continuam abertos", !!rev(w,"vA1") && !!rev(w,"vA2") &&
+     !rev(w,"vA1").feita && !rev(w,"vA2").feita, db(w).revisoes.map(r=>[r.id,r.data,r.feita]));
+  // o ✓ está no card de HOJE; o de ontem é justamente o que não deu para marcar
+  click(w,doc.querySelector('#view [data-acao="concluir"][data-id="vA2"]')); await espera(400);
+  f=doc.querySelector("#formRegistro");
+  const dupla=f && f.querySelector('input[name="juntar"][value="vA1"]');
+  ok("a caixa oferece o OUTRO card de A", !!dupla, f && f.textContent.slice(0,300));
+  ok("dizendo que é o mesmo conteúdo, com a data", !!dupla && /o mesmo conteúdo, card atrasado de/.test(f.textContent));
+  ok("e ela vem DESMARCADA (você escolhe)", !!dupla && !dupla.checked);
+  ok("o card de B (outro conteúdo) continua na lista", !!f.querySelector('input[name="juntar"][value="vB"]'));
+  dupla.checked=true; dupla.dispatchEvent(new w.Event("change",{bubbles:true}));
+  const tags6=[...f.querySelectorAll("#listaAssuntosForm [data-assunto]")].map(t=>t.dataset.assunto).join("+");
+  ok("marcar não duplica o conteúdo na sessão", tags6==="A", tags6);
+  f.querySelector('[name="minutos"]').value="45"; f.querySelector('[name="dificuldade"]').value="2";
+  enviar(w,f); await espera(600);
+  const reg6=db(w).registros.filter(r=>r.data===hoje);
+  ok("nasce UMA sessão de A", reg6.length===1 && reg6[0].assuntos.join("+")==="A", reg6);
+  ok("que cumpre o card de hoje", rev(w,"vA2").feita && rev(w,"vA2").sessaoId===reg6[0].id, rev(w,"vA2"));
+  ok("e TAMBÉM o card atrasado, igual a ele", rev(w,"vA1").feita && rev(w,"vA1").sessaoId===reg6[0].id, rev(w,"vA1"));
+  ok("com 45 min contados uma vez", reg6.reduce((s,r)=>s+r.minutos,0)===45);
+  ok("o card de B, não marcado, fica em aberto", !rev(w,"vB").feita && !rev(w,"vB").sessaoId, rev(w,"vB"));
+
+  /* ---- 7. sem marcar a caixa, o card duplicado continua em aberto ---- */
+  w=abrirSeed(seed6(),"revisoes"); await espera(500); doc=w.document;
+  click(w,doc.querySelector('#view [data-acao="concluir"][data-id="vA2"]')); await espera(400);
+  f=doc.querySelector("#formRegistro");
+  f.querySelector('[name="minutos"]').value="30"; f.querySelector('[name="dificuldade"]').value="2";
+  enviar(w,f); await espera(600);
+  ok("caixa desmarcada: só o card de hoje se cumpre",
+     rev(w,"vA2").feita && !rev(w,"vA1").feita, [rev(w,"vA1"),rev(w,"vA2")]);
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nestudar junto: a sessão cumpre o card de cada conteúdo");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();
