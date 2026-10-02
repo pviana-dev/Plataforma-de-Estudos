@@ -8265,6 +8265,23 @@ function modalAjustes(){
   abrirModal("Ajustes",
     '<form id="formAjustes"><div class="campos uma-coluna">' +
       camposObjetivo() +
+      /* Agendamento logo abaixo da data da prova (pedido do Pedro, 02/10): é
+         importante demais para ficar no fim da tela */
+      campoOpcoes("Agendamento", [{ nome:"automatico", marcado: agendaAutomatica(),
+        texto:"Criar os agendamentos automaticamente (revisões e cards de continuar)" }]
+        .concat(db.posProva === "encerrei" ? [{ nome:"religar", marcado:false,
+        texto:"Voltar a agendar revisões (está desligado desde a prova)" }] : [])) +
+      /* Desligando: o que já está na agenda. Manter é o padrão — nada some sem
+         você pedir; o que era automático passa a ser seu e não é mais mexido. */
+      (agendaAutomatica()
+        ? '<div class="campo largo painel-questao" id="painelAutomatico"><div class="interno">' +
+            '<span>O que já está na agenda</span><div class="opcoes">' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="manter" checked>' +
+              '<span>Manter — as revisões e os cards de continuar automáticos passam a ser seus</span></label>' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="apagar">' +
+              '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+          '</div></div></div>'
+        : '') +
       campo("Meta diária (min)", '<input type="number" name="meta" min="15" max="960" value="'+db.metaDiariaMin+'">') +
       campo("Revisar até (opcional)",
             '<input type="date" name="revisarAte" value="'+esc(db.revisarAte||"")+'" ' +
@@ -8287,21 +8304,6 @@ function modalAjustes(){
           'value="' + esc(String((db.diasRetomada || {})[n] || "")) + '">' +
           '<span class="ajuda-campo" style="margin:0" id="padraoVolta' + n + '">' + textoPadraoVolta(diasDaVoltaPadrao(n)) + '</span></div>').join("") +
         '</div></div>' +
-      campoOpcoes("Agendamento", [{ nome:"automatico", marcado: agendaAutomatica(),
-        texto:"Criar os agendamentos automaticamente (revisões e cards de continuar)" }]
-        .concat(db.posProva === "encerrei" ? [{ nome:"religar", marcado:false,
-        texto:"Voltar a agendar revisões (está desligado desde a prova)" }] : [])) +
-      /* Desligando: o que já está na agenda. Manter é o padrão — nada some sem
-         você pedir; o que era automático passa a ser seu e não é mais mexido. */
-      (agendaAutomatica()
-        ? '<div class="campo largo painel-questao" id="painelAutomatico"><div class="interno">' +
-            '<span>O que já está na agenda</span><div class="opcoes">' +
-            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="manter" checked>' +
-              '<span>Manter — as revisões e os cards de continuar automáticos passam a ser seus</span></label>' +
-            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="apagar">' +
-              '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
-          '</div></div></div>'
-        : '') +
     '</div>' +
     // acoes-form: o Salvar vai para o rodapé fixo, como nas outras telas (antes só no fim da rolagem)
     '<div class="linha acoes-form" style="margin-top:12px"><button class="btn" type="submit">Salvar</button>' +
@@ -8448,6 +8450,7 @@ function modalAjuda(){
         '<div class="aj-item"><dt>Objetivo</dt><dd>Estudo contínuo, concurso (uma prova) ou vestibular (vários dias de prova, quantos ' +
           'forem). Sem data, a prova fica “data a definir” e a agenda segue sem prazo até ela entrar. Com dois dias de prova ou ' +
           'mais, dá para ligar disciplinas e conteúdos a um dia, na aba Disciplinas — é opcional.</dd></div>' +
+        '<div class="aj-item"><dt>Agendamento</dt><dd>Ligar ou desligar a criação automática de revisões e cards de continuar.</dd></div>' +
         '<div class="aj-item"><dt>Meta diária</dt><dd>Os minutos por dia que contam para a meta e para a sequência de dias.</dd></div>' +
         '<div class="aj-item"><dt>Revisar até</dt><dd>O teto do cronograma: o sistema agenda até esse dia e não passa dele. ' +
           'Em branco, ele anda ' + CONFIG.HORIZONTE_LIVRE + ' dias à frente de hoje.</dd></div>' +
@@ -8455,7 +8458,6 @@ function modalAjuda(){
           'tempo continuar cada conteúdo em andamento. Em branco, vale a data da prova, se houver.</dd></div>' +
         '<div class="aj-item"><dt>Dias até continuar</dt><dd>Os seus números para difícil, médio e fácil; em branco, vale o padrão ' +
           '(o número apagado).</dd></div>' +
-        '<div class="aj-item"><dt>Agendamento</dt><dd>Ligar ou desligar a criação automática de revisões e cards de continuar.</dd></div>' +
       '</dl>' +
       '<div class="linha" style="margin-top:10px"><button class="btn ghost" type="button" data-acao="abrir-ajustes">' +
         'Abrir os ajustes</button></div>'],
