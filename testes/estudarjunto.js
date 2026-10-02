@@ -168,6 +168,122 @@ function abertas(w){
   ok("caixa desmarcada: só o card de hoje se cumpre",
      rev(w,"vA2").feita && !rev(w,"vA1").feita, [rev(w,"vA1"),rev(w,"vA2")]);
 
+  /* ---- 8. A JUNÇÃO É SÓ DA SESSÃO (02/10): estudados juntos hoje, A e B
+       ganham cada um a sua próxima volta — não um card "A · B". ---- */
+  w=abrir(base(),"revisoes"); await espera(500); doc=w.document;
+  click(w,doc.querySelector('#view [data-acao="concluir"][data-id="vA"]')); await espera(400);
+  f=doc.querySelector("#formRegistro");
+  const cx8=f.querySelector('input[name="juntar"][value="vB"]');
+  cx8.checked=true; cx8.dispatchEvent(new w.Event("change",{bubbles:true}));
+  f.querySelector('[name="minutos"]').value="60"; f.querySelector('[name="dificuldade"]').value="2";
+  enviar(w,f); await espera(600);
+  const prox8=db(w).revisoes.filter(r=>!r.feita && r.retomada).map(r=>(r.assuntos||[]).join("+")).sort();
+  ok("a próxima volta vem separada: um card de A e outro de B", JSON.stringify(prox8)==='["A","B"]', prox8);
+
+  /* ---- 9. a sessão conjunta que FECHA os dois: a escada de cada um anda
+       sozinha, sem se juntar num card "A · B" ---- */
+  const seed9 = { versao:1, tema:"claro", dataProva:"", objetivo:"livre", metaDiariaMin:120,
+    disciplinas:["Legislação"], lancamentos:[], grupos:[],
+    conteudos:[{id:"cA",disciplina:"Legislação",nome:"A",fase:"concluido",concluidoEm:hoje,criadoEm:1},
+               {id:"cB",disciplina:"Legislação",nome:"B",fase:"concluido",concluidoEm:hoje,criadoEm:2}],
+    conteudosMigrados:true, fasesMigradas:true, dificuldadesMigradas:true,
+    registros: base().concat([Object.assign(sess("r3",["A","B"],hoje), {revisaoId:"vA", juntasIds:["vB"]})]),
+    revisoes:[ Object.assign(volta("vA","r1","A"),{feita:true,feitaEm:hoje,sessaoId:"r3"}),
+               Object.assign(volta("vB","r2","B"),{feita:true,feitaEm:hoje,sessaoId:"r3"}) ],
+    erros:[], cronometro:null };
+  w=abrirSeed(seed9,"revisoes"); await espera(500);
+  const escada9=db(w).revisoes.filter(r=>!r.feita && !r.retomada && r.registroId==="r3");
+  ok("a escada nasce", escada9.length>0, db(w).revisoes);
+  ok("e cada degrau é um card de um conteúdo só", escada9.every(r=>(r.assuntos||[]).length===1),
+     escada9.map(r=>[r.data,r.assuntos]));
+
+  /* ---- 10. cada um no SEU ritmo: A fácil e B difícil, estudados juntos pelo
+       card de A. A volta de B segue a dificuldade de B (não a da sessão, que é
+       a de A), e B continua difícil. ---- */
+  const base10=()=>[Object.assign(sess("r1",["A"],dia(-3)),{dificuldade:1}), Object.assign(sess("r2",["B"],dia(-3)),{dificuldade:3})];
+  // a régua: a data que cada um ganharia estudado SOZINHO
+  const sozinho=async(id,nome,dif)=>{ const x=abrir(base10(),"revisoes"); await espera(500);
+    click(x,x.document.querySelector('#view [data-acao="concluir"][data-id="'+id+'"]')); await espera(400);
+    const g=x.document.querySelector("#formRegistro");
+    g.querySelector('[name="minutos"]').value="60"; g.querySelector('[name="dificuldade"]').value=String(dif);
+    enviar(x,g); await espera(600);
+    const v=db(x).revisoes.find(r=>!r.feita && r.retomada && (r.assuntos||[]).join("+")===nome);
+    return v && v.data; };
+  const sozA=await sozinho("vA","A",1), sozB=await sozinho("vB","B",3);
+  w=abrir(base10(),"revisoes"); await espera(500); doc=w.document;
+  click(w,doc.querySelector('#view [data-acao="concluir"][data-id="vA"]')); await espera(400);
+  f=doc.querySelector("#formRegistro");
+  const cx10=f.querySelector('input[name="juntar"][value="vB"]');
+  cx10.checked=true; cx10.dispatchEvent(new w.Event("change",{bubbles:true}));
+  f.querySelector('[name="minutos"]').value="60"; f.querySelector('[name="dificuldade"]').value="1";
+  enviar(w,f); await espera(600);
+  const volta10=n=>db(w).revisoes.find(r=>!r.feita && r.retomada && (r.assuntos||[]).join("+")===n);
+  ok("sozinhos, A e B voltariam em dias diferentes", sozA && sozB && sozA!==sozB, [sozA,sozB]);
+  ok("a volta de A vem no dia em que viria sozinha", volta10("A") && volta10("A").data===sozA, [volta10("A"),sozA]);
+  ok("a volta de B também (ritmo de B, não o da sessão)", volta10("B") && volta10("B").data===sozB, [volta10("B"),sozB]);
+  const fB=db(w).conteudos.find(c=>c.nome==="B");
+  ok("e B continua difícil", fB.dificuldade===3, fB);
+
+  /* ---- 11. concluídos: revisar B junto com A (fácil) não refaz a escada de B
+       com a dificuldade de A ---- */
+  const seed11 = { versao:1, tema:"claro", dataProva:"", objetivo:"livre", metaDiariaMin:120, revisarAte:dia(400),
+    disciplinas:["Legislação"], lancamentos:[], grupos:[],
+    conteudos:[{id:"cA",disciplina:"Legislação",nome:"A",fase:"concluido",concluidoEm:dia(-3),criadoEm:1},
+               {id:"cB",disciplina:"Legislação",nome:"B",fase:"concluido",concluidoEm:dia(-3),criadoEm:2}],
+    conteudosMigrados:true, fasesMigradas:true, dificuldadesMigradas:true,
+    registros: base10().map(r=>Object.assign(r,{data:dia(-3)})),
+    revisoes:[ {id:"vA",registroId:"r1",assuntos:["A"],data:hoje,degrau:1,passo:3,feita:false,manual:false},
+               {id:"vB",registroId:"r2",assuntos:["B"],data:hoje,degrau:1,passo:3,feita:false,manual:false} ],
+    erros:[], cronometro:null };
+  w=abrirSeed(seed11,"revisoes"); await espera(500); doc=w.document;
+  const passosB=()=>db(w).revisoes.filter(r=>r.id!=="vB" && !r.feita && (r.assuntos||[]).join()==="B").sort((a,b)=>a.data.localeCompare(b.data)).map(r=>r.passo);
+  const antesB=JSON.stringify(passosB());
+  click(w,doc.querySelector('#view [data-acao="concluir"][data-id="vA"]')); await espera(400);
+  f=doc.querySelector("#formRegistro");
+  const cx11=f.querySelector('input[name="juntar"][value="vB"]');
+  cx11.checked=true; cx11.dispatchEvent(new w.Event("change",{bubbles:true}));
+  f.querySelector('[name="minutos"]').value="30"; const sd=f.querySelector('[name="dificuldade"]'); if (sd) sd.value="1";
+  enviar(w,f); await espera(600);
+  ok("revisados juntos: os dois cards ficam cumpridos", rev(w,"vA").feita && rev(w,"vB").feita, [rev(w,"vA"),rev(w,"vB")]);
+  ok("a escada de B mantém os passos dela", JSON.stringify(passosB())===antesB, [antesB, passosB()]);
+  ok("e B continua difícil", db(w).conteudos.find(c=>c.nome==="B").dificuldade===3, db(w).conteudos);
+
+  /* ---- 12 e 13. TIRAR DE "ESTUDAR JUNTO" (02/10): na sessão de HOJE desfaz o
+       check do card; em sessão de ontem para trás, o card continua marcado e só
+       o nome sai da sessão. ---- */
+  const juntoEm=async(d)=>{
+    const seed={ versao:1, tema:"claro", dataProva:"", objetivo:"livre", metaDiariaMin:120,
+      disciplinas:["Legislação"], lancamentos:[], grupos:[],
+      conteudos:[{id:"cA",disciplina:"Legislação",nome:"A",fase:"andamento",criadoEm:1},
+                 {id:"cB",disciplina:"Legislação",nome:"B",fase:"andamento",criadoEm:2}],
+      conteudosMigrados:true, fasesMigradas:true, dificuldadesMigradas:true,
+      registros: base().concat([Object.assign(sess("r3",["A","B"],d),{revisaoId:"vA",juntasIds:["vB"]})]),
+      revisoes:[ Object.assign(volta("vA","r1","A"),{data:d,feita:true,feitaEm:d,sessaoId:"r3"}),
+                 Object.assign(volta("vB","r2","B"),{data:d,feita:true,feitaEm:d,sessaoId:"r3"}) ],
+      erros:[], cronometro:null };
+    const x=abrirSeed(seed,"registros"); await espera(500);
+    click(x,x.document.querySelector('[data-acao="editar-registro"][data-id="r3"]')); await espera(300);
+    const g=x.document.querySelector("#formRegistro");
+    const c=g.querySelector('input[name="juntar"][value="vB"]');
+    if (c){ c.checked=false; c.dispatchEvent(new x.Event("change",{bubbles:true})); }
+    enviar(x,g); await espera(600);
+    return { w:x, achou:!!c, voltasB:db(x).revisoes.filter(r=>!r.feita && r.retomada && (r.assuntos||[]).includes("B")).map(r=>r.data) };
+  };
+  let j=await juntoEm(hoje); w=j.w;
+  let r3j=db(w).registros.find(r=>r.id==="r3");
+  ok("hoje: a caixa de B aparece marcada na edição", j.achou);
+  ok("hoje: tirar B desfaz o check do card de B", !rev(w,"vB").feita && !rev(w,"vB").sessaoId, rev(w,"vB"));
+  ok("hoje: o card de A continua cumprido", rev(w,"vA").feita && r3j.revisaoId==="vA", rev(w,"vA"));
+  ok("hoje: B sai da sessão", r3j.assuntos.join("+")==="A", r3j.assuntos);
+
+  j=await juntoEm(dia(-1)); w=j.w;
+  r3j=db(w).registros.find(r=>r.id==="r3");
+  ok("ontem: a caixa de B aparece marcada na edição", j.achou);
+  ok("ontem: B sai da sessão (só o nome)", r3j.assuntos.join("+")==="A", r3j.assuntos);
+  ok("ontem: o card de B continua marcado", rev(w,"vB").feita && rev(w,"vB").sessaoId==="r3" && rev(w,"vB").feitaEm===dia(-1), rev(w,"vB"));
+  ok("ontem: e a sessão continua cumprindo os dois", JSON.stringify(r3j.juntasIds)==='["vB"]' && rev(w,"vA").feita, [r3j.revisaoId,r3j.juntasIds]);
+  ok("ontem: B não ganha volta extra", j.voltasB.length<=1, j.voltasB);
+
   console.log(falhas?"\n"+falhas+" FALHA(S)":"\nestudar junto: a sessão cumpre o card de cada conteúdo");
   process.exit(falhas?1:0);
 }catch(x){console.error("ERRO:",x.message,"\n",x.stack.split("\n").slice(0,6).join("\n"));process.exit(2);}})();

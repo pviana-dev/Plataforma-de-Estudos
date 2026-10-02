@@ -2143,6 +2143,28 @@ function revisoesDaSessao(reg){
   const p = revisaoDaSessao(reg);
   return (p ? [p] : []).concat(juntasDaSessao(reg));
 }
+/* A JUNÇÃO É SÓ DESTA SESSÃO (pedido do Pedro, 02/10). Estudar A e B juntos
+   cumpre os dois cards hoje, mas o próximo agendamento volta a ser um card de
+   A e outro de B — não um "A · B". O grupo de um conteúdo é o card da sessão
+   que o trouxe (o principal é 0, os juntos 1, 2…; card que já era "X · Y"
+   continua junto); conteúdo posto à mão fica com o principal. Sessão sem
+   cards juntos: tudo no grupo 0, como sempre. */
+function grupoNaSessao(reg, assunto){
+  const juntas = juntasDaSessao(reg);
+  if (!juntas.length) return 0;
+  const a = String(assunto).toLowerCase();
+  const i = juntas.findIndex(r => ((contextoRevisao(r) || {}).assuntos || []).some(x => x.toLowerCase() === a));
+  const doPrincipal = (((revisaoDaSessao(reg) && contextoRevisao(revisaoDaSessao(reg))) || {}).assuntos || [])
+    .some(x => x.toLowerCase() === a);
+  return doPrincipal || i < 0 ? 0 : i + 1;
+}
+/** separa os conteúdos pelos cards de onde vieram (ver grupoNaSessao) */
+function separarPorCard(reg, conteudos){
+  const grupos = new Map();
+  conteudos.forEach(c => { const g = grupoNaSessao(reg, c);
+                           if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(c); });
+  return [...grupos.keys()].sort((x, y) => x - y).map(g => grupos.get(g));
+}
 /** solta os itens que foram junto (o principal fica); a sessão e as horas continuam */
 function soltarJuntas(reg){
   if (!reg) return;
@@ -2189,6 +2211,23 @@ function cumprirJuntas(reg, antes, escolhidos){
     });
   if (novas.length) reg.juntasIds = novas;
   return novas.filter(id => !jaEstavam.has(id)).length;
+}
+/* TIRAR DE "ESTUDAR JUNTO" SÓ DESFAZ HOJE (pedido do Pedro, 02/10). Na sessão
+   de hoje, desmarcar a caixa desfaz o check do card (cumprirJuntas já não o
+   inclui). Em sessão de ontem para trás, o que já foi cumprido fica cumprido:
+   só o nome do conteúdo sai da sessão. `antes` = id → feitaEm dos cards que a
+   sessão cumpria antes de salvar. */
+function manterJuntasDoPassado(reg, antes){
+  if (!reg || !antes || !antes.size || !(reg.data < D.hoje()) || !revisaoDaSessao(reg)) return;
+  const juntas = Array.isArray(reg.juntasIds) ? reg.juntasIds.slice() : [];
+  antes.forEach((feitaEm, id) => {
+    const r = acharRevisao(id);
+    if (!r || juntas.includes(id) || r.id === reg.revisaoId) return;
+    if (r.sessaoId && r.sessaoId !== reg.id) return;       // outra sessão já o cumpre
+    r.sessaoId = reg.id; r.feita = true; r.feitaEm = feitaEm || reg.data;
+    juntas.push(id);
+  });
+  if (juntas.length) reg.juntasIds = juntas;
 }
 /** "junto com B": o item foi cumprido por uma sessão que cumpriu outros também */
 function juntoCom(rev){
@@ -2398,7 +2437,7 @@ function gerarRevisoes(reg, opcoes){
   /* E o resto segue a invariante: só nasce volta para o conteúdo que ainda
      não tem quem o chame de volta (ver conteudosSemVolta). */
   const faltando = conteudosSemVolta(reg);
-  if (faltando.length) marcarVolta(reg, faltando, partida);
+  separarPorCard(reg, faltando).forEach(lista => marcarVolta(reg, lista, partida));
 }
 
 /* ==========================================================================
@@ -2429,9 +2468,14 @@ function sessoesDaFicha(ficha){
   return sessoesDoConteudo(ficha.disciplina, [ficha.nome]).slice()
     .sort((a,b) => String(b.data).localeCompare(String(a.data)) || (b.criadoEm||0) - (a.criadoEm||0));
 }
+/* A sessão que fala pelo conteúdo: a mais recente em que ele foi o card
+   principal. Onde ele só foi "junto" (Estudar junto, 02/10), a sessão é do
+   outro conteúdo — a dificuldade dela não é a dele, e ele segue no ritmo
+   próprio. */
+const sessaoPropriaDaFicha = ficha => sessoesDaFicha(ficha).find(s => grupoNaSessao(s, ficha.nome) === 0) || null;
 /** a dificuldade de AGORA: a da sessão mais recente do conteúdo, revisão ou estudo */
 function dificuldadeDaFicha(ficha){
-  const s = sessoesDaFicha(ficha)[0];
+  const s = sessaoPropriaDaFicha(ficha);
   return s ? dificuldadeDe(s) : tresNiveis(ficha && ficha.dificuldade || 2);   // sem sessão: a escolhida na aba Disciplinas
 }
 /* MUDAR A DIFICULDADE PELA ABA DISCIPLINAS (pedido do Pedro, 26/09). A dificuldade
@@ -2443,7 +2487,7 @@ function dificuldadeDaFicha(ficha){
    Devolve os outros conteúdos da mesma sessão (a dificuldade é da sessão). */
 function definirDificuldadeDoConteudo(ficha, nivel){
   nivel = tresNiveis(nivel);
-  const s = sessoesDaFicha(ficha)[0];
+  const s = sessaoPropriaDaFicha(ficha);
   if (!s){ ficha.dificuldade = nivel; persistir(); return []; }
   if (dificuldadeDe(s) !== nivel) salvarRegistro(Object.assign({}, s, { dificuldade: nivel }));
   return assuntosDe(s).filter(a => a.toLowerCase() !== ficha.nome.toLowerCase());
@@ -2683,13 +2727,15 @@ function reespacarEscada(ficha){
 /* Itens da escada que nasceram no mesmo dia, do mesmo degrau e da mesma
    sessão viram um só: fechar Scrum e XP juntos (estudados juntos) dá um card
    "Scrum · XP", não dois. Se depois só um deles for revisado, o empurrão
-   separa de novo. */
+   separa de novo. Conteúdos que vieram de cards diferentes ("Estudar junto")
+   não se juntam: a junção valeu só para aquela sessão (grupoNaSessao). */
 function juntarIrmas(){
   const vistos = new Map();
   db.revisoes = db.revisoes.filter(r => {
     if (r.feita || r.manual || ehRetomada(r) || !r.registroId ||
         !Array.isArray(r.assuntos) || !Number.isInteger(r.degrau)) return true;
-    const k = r.registroId + "|" + r.data + "|" + r.degrau;
+    const dono = acharRegistro(r.registroId);
+    const k = r.registroId + "|" + r.data + "|" + r.degrau + "|" + (dono ? grupoNaSessao(dono, r.assuntos[0] || "") : 0);
     const irma = vistos.get(k);
     if (!irma){ vistos.set(k, r); return true; }
     r.assuntos.forEach(a => { if (!irma.assuntos.includes(a)) irma.assuntos.push(a); });
@@ -6930,18 +6976,25 @@ async function enviarRegistro(ev){
   // o vínculo é declarado ANTES de gerar o plano: a volta que esta sessão vem
   // fechar não pode ser confundida com a volta em aberto que a continuação move
   if (revAlvo) reg.revisaoId = revAlvo.id;
+  /* os cards marcados em "Estudar junto" também vão antes (cumprirJuntas os
+     confirma lá embaixo): sem isso, salvar dava ao conteúdo que foi junto a
+     dificuldade da sessão — a do card principal — e refazia a escada dele */
+  const juntasAntes = ((anterior && anterior.juntasIds) || []).slice();
+  if (revAlvo && juntarIds.length) reg.juntasIds = juntarIds.slice();
   const planoMudou = salvarRegistro(reg);
   /* a ficha de cada conteúdo guarda a dificuldade de agora — o conteúdo criado
      nesta sessão chega à aba Disciplinas com a escolhida aqui */
   listaAssuntos.forEach(a => { const fc = acharConteudo(reg.disciplina, a); if (fc) fc.dificuldade = dificuldadeDaFicha(fc); });
   // vínculo com a revisão: marca a caixa dela, ou solta se deixou de ser revisão
   const salvo = acharRegistro(reg.id);
-  const juntasAntes = (salvo.juntasIds || []).slice();
   if (revAlvo){
+    const cumpridasAntes = new Map(juntasAntes.map(acharRevisao).filter(r => r && r.sessaoId === salvo.id)
+                                              .map(r => [r.id, r.feitaEm]));
     ligarSessaoRevisao(salvo, revAlvo);
     // os outros conteúdos da sessão cumprem o item deles; o próximo nasce daqui, como no resolverLembrete
     if (cumprirJuntas(salvo, juntasAntes, juntarIds) && !ehRevisaoSessao(salvo) && planoDe(salvo) !== "sem")
       gerarRevisoes(salvo, { base: salvo.data });
+    manterJuntasDoPassado(salvo, cumpridasAntes);
   }
   else if (anterior && anterior.revisaoId) desligarSessaoRevisao(salvo);
   else resolverLembrete(salvo, juntarIds);   // estudou o conteúdo? o lembrete vencido se dá por cumprido
@@ -7568,7 +7621,10 @@ function agendaVolta(reg){
 
 /** marca a volta daquela sessão, cobrindo só os conteúdos passados */
 function marcarVolta(reg, conteudos, base){
-  const quando = foraDaProva(D.soma(base || D.hoje(), diasDaVolta(dificuldadeDe(reg))));
+  /* conteúdo que veio junto (Estudar junto) volta no ritmo dele, não no do card principal */
+  const ficha = grupoNaSessao(reg, conteudos[0]) ? acharConteudo(reg.disciplina, conteudos[0]) : null;
+  const nivel = ficha ? dificuldadeDaFicha(ficha) : dificuldadeDe(reg);
+  const quando = foraDaProva(D.soma(base || D.hoje(), diasDaVolta(nivel)));
   if (quando > limiteDe(reg)) return null;          // o teto que você definiu manda
   /* Sem `disciplina`: ela vem da sessão dona (a volta sempre tem uma). Gravá-la
      aqui faria disciplinas() — que varre db.revisoes — manter viva a disciplina
@@ -7594,7 +7650,7 @@ function garantirRetomadas(){
       if (!agendaVolta(reg)) return;
       const faltando = conteudosSemVolta(reg);
       if (!faltando.length) return;                 // já há quem chame estes de volta
-      if (marcarVolta(reg, faltando)) criadas++;
+      separarPorCard(reg, faltando).forEach(lista => { if (marcarVolta(reg, lista)) criadas++; });
     });
   return criadas;
 }
