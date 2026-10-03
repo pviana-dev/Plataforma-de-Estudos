@@ -328,6 +328,9 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 #dialogo .linha-rev-prova{margin-top:10px}
 #dialogo .meta.ate-prova{font-size:12.5px;margin-top:4px}
 #dialogo .dialogo-mais{margin-bottom:22px}       /* o atalho não cola no Salvar/Cancelar */
+/* a data da pergunta curta (remarcar): caixa compacta e com folga até Remarcar/Cancelar */
+#dialogo .campo input[type="date"]{max-width:160px;padding:6px 10px;height:38px;line-height:1.2}
+#dialogo .campos + .acoes-form{margin-top:16px}
 .meta.sem-auto{color:var(--muted);font-style:italic}
 .ajuda-campo:empty{display:none}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
@@ -7679,6 +7682,18 @@ function pedirValor(o){
     if (o.aoAbrir) o.aoAbrir(f, () => fechar(null));
     caixa.onclick = ev => { ev.stopPropagation(); if (ev.target === caixa) fechar(null); };
     inp.addEventListener("input", () => { $("#erroDialogo").textContent = ""; inp.classList.remove("campo-errado"); });
+    /* escolheu o dia no calendário: ele fecha. Só o blur não basta no Safari (o
+       calendário fica aberto); trocar o tipo do campo e voltar desmonta o
+       calendário. Digitando no teclado não: a data ainda está pela metade. */
+    if (o.tipo === "date"){
+      let tecla = 0;
+      inp.addEventListener("keydown", () => { tecla = Date.now(); });
+      inp.addEventListener("change", () => {
+        if (Date.now() - tecla < 400) return;
+        const v = inp.value;
+        inp.blur(); inp.type = "text"; inp.type = "date"; inp.value = v;
+      });
+    }
     f.addEventListener("submit", ev => {
       ev.preventDefault();
       const v = (inp.value || "").trim().replace(/\s+/g, " ");
