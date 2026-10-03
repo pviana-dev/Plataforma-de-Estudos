@@ -327,6 +327,7 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 #dialogo .nota-conteudo{margin:12px 0 0}
 #dialogo .linha-rev-prova{margin-top:10px}
 #dialogo .meta.ate-prova{font-size:12.5px;margin-top:4px}
+#dialogo .dialogo-mais{margin-bottom:22px}       /* o atalho não cola no Salvar/Cancelar */
 .meta.sem-auto{color:var(--muted);font-style:italic}
 .ajuda-campo:empty{display:none}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
@@ -7659,7 +7660,7 @@ function pedirValor(o){
           ' maxlength="' + (o.maxlength || 80) + '" value="' + esc(o.valor || "") + '">', true) +
       '</div>' +
       // o.depois: mais conteúdo abaixo do campo (a janela do conteúdo); o.ler(form) o devolve junto
-      (o.depois || '') +
+      (o.depois ? '<div class="dialogo-mais">' + o.depois + '</div>' : '') +
       '<div class="linha acoes-form"><button class="btn" type="submit">' + esc(o.botao || "Salvar") + '</button>' +
       '<button class="btn ghost" type="button" data-dialogo="cancelar">Cancelar</button>' +
       // o.extra: uma ação a mais no canto (o Excluir do conteúdo), fecha a pergunta e segue
