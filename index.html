@@ -321,6 +321,13 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 .data-prova-rev input{max-width:190px}
 .data-prova-rev .dia-semana{font-size:13px;color:var(--text-2)}
 .meta.ate-prova{color:var(--accent-ink)}
+/* a janela do conteúdo (✎ editar na aba Disciplinas) */
+.situacao-conteudo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.situacao-conteudo .dica{font-size:12.5px;color:var(--muted)}
+#dialogo .nota-conteudo{margin:12px 0 0}
+#dialogo .linha-rev-prova{margin-top:10px}
+#dialogo .meta.ate-prova{font-size:12.5px;margin-top:4px}
+.meta.sem-auto{color:var(--muted);font-style:italic}
 .ajuda-campo:empty{display:none}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
    anima a altura sem precisar saber quanto o conteúdo mede; o `visibility` no
@@ -1987,6 +1994,12 @@ const provaFutura = () => !!ultimaProva() && ultimaProva() > D.hoje();
     prova, a pergunta "e depois?" não segura nada (decisão do Pedro, 23/09). */
 const agendaAutomatica = () => db.agendaAutomatica !== false;
 const agendamentoAtivo = () => db.posProva !== "encerrei" && agendaAutomatica();
+/* A MESMA CHAVE, NUM CONTEÚDO SÓ (pedido do Pedro, 03/10). Conteúdo concluído pode
+   ter as revisões automáticas desligadas na janela "✎ editar": a escada dele não
+   nasce, não é empurrada e não é refeita — fica só o que você marcar. É a exceção
+   escolhida à garantia de revisão. Vale só para concluído (o em andamento sempre
+   tem o card de continuar) e reabrir o conteúdo religa (marcarConteudos). */
+const escadaAtiva = f => agendamentoAtivo() && !(f && f.semAutomaticas);
 /* ATÉ QUANDO O SISTEMA AGENDA: o teto que você escolheu ("revisar até") ou,
    sem ele, o horizonte livre, que anda junto com hoje. A PROVA NÃO É TETO: as
    revisões seguem depois dela — só o dia da prova é pulado (foraDaProva).
@@ -2269,7 +2282,9 @@ function juntoCom(rev){
   });
   return outros.length ? "junto com " + outros.join(", ") : "";
 }
-/** remarca uma revisão atrasada, guardando a data em que ela estava marcada */
+/** a data que o "remarcar" já traz: a atrasada vem para hoje; a de hoje, para amanhã */
+const sugestaoRemarcar = data => data < D.hoje() ? D.hoje() : D.soma(D.hoje(), 1);
+/** remarca uma revisão (atrasada ou de hoje), guardando a data em que ela estava marcada */
 function remarcarRevisao(rev, data){
   if (!rev || !data) return;
   if (!rev.dataOriginal) rev.dataOriginal = rev.data;
@@ -2287,7 +2302,7 @@ function remarcarRevisao(rev, data){
 function remanejarItem(rev, nova){
   const antiga = rev.data;
   const fichas = ehRetomada(rev) || rev.feita ? []
-               : fichasDaRevisao(rev).filter(f => f.fase === "concluido");
+               : fichasDaRevisao(rev).filter(f => f.fase === "concluido" && !f.semAutomaticas);
   fichas.forEach(f => fixarPassos(f));
   rev.data = nova;
   if (!agendamentoAtivo() || nova <= antiga) return;
@@ -2560,7 +2575,7 @@ function pausaAteProva(ficha){
   return ficha.revisoesProva >= D.hoje() ? ficha.revisoesProva : "";
 }
 /** o conteúdo pode escolher as revisões até a prova? (concluído, com escada, prova à frente) */
-const podeEscolherAteProva = f => !!f && f.fase === "concluido" && !!dataProvaDaFicha(f) && agendamentoAtivo();
+const podeEscolherAteProva = f => !!f && f.fase === "concluido" && !!dataProvaDaFicha(f) && escadaAtiva(f);
 /** as revisões pendentes do conteúdo até a prova (o que o modal mostra e troca) */
 function pendentesAteProva(ficha, prova){
   return itensDaFicha(ficha).filter(r => !r.feita && r.data <= prova);
@@ -2612,7 +2627,7 @@ function definirRevisoesProva(ficha, datas){
 }
 /** completa a escada do conteúdo até o último degrau que cabe no horizonte */
 function continuarEscada(ficha){
-  if (!ficha || ficha.fase !== "concluido" || !agendamentoAtivo()) return 0;
+  if (!ficha || ficha.fase !== "concluido" || !escadaAtiva(ficha)) return 0;
   const dono = donoDaEscada(ficha);
   if (!dono) return 0;
   const inicio = ficha.concluidoEm || D.hoje();
@@ -2684,7 +2699,7 @@ function fixarPassos(ficha, novoId){
    tocada anda, o resto fica onde estava. */
 function reancorarEscada(fichas, data, opcoes){
   const o = opcoes || {};
-  const alvo = (fichas || []).filter(f => f && f.fase === "concluido" && data >= (f.concluidoEm || ""));
+  const alvo = (fichas || []).filter(f => f && f.fase === "concluido" && !f.semAutomaticas && data >= (f.concluidoEm || ""));
   if (!alvo.length || !data) return 0;
   if (data > D.hoje() && !o.exceto) return 0;         // sessão no futuro não é contato ainda
   const chaves = new Set(alvo.map(chaveDaFicha));
@@ -2719,7 +2734,7 @@ function reancorarEscada(fichas, data, opcoes){
    estão. A escada também muda de tamanho — o que sobra sai, o que falta nasce.
    Atrasada não se mexe: ela ainda é a de hoje. */
 function reespacarEscada(ficha){
-  if (!ficha || ficha.fase !== "concluido" || !agendamentoAtivo()) return 0;
+  if (!ficha || ficha.fase !== "concluido" || !escadaAtiva(ficha)) return 0;
   const inicio = ficha.concluidoEm || "";
   const degraus = degrausDa(dificuldadeDaFicha(ficha));
   const itens = itensDaFicha(ficha);
@@ -3653,8 +3668,8 @@ function telaHoje(){
   if (!atrasadas.length && !hoje.length){
     h += '<div class="vazio"><strong>Nada pendente para hoje</strong>Aproveite para registrar um estudo novo ou reler suas anotações.</div>';
   } else {
-    h += atrasadas.map(x => itemRevisao(x, "Atrasada desde " + D.extenso(x.rev.data))).join("");
-    h += hoje.map(x => itemRevisao(x, "Para hoje")).join("");
+    h += atrasadas.map(x => itemRevisao(x, "Atrasada desde " + D.extenso(x.rev.data), { remarcavel: true })).join("");
+    h += hoje.map(x => itemRevisao(x, "Para hoje", { remarcavel: true })).join("");
   }
   h += '</div>';
 
@@ -4092,6 +4107,17 @@ function emAndamento(rev){
   const c = db.cronometro;
   return !!(c && rev && rev.sessaoId && c.destinoTipo === "registro" && c.destinoId === rev.sessaoId);
 }
+/* REMARCAR DE ONDE SE ESTÁ OLHANDO (pedido do Pedro, 03/10). O card de hoje (e o
+   atrasado, na aba Hoje) ganha o "remarcar" que antes só o card de Atrasados tinha:
+   o mesmo caminho (remarcarRevisao), que empurra as revisões seguintes do conteúdo.
+   Não aparece no que já foi feito, no que está sendo cronometrado nem no bloqueado
+   até a prova. */
+function botaoRemarcar(x, o){
+  if (!o.remarcavel || x.status === "feita" || x.rev.feita || x.rev.data > D.hoje()) return "";
+  if (x.tarefa) return '<button class="btn mini" data-acao="remarcar-tarefa" data-id="'+esc(x.rev.id)+'">remarcar</button>';
+  if (emAndamento(x.rev) || bloqueadaPelaProva(x.rev)) return "";
+  return '<button class="btn mini" data-acao="remarcar-revisao" data-id="'+esc(x.rev.id)+'">remarcar</button>';
+}
 /* A LINHA DA TAREFA. O ✓ só marca (não abre sessão nenhuma). O "editar" aparece
    onde a lista é de mexer — a Agenda —, não no resumo da aba Hoje. */
 function itemTarefa(x, quando, opcoes){
@@ -4107,6 +4133,7 @@ function itemTarefa(x, quando, opcoes){
       '<div class="meta"><span class="badge b-tarefa">tarefa</span>' + (quando ? ' ' + esc(quando) : '') +
         (feita && t.feitaEm && t.feitaEm !== t.data ? ' · feita em ' + D.br(t.feitaEm) : '') + '</div></div>' +
       (o.editavel || o.saltavel ? '<button class="act" data-acao="editar-tarefa" data-id="'+esc(t.id)+'">editar</button>' : '') +
+      botaoRemarcar(x, o) +
     '</div>' +
     (t.nota ? '<div class="ativ"><span class="det">'+esc(t.nota)+'</span></div>' : '') + '</div>';
 }
@@ -4145,7 +4172,7 @@ function itemRevisao(x, quando, opcoes){
         (feita && juntoCom(x.rev) ? ' · ' + esc(juntoCom(x.rev)) : '') +
         (bloq ? ' · <span class="selo-bloq">bloqueada até ' + D.br(bloq) + '</span>' : '') +
         (o.saltavel ? ' <span class="leva-a">ver no cronograma ↓</span>' : '')+'</div></div>' +
-      acoes +
+      acoes + botaoRemarcar(x, o) +
     '</div>' + descricaoAtividade(x.rev) + '</div>';
 }
 
@@ -5387,7 +5414,7 @@ function telaRevisoes(){
       // a explicação do ✓ e do salto foi para a Ajuda; fica só o aviso de que há atraso mais abaixo
       if (atrasadas.length)
         h += '<p class="sub"><b>' + atrasadas.length + '</b> ' + (atrasadas.length === 1 ? "atrasado" : "atrasados") + ' mais abaixo.</p>';
-      h += deHoje.map(x => itemRevisao(x, rotuloDeHoje(x, agora), { saltavel: true })).join("");
+      h += deHoje.map(x => itemRevisao(x, rotuloDeHoje(x, agora), { saltavel: true, remarcavel: true })).join("");
     }
     h += '</div>';
   }
@@ -7467,6 +7494,7 @@ function marcarConteudos(fichas, fase){
     c.fase = fase;
     c.concluidoEm = fase === "concluido" ? D.hoje() : null;
     delete c.revisoesProva;                   // revisões até a prova são de conteúdo concluído
+    delete c.semAutomaticas;                  // reabrir (ou fechar de novo) religa o automático (Pedro, 03/10)
   });
   const chaves = new Set(tocadas.map(chaveDaFicha));
 
@@ -7630,6 +7658,8 @@ function pedirValor(o){
           (o.min ? ' min="' + esc(o.min) + '"' : '') + (o.max ? ' max="' + esc(o.max) + '"' : '') +
           ' maxlength="' + (o.maxlength || 80) + '" value="' + esc(o.valor || "") + '">', true) +
       '</div>' +
+      // o.depois: mais conteúdo abaixo do campo (a janela do conteúdo); o.ler(form) o devolve junto
+      (o.depois || '') +
       '<div class="linha acoes-form"><button class="btn" type="submit">' + esc(o.botao || "Salvar") + '</button>' +
       '<button class="btn ghost" type="button" data-dialogo="cancelar">Cancelar</button>' +
       // o.extra: uma ação a mais no canto (o Excluir do conteúdo), fecha a pergunta e segue
@@ -7645,6 +7675,7 @@ function pedirValor(o){
     caixa.querySelectorAll('[data-dialogo="cancelar"]').forEach(b => { b.onclick = ev => { ev.stopPropagation(); fechar(null); }; });
     const ex = caixa.querySelector('[data-dialogo="extra"]');
     if (ex) ex.onclick = ev => { ev.stopPropagation(); fechar(null); o.extra.ao(); };
+    if (o.aoAbrir) o.aoAbrir(f, () => fechar(null));
     caixa.onclick = ev => { ev.stopPropagation(); if (ev.target === caixa) fechar(null); };
     inp.addEventListener("input", () => { $("#erroDialogo").textContent = ""; inp.classList.remove("campo-errado"); });
     f.addEventListener("submit", ev => {
@@ -7652,7 +7683,7 @@ function pedirValor(o){
       const v = (inp.value || "").trim().replace(/\s+/g, " ");
       const erro = o.validar ? o.validar(v) : (v ? "" : "Preencha o campo.");
       if (erro){ $("#erroDialogo").textContent = erro; inp.classList.add("campo-errado"); inp.focus(); return; }
-      fechar(v);
+      fechar(o.ler ? { valor: v, extra: o.ler(f) } : v);
     });
     caixa.hidden = false;
     inp.focus(); if (inp.select && (o.tipo || "text") === "text") inp.select();
@@ -7694,12 +7725,12 @@ async function excluirConteudoPerguntando(disc, nome){
   toast("“" + nome + "” excluído — " + (r.itens === 1 ? "1 item saiu" : r.itens + " itens saíram") + " da agenda.");
 }
 
-/* O ✎ dos dois lugares passa por aqui: pergunta o nome, recusa duplicata na
+/* O ✎ da etiqueta no formulário da sessão: pergunta o nome, recusa duplicata na
    mesma disciplina e propaga. Devolve (numa Promise) o nome novo, ou "" se
-   nada mudou. */
-async function pedirNomeDoConteudo(disc, antigo, extra){
-  const novo = await pedirValor({ titulo: extra ? "Editar conteúdo" : "Renomear conteúdo", rotulo: extra ? "Nome do conteúdo" : "Novo nome para “" + antigo + "”",
-    texto: fraseAlcance(disc, antigo), valor: antigo, maxlength: 120, botao: extra ? "Salvar" : "Renomear", extra,
+   nada mudou. (O ✎ da aba Disciplinas abre a janela inteira: editarConteudo.) */
+async function pedirNomeDoConteudo(disc, antigo){
+  const novo = await pedirValor({ titulo: "Renomear conteúdo", rotulo: "Novo nome para “" + antigo + "”",
+    texto: fraseAlcance(disc, antigo), valor: antigo, maxlength: 120, botao: "Renomear",
     validar: v => !v ? "Escreva o nome."
       : acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()
         ? "Já existe um conteúdo com esse nome nesta disciplina." : "" });
@@ -7707,6 +7738,78 @@ async function pedirNomeDoConteudo(disc, antigo, extra){
   renomearConteudo(disc, antigo, novo);
   persistir();
   return novo;
+}
+
+/* A JANELA DO CONTEÚDO (✎ editar da aba Disciplinas; pedido do Pedro, 03/10). Além
+   do nome e do Excluir: em que pé o conteúdo está, a chave das revisões automáticas
+   DELE (ver escadaAtiva) e o atalho para as revisões até a prova. As duas últimas só
+   valem para concluído; em andamento, a janela diz isso em vez de esconder. */
+function htmlJanelaConteudo(ficha){
+  const nSess = sessoesDoConteudo(ficha.disciplina, [ficha.nome]).length;
+  const concluido = ficha.fase === "concluido";
+  let h = '<div class="situacao-conteudo"><span class="badge ' + (concluido ? "b-bom" : nSess ? "b-misto" : "") + '">' +
+    (concluido ? "concluído" + (ficha.concluidoEm ? " em " + D.br(ficha.concluidoEm) : "") : nSess ? "em andamento" : "a estudar") +
+    '</span> <span class="dica">' + esc(ficha.disciplina) + ' · ' + plural(nSess, "sessão", "sessões") + '</span></div>';
+  if (!concluido)
+    return h + '<p class="sub nota-conteudo">Revisões automáticas e revisões até a prova ficam disponíveis quando o ' +
+      'conteúdo for <b>concluído</b>. Enquanto isso, a agenda chama para continuar.</p>';
+  if (!agendamentoAtivo())
+    return h + '<p class="sub nota-conteudo">O agendamento automático está desligado para todos os conteúdos (engrenagem no topo).</p>';
+  const ligado = !ficha.semAutomaticas;
+  h += '<div class="campos uma-coluna">' + campoOpcoes("Revisões", [{ nome: "autoConteudo", marcado: ligado,
+         texto: "Criar revisões automáticas para este conteúdo" }]);
+  if (ligado)
+    h += '<div class="campo largo painel-questao" id="painelAutoConteudo" hidden><div class="interno">' +
+      '<span>O que já está na agenda dele</span><div class="opcoes">' +
+      '<label class="opcao"><input type="radio" name="jaNaAgendaConteudo" value="manter" checked>' +
+        '<span>Manter — as revisões automáticas pendentes passam a ser suas</span></label>' +
+      '<label class="opcao"><input type="radio" name="jaNaAgendaConteudo" value="apagar">' +
+        '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+      '</div></div></div>';
+  h += '</div>';
+  if (ligado && podeEscolherAteProva(ficha))
+    h += '<div class="linha linha-rev-prova"><button class="act atalho" type="button" data-dialogo="ate-prova">' +
+      'Personalizar revisões até a prova</button></div>' + metaAteProva(ficha);
+  return h;
+}
+async function editarConteudo(disc, antigo){
+  const ficha = acharConteudo(disc, antigo);
+  if (!ficha) return;
+  const res = await pedirValor({ titulo: "Editar conteúdo", rotulo: "Nome do conteúdo",
+    texto: fraseAlcance(disc, antigo), valor: antigo, maxlength: 120, botao: "Salvar",
+    extra: { rotulo: "Excluir", ao: () => excluirConteudoPerguntando(disc, antigo) },
+    depois: htmlJanelaConteudo(ficha),
+    aoAbrir: (f, fechar) => {
+      const chave = f.querySelector('[name="autoConteudo"]'), painel = f.querySelector("#painelAutoConteudo");
+      if (chave && painel) chave.addEventListener("change", () => { painel.hidden = chave.checked; });
+      const ate = f.querySelector('[data-dialogo="ate-prova"]');
+      if (ate) ate.onclick = ev => { ev.stopPropagation(); fechar(); modalRevisoesProva(ficha); };
+    },
+    ler: f => {
+      const chave = f.querySelector('[name="autoConteudo"]');
+      const apagar = f.querySelector('[name="jaNaAgendaConteudo"]:checked');
+      return { auto: chave ? chave.checked : null, apagar: !!apagar && apagar.value === "apagar" };
+    },
+    validar: v => !v ? "Escreva o nome."
+      : acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()
+        ? "Já existe um conteúdo com esse nome nesta disciplina." : "" });
+  if (!res) return;
+  const avisos = [];
+  if (res.extra.auto === false && !ficha.semAutomaticas){
+    desligarAutomaticasDoConteudo(ficha, res.extra.apagar);
+    avisos.push("revisões automáticas desligadas" + (res.extra.apagar ? " — as pendentes saíram" : " — as pendentes passaram a ser suas"));
+  } else if (res.extra.auto === true && ficha.semAutomaticas){
+    religarAutomaticasDoConteudo(ficha);
+    avisos.push("revisões automáticas religadas");
+  }
+  if (res.valor !== antigo){
+    renomearConteudo(disc, antigo, res.valor);
+    avisos.unshift("renomeado em todo o sistema");
+  }
+  if (!avisos.length) return;
+  persistir(); render();
+  const frase = avisos.join("; ");
+  toast(frase.charAt(0).toUpperCase() + frase.slice(1) + ".");
 }
 
 /* O LEMBRETE SE RESOLVE SOZINHO. A agenda não é uma lista de tarefas a marcar:
@@ -7993,6 +8096,8 @@ function telaConteudos(){
                                           : nSess ? "em andamento" : "a estudar")+'</div>' +
                   (ligacoesAtivas() ? '<div class="meta dia-cont">Dia de prova: ' + seletorDiaConteudo(c) + '</div>' : '') +
                   metaAteProva(c) +
+                  (c.fase === "concluido" && c.semAutomaticas && agendamentoAtivo()
+                    ? '<div class="meta sem-auto">revisões automáticas desligadas — só as que você marcar</div>' : '') +
                   '</div>' +
                   seletorDificuldadeConteudo(c, nSess) +
                   '<button class="act" data-acao="renomear-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'">✎ editar</button>' +
@@ -8417,6 +8522,40 @@ function desligarAgendaAutomatica(apagar){
   if (apagar) db.revisoes = db.revisoes.filter(r => r.feita || r.manual);
   else db.revisoes.forEach(r => { if (!r.feita && !r.manual) r.manual = true; });
 }
+/* O MESMO, NUM CONTEÚDO SÓ (ver escadaAtiva). As revisões pendentes dele que eram
+   automáticas viram suas ou saem; as escolhidas até a prova viram revisões comuns
+   suas (o modo "até a prova" acaba: não há automático para voltar depois). Item
+   que fala também de outro conteúdo só perde este — a parte dele, se fica, vira
+   um item próprio e manual, sem mexer no plano do outro. */
+function desligarAutomaticasDoConteudo(ficha, apagar){
+  if (!ficha) return;
+  const chave = chaveDaFicha(ficha);
+  const novos = [];
+  db.revisoes = db.revisoes.filter(r => {
+    if (r.feita || ehRetomada(r) || !falaDe(r, chave)) return true;
+    const ctx = contextoRevisao(r);
+    const meus = ctx.assuntos.filter(a => chaveAssunto(ctx.disciplina, a) === chave);
+    const resto = ctx.assuntos.filter(a => chaveAssunto(ctx.disciplina, a) !== chave);
+    const fica = r.manual || !apagar;
+    if (!resto.length){
+      if (!fica) return false;
+      r.manual = true; delete r.planoProva;
+      return true;
+    }
+    r.assuntos = resto;
+    if (fica) novos.push(Object.assign({}, r, { id: uid(), assuntos: meus, manual: true }));
+    return true;
+  });
+  novos.forEach(n => { delete n.planoProva; db.revisoes.push(n); });
+  delete ficha.revisoesProva;
+  ficha.semAutomaticas = true;
+}
+function religarAutomaticasDoConteudo(ficha){
+  if (!ficha) return;
+  delete ficha.semAutomaticas;
+  continuarEscada(ficha);
+  juntarIrmas();
+}
 /* AJUSTES E AJUDA SÃO DUAS TELAS. A engrenagem abre os ajustes (o que se muda);
    o "?" abre a ajuda (como o cronograma é montado e por quê). */
 function modalAjustes(){
@@ -8521,7 +8660,8 @@ function modalAjuda(){
           'escolher, num conteúdo concluído, quantas revisões fazer até a prova e em que dias (mudar a quantidade refaz a ' +
           'sugestão de datas): até lá só elas valem para aquele conteúdo — em "Todas as agendadas" as outras aparecem ' +
           '<b>bloqueadas</b>, apagadas e sem ação —, o automático fica pausado e volta sozinho no dia ' +
-          'seguinte à prova. <b>Atrasados</b>: remarque para hoje ou para a frente — a data original fica registrada. ' +
+          'seguinte à prova (o atalho também fica no <b>✎ editar</b> do conteúdo, na aba Disciplinas). ' +
+          '<b>Atrasados</b> e cards de <b>hoje</b>: <b>remarcar</b> leva para hoje ou para a frente — a data original fica registrada. ' +
           '<b>+ Adicionar tarefa</b> marca um lembrete que não é estudo de um conteúdo (pagar a inscrição, simulado, aula ' +
           'ao vivo): título, data e, se quiser, horário e detalhes. Ela aparece no dia, no mês e na aba Hoje, com o selo ' +
           '<b>tarefa</b>; o ✓ só marca, sem sessão, e ela não entra no cronograma nem no Progresso. Se o dia passar sem o ✓, ' +
@@ -8581,8 +8721,11 @@ function modalAjuda(){
       '<ul class="aj-lista">' +
         '<li><b>Atrasou ou revisou a mais?</b> As revisões seguintes <b>andam junto</b>, cada uma mantendo a distância que ' +
           'tinha da anterior (15, 17 e 22 marcadas; uma extra no dia 20 → a de 22 vai para 25).</li>' +
-        '<li><b>Dia cheio?</b> Mova a revisão para outro dia (<b>remarcar</b> ou editando a data): as do mesmo conteúdo ' +
+        '<li><b>Dia cheio?</b> Mova a revisão para outro dia (<b>remarcar</b>, no card de hoje ou no atrasado, ou editando a data): as do mesmo conteúdo ' +
           'que vinham depois dela <b>andam junto</b>. Puxar uma para mais cedo não mexe nas outras.</li>' +
+        '<li><b>Não quer mais revisões automáticas de um conteúdo?</b> No <b>✎ editar</b> dele (aba Disciplinas), desmarque ' +
+          '<b>Criar revisões automáticas</b>: as pendentes ficam como suas ou saem, à sua escolha, e só vale o que você marcar. ' +
+          'Reabrir o conteúdo religa.</li>' +
         '<li><b>A dificuldade da sessão mais recente manda:</b> revisar e marcar "difícil" aproxima o que vem.</li>' +
         '<li><b>A prova não corta nada:</b> as revisões seguem depois dela; só o dia da prova é pulado.</li>' +
         '<li>Na agenda aparecem, por padrão, as <b>2 próximas revisões</b> e o <b>próximo card de continuar</b> de cada conteúdo — ' +
@@ -9875,14 +10018,9 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
                        podem.find(c => ui.aDisciplina && c.disciplina === ui.aDisciplina);
       if (podem.length) modalRevisoesProva(doFiltro || podem[0], true);
       break; }
-    case "renomear-conteudo": {                  // aba Disciplinas: "✎ editar" (nome + Excluir no canto)
-      const disc = alvo.dataset.disc, cont = alvo.dataset.cont;
-      pedirNomeDoConteudo(disc, cont, { rotulo: "Excluir", ao: () => excluirConteudoPerguntando(disc, cont) }).then(novo => {
-        if (!novo) return;
-        render();
-        toast("Renomeado em todo o sistema.");
-      });
-      break; }
+    case "renomear-conteudo":                    // aba Disciplinas: "✎ editar" (a janela do conteúdo)
+      editarConteudo(alvo.dataset.disc, alvo.dataset.cont);
+      break;
     /* O MESMO RENOME, VINDO DO FORMULÁRIO DA SESSÃO. A diferença é que aqui NÃO
        se pode redesenhar: formRegistroHtml() remonta os campos a partir do
        registro SALVO, e um render() com a sessão aberta apagaria a descrição,
@@ -9951,10 +10089,13 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
     case "remarcar-revisao": {
       const r = acharRevisao(id); if (!r) break;
       const k = chaveCard(r), ctx = contextoRevisao(r);
-      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: D.hoje(), botao: "Remarcar",
-                   texto: (ctx ? ctx.rotulo + " · " : "") + "estava marcada para " + D.brFull(r.data) + ".",
+      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: sugestaoRemarcar(r.data), botao: "Remarcar",
+                   texto: (ctx ? ctx.rotulo + " · " : "") + (r.data === D.hoje() ? "marcada para hoje" : "estava marcada para " + D.brFull(r.data)) + "." +
+                     (fichasDaRevisao(r).some(f => f.fase === "concluido" && escadaAtiva(f))
+                       ? " As revisões seguintes deste conteúdo andam junto, mantendo a distância entre elas." : ""),
                    validar: v => !/^\d{4}-\d{2}-\d{2}$/.test(v) ? "Escolha a data."
                      : v < D.hoje() ? "Escolha hoje ou uma data à frente."
+                     : v === r.data ? "Já está marcada para esse dia — escolha outra data."
                      : diaDeProva(v) ? "Esse dia é de prova — escolha outro."
                      : db.revisoes.some(o => o.id !== r.id && !o.feita && o.data === v && chaveCard(o) === k)
                        ? "Já existe um item deste conteúdo nesse dia — escolha outra data." : "" })
@@ -9988,10 +10129,11 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       break; }
     case "remarcar-tarefa": {
       const t = acharTarefa(id); if (!t) break;
-      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: D.hoje(), botao: "Remarcar",
-                   texto: t.titulo + " · estava marcada para " + D.brFull(t.data) + ".",
+      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: sugestaoRemarcar(t.data), botao: "Remarcar",
+                   texto: t.titulo + " · " + (t.data === D.hoje() ? "marcada para hoje" : "estava marcada para " + D.brFull(t.data)) + ".",
                    validar: v => !/^\d{4}-\d{2}-\d{2}$/.test(v) ? "Escolha a data."
-                     : v < D.hoje() ? "Escolha hoje ou uma data à frente." : "" })
+                     : v < D.hoje() ? "Escolha hoje ou uma data à frente."
+                     : v === t.data ? "Já está marcada para esse dia — escolha outra data." : "" })
         .then(nova => {
           if (!nova) return;
           t.data = nova; persistir(); render();

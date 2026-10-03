@@ -42,7 +42,7 @@ const espera=ms=>new Promise(r=>setTimeout(r,ms));
      $("#revisoes-atrasadas").textContent.replace(/\s+/g," ").slice(0,140));
 
   /* ---- remarcar ---- */
-  click(doc.querySelector('[data-acao="remarcar-revisao"]')); await espera(300);
+  click(doc.querySelector('#revisoes-atrasadas [data-acao="remarcar-revisao"]')); await espera(300);
   const rev=lerDb().revisoes.find(r=>r.id==="vAtras");
   ok("a revisão foi remarcada", rev.data===dia(2), rev.data);
   ok("e guardou a data original", rev.dataOriginal===dia(-3), rev.dataOriginal);
