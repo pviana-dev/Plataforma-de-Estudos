@@ -552,6 +552,16 @@ html[data-tema="escuro"] .cal-dia.sel{color:#1b2224}
 .cal-dia .pt{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
   width:5px;height:5px;border-radius:50%}
 .cal-dia.sel .pt{background:#fff !important}
+.cal-dia .pt.pt-tarefa{background:var(--star)}
+.cal-dia.dois-pts .pt{left:calc(50% - 4px)}
+.cal-dia.dois-pts .pt.pt-tarefa{left:calc(50% + 4px)}
+/* TAREFA: o lembrete solto da agenda. A borda e o selo na cor da estrela a separam
+   das revisões; atrasada e feita seguem as cores de sempre. */
+.item.tarefa:not(.atrasada):not(.feita){border-left-color:var(--star)}
+.badge.b-tarefa{background:var(--star-soft);color:var(--star-ink)}
+.item.tarefa .hora{font-variant-numeric:tabular-nums;font-weight:650;color:var(--star-ink);margin-right:7px}
+.linha-add{display:flex;column-gap:10px;flex-wrap:wrap}   /* a linha de baixo já tem a margem do botão */
+.linha-add .btn-add{flex:1 1 220px;width:auto}
 .pt-legenda{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 @media (max-width:820px){.heat-grid{grid-template-columns:1fr}}
 .dia-info{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);
@@ -1487,6 +1497,17 @@ function migrarDificuldades(d){
 }
 const normalizarRevisoes = lista => (lista||[]).map(r =>
   Object.assign({}, r, { dificuldade: r.dificuldade || (r.dominio ? 6 - Number(r.dominio) : null) }));
+/* TAREFAS (pedido do Pedro, 02/10): lembretes da agenda que NÃO são estudo de um
+   conteúdo — "pagar a inscrição", "simulado no sábado", "aula ao vivo às 19h".
+   Só lembram: o ✓ marca e pronto, sem sessão, sem tempo, sem tocar no cronograma
+   nem no Progresso. Vencida e não marcada, fica atrasada até ser marcada.
+   { id, titulo, data, hora ("" ou "HH:MM"), nota, feita, feitaEm, criadoEm }   */
+const normalizarTarefas = lista => (lista||[])
+  .filter(t => t && typeof t === "object" && t.id && /^\d{4}-\d{2}-\d{2}$/.test(t.data || ""))
+  .map(t => ({ id: t.id, titulo: String(t.titulo || "").trim() || "Tarefa", data: t.data,
+               hora: /^\d{2}:\d{2}$/.test(t.hora || "") ? t.hora : "", nota: String(t.nota || ""),
+               feita: !!t.feita, feitaEm: t.feita ? (t.feitaEm || t.data) : "",
+               criadoEm: Number(t.criadoEm) || 0 }));
 
 /* ==========================================================================
    3. CAMADA DE DADOS (localStorage isolado em funções)
@@ -1510,6 +1531,7 @@ function estadoInicial(){
            conteudos: [],                       // cadastro dos conteúdos: { id, nome, disciplina, fase, concluidoEm }
            lancamentos: [],                     // questões lançadas à parte, ligadas a um registro:
                                                 // { id, registroId, data, questoes, acertos, criadoEm }
+           tarefas: [],                         // lembretes soltos da agenda, sem conteúdo (ver TAREFAS)
            registros: [], revisoes: [], erros: [], cronometro: null };   // { inicio: timestamp, disciplina, assunto } enquanto roda
 }
 
@@ -1731,7 +1753,8 @@ function prepararDados(d){
     erros:     Array.isArray(d.erros)     ? d.erros     : [],
     disciplinas: Array.isArray(d.disciplinas) ? d.disciplinas : [],
     grupos:    Array.isArray(d.grupos)    ? d.grupos    : [],
-    lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : []
+    lancamentos: Array.isArray(d.lancamentos) ? d.lancamentos : [],
+    tarefas:   normalizarTarefas(Array.isArray(d.tarefas) ? d.tarefas : [])
   });
   x.dificuldadesMigradas = true;
   const objetivoDeduzido = migrarObjetivo(x);
@@ -1798,6 +1821,8 @@ const getErros     = () => db.erros;
 const acharRegistro = id => db.registros.find(r => r.id === id);
 const acharRevisao  = id => db.revisoes.find(r => r.id === id);
 const acharErro     = id => db.erros.find(e => e.id === id);
+const getTarefas   = () => Array.isArray(db.tarefas) ? db.tarefas : (db.tarefas = []);
+const acharTarefa  = id => getTarefas().find(t => t.id === id);
 
 /* O QUE DECIDE O PLANO de uma sessão. Só isto: o dia, os conteúdos, a
    dificuldade (que manda na cadência), o modo do plano e o tipo. Tempo,
@@ -2897,6 +2922,24 @@ function revisoesDetalhadas(){
     return ctx ? { rev, ctx, reg: ctx.reg, status: statusRevisao(rev) } : null;
   }).filter(Boolean).sort((a,b) => a.rev.data.localeCompare(b.rev.data));
 }
+/* AS TAREFAS NA MESMA FILA DA AGENDA. Cada uma vira um item com a cara dos da
+   agenda ({ rev, ctx, status }), para as listas por dia, o mês e os atrasados
+   agruparem tudo junto; o `tarefa` diz quem ela é, e quem desenha (itemRevisao,
+   cardAtrasadas) desvia para o jeito dela. Sem disciplina nem conteúdo: o filtro
+   de disciplina/conteúdo da Agenda as esconde. */
+function tarefasDetalhadas(){
+  return getTarefas().map(t => ({
+    tarefa: t,
+    rev: { id: t.id, data: t.data, feita: t.feita, feitaEm: t.feitaEm },
+    ctx: { disciplina: "", assuntos: [], rotulo: t.titulo, sub: "" },
+    status: statusRevisao(t)
+  }));
+}
+/** dentro do mesmo dia: tarefas com hora (na ordem da hora), tarefas sem hora, depois o resto */
+const ordemNoDia = x => x.tarefa ? (x.tarefa.hora ? "0" + x.tarefa.hora : "1") : "2";
+/** a agenda e as tarefas numa lista só, em ordem de data */
+const juntarTarefas = (det, tar) => det.concat(tar).sort((a,b) =>
+  a.rev.data.localeCompare(b.rev.data) || ordemNoDia(a).localeCompare(ordemNoDia(b)));
 function disciplinas(){
   const set = new Set(db.disciplinas || []);
   db.registros.forEach(r => r.disciplina && set.add(r.disciplina));
@@ -3075,6 +3118,7 @@ const ui = {
   compondo: false, rascunhoAnot: "", editandoErro: null, prefill: null,
   alvoAnot: null,                   // último destino usado no compositor (disciplina + conteúdo)
   editandoRevisao: null, editandoLancamento: null, prefRevisao: null, cronoDestino: "", rascunho: null,
+  editandoTarefa: null,             // "nova" ou o id da tarefa aberta na tela sobreposta
   ligarRevisao: "",                 // veio da agenda: a sessão aberta vai cumprir esta revisão
   verTodasProximas: false, verTodosAssuntos: false, mesCal: "",
   visaoAgenda: "dia", mesAgenda: "", diaAgenda: "", verTodaAgenda: false, agendaCompleta: false,
@@ -3239,7 +3283,7 @@ function render(){
                            : "A data da prova pode ser alterada em Ajustes (⚙)";
 
   if (!db.cronometro) $("#cronoChip").innerHTML = "";
-  const det = revisoesDetalhadas();
+  const det = juntarTarefas(revisoesDetalhadas(), tarefasDetalhadas());   // a tarefa também conta no pino
   const pendentesHoje = det.filter(x => x.status === "hoje").length;
   const atrasadas = det.filter(x => x.status === "atrasada").length;
   $("#abas").innerHTML = ABAS.map(a => {
@@ -3318,6 +3362,7 @@ function ligarFormularios(){
   ligar("#formRegistro", "submit", enviarRegistro);
   ligar("#formEdicaoErro", "submit", enviarEdicaoErro);
   ligar("#formRevisao", "submit", enviarRevisao);
+  ligar("#formTarefa", "submit", enviarTarefa);
   ligar("#formLancamento", "submit", enviarLancamento);
   montarSugestoes();
   ligarSeletoresDisciplina();
@@ -3435,6 +3480,7 @@ function alvoTelaForm(){
   if (ui.editandoRegistro) return "reg:" + ui.editandoRegistro;
   if (ui.formAberto)       return "reg:novo";
   if (ui.editandoRevisao)  return "rev:" + ui.editandoRevisao;
+  if (ui.editandoTarefa)   return "tar:" + ui.editandoTarefa;
   if (ui.editandoLancamento) return "lan:" + ui.editandoLancamento;
   if (ui.editandoErro)     return "anot:" + ui.editandoErro;
   return null;
@@ -3452,6 +3498,10 @@ function sincronizarTelaForm(){
     const rev = ui.editandoRevisao === "nova" ? null : acharRevisao(ui.editandoRevisao);
     if (!rev && ui.editandoRevisao !== "nova"){ telaForm = null; ui.editandoRevisao = null; esconderModal(); return; }
     abrirModal(rev ? termosDoItem(rev).titulo : "Nova revisão", formRevisao(rev), ligarFormularios, true);
+  } else if (alvo.slice(0,3) === "tar"){
+    const t = ui.editandoTarefa === "nova" ? null : acharTarefa(ui.editandoTarefa);
+    if (!t && ui.editandoTarefa !== "nova"){ telaForm = null; ui.editandoTarefa = null; esconderModal(); return; }
+    abrirModal(t ? "Editar tarefa" : "Nova tarefa", formTarefa(t), ligarFormularios, true);
   } else if (alvo.slice(0,4) === "anot"){
     const err = acharErro(ui.editandoErro);
     if (!err){ telaForm = null; ui.editandoErro = null; esconderModal(); return; }
@@ -3570,10 +3620,13 @@ function montarSugestoes(){
 
 /* ---------- TELA: HOJE ---------- */
 function telaHoje(){
-  const det = revisoesDetalhadas();
+  const tar = tarefasDetalhadas();
+  const det = juntarTarefas(revisoesDetalhadas(), tar);
   const atrasadas = det.filter(x => x.status === "atrasada");
   const hoje      = det.filter(x => x.status === "hoje");
-  const proximas  = agendaVisivel(det).filter(x => x.status === "futura" && D.dif(D.hoje(), x.rev.data) <= 7);
+  // o corte das "só as próximas" é por conteúdo: tarefa não tem, entra inteira
+  const proximas  = juntarTarefas(agendaVisivel(revisoesDetalhadas()), tar)
+                      .filter(x => x.status === "futura" && D.dif(D.hoje(), x.rev.data) <= 7);
   const min = minutosDoDia(D.hoje());
   const meta = db.metaDiariaMin || 1;
   const perc = Math.min(100, Math.round((min/meta)*100));
@@ -4039,7 +4092,26 @@ function emAndamento(rev){
   const c = db.cronometro;
   return !!(c && rev && rev.sessaoId && c.destinoTipo === "registro" && c.destinoId === rev.sessaoId);
 }
+/* A LINHA DA TAREFA. O ✓ só marca (não abre sessão nenhuma). O "editar" aparece
+   onde a lista é de mexer — a Agenda —, não no resumo da aba Hoje. */
+function itemTarefa(x, quando, opcoes){
+  const o = opcoes || {}, t = x.tarefa;
+  const feita = x.status === "feita";
+  return '<div class="item rev-linha tarefa '+x.status+'"' + (o.editavel ? ' id="tar-'+esc(t.id)+'"' : '') + '>' +
+    '<div class="rev-topo">' +
+      (o.leitura ? '' :
+      '<button class="check" role="checkbox" aria-checked="'+feita+'" data-acao="tarefa-check" data-id="'+esc(t.id)+'" ' +
+      'title="'+(feita ? "Desmarcar esta tarefa" : "Marcar como feita")+'" ' +
+      'aria-label="'+esc((feita ? "Desmarcar " : "Marcar como feita: ") + t.titulo)+'">✓</button>') +
+      '<div class="corpo"><div class="titulo">' + (t.hora ? '<span class="hora">'+esc(t.hora)+'</span>' : '') + esc(t.titulo) + '</div>' +
+      '<div class="meta"><span class="badge b-tarefa">tarefa</span>' + (quando ? ' ' + esc(quando) : '') +
+        (feita && t.feitaEm && t.feitaEm !== t.data ? ' · feita em ' + D.br(t.feitaEm) : '') + '</div></div>' +
+      (o.editavel || o.saltavel ? '<button class="act" data-acao="editar-tarefa" data-id="'+esc(t.id)+'">editar</button>' : '') +
+    '</div>' +
+    (t.nota ? '<div class="ativ"><span class="det">'+esc(t.nota)+'</span></div>' : '') + '</div>';
+}
 function itemRevisao(x, quando, opcoes){
+  if (x.tarefa) return itemTarefa(x, quando, opcoes);
   const o = opcoes || {};
   const nome = nomeRevisao(x.rev);
   const feita = x.status === "feita";
@@ -4711,11 +4783,15 @@ function cardAtrasadas(det){
     '<h2>Atrasados <span class="dica">' + atrasadas.length +
       (atrasadas.length === 1 ? " para remarcar" : " para remarcar") + '</span></h2>' +
     
-    atrasadas.map(x => '<div class="item atrasada">' +
+    atrasadas.map(x => '<div class="item atrasada'+(x.tarefa ? " tarefa" : "")+'">' +
+      // a tarefa pode ser marcada daqui mesmo: o ✓ dela não abre nada
+      (x.tarefa ? '<button class="check" role="checkbox" aria-checked="false" data-acao="tarefa-check" data-id="'+esc(x.rev.id)+'" ' +
+                  'title="Marcar como feita" aria-label="'+esc("Marcar como feita: " + x.ctx.rotulo)+'">✓</button>' : '') +
       '<div class="corpo"><div class="titulo">'+esc(x.ctx.rotulo)+'</div>' +
-      '<div class="meta">'+esc(x.ctx.disciplina)+' · estava marcada para '+D.brFull(x.rev.data)+
+      '<div class="meta">'+(x.tarefa ? '<span class="badge b-tarefa">tarefa</span>' : esc(x.ctx.disciplina))+
+        ' · estava marcada para '+D.brFull(x.rev.data)+
         ' · ' + plural(D.dif(x.rev.data, D.hoje()), "dia", "dias") + ' de atraso</div></div>' +
-      '<button class="btn mini" data-acao="remarcar-revisao" data-id="'+esc(x.rev.id)+'">remarcar</button>' +
+      '<button class="btn mini" data-acao="'+(x.tarefa ? "remarcar-tarefa" : "remarcar-revisao")+'" data-id="'+esc(x.rev.id)+'">remarcar</button>' +
       '</div>').join("") + '</div>';
 }
 
@@ -5258,22 +5334,26 @@ function graficoQuestoes(itens){
 /* ---------- TELA: ROTINA DE REVISÕES ---------- */
 function telaRevisoes(){
   const det = revisoesDetalhadas();
-  const atrasadas = det.filter(x => x.status === "atrasada");
-  const feitas = det.filter(x => x.rev.feita);
+  const tudo = juntarTarefas(det, tarefasDetalhadas());   // agenda + tarefas: o que a tela mostra
+  const atrasadas = tudo.filter(x => x.status === "atrasada");
+  const feitas = tudo.filter(x => x.rev.feita);
   /* O "Na agenda" (tudo o que está marcado, até o fim) saiu do topo (revisão de UX R2,
      27/09, pedido do Pedro): ao lado de uma lista que mostra só as próximas, o número
      não batia com o que se via e a pessoa procurava o que faltava. */
   let h = '<div class="tiles" style="margin-bottom:16px">' +
     tile("Atrasados", String(atrasadas.length), atrasadas.length ? "⚠ prioridade máxima" : "✓ nada atrasado",
          "", atrasadas.length ? "critico" : "bom") +
-    tile("Já concluídos", String(feitas.length), "de " + det.length + " no total", "", feitas.length ? "bom" : "") +
+    tile("Já concluídos", String(feitas.length), "de " + tudo.length + " no total", "", feitas.length ? "bom" : "") +
     '</div>';   // a contagem da prova saiu daqui: o cabeçalho já mostra, em todas as abas
 
   // o formulário de revisão abre numa tela sobreposta, não aqui dentro
   /* O nome continua "revisão" de propósito: este botão cria mesmo uma REVISÃO
      (avulsa, marcada `manual`), não uma volta — voltas quem marca é a agenda,
      sozinha, enquanto o conteúdo está aberto. */
-  h += '<button class="btn-add" data-acao="nova-revisao"><span class="mais">+</span> Adicionar revisão</button>';
+  /* A tarefa tem botão próprio, ao lado: ela não pede disciplina nem conteúdo. */
+  h += '<div class="linha-add">' +
+       '<button class="btn-add" data-acao="nova-revisao"><span class="mais">+</span> Adicionar revisão</button>' +
+       '<button class="btn-add" data-acao="nova-tarefa"><span class="mais">+</span> Adicionar tarefa</button></div>';
   if (!agendaAutomatica())
     h += '<p class="sub" style="margin:-6px 0 14px">Agendamento automático <b>desligado</b>: a agenda é a sua rotina. ' +
          'No <b>+ Adicionar revisão</b> dá para marcar várias datas de uma vez. Para religar, use a <b>engrenagem</b> no topo.</p>';
@@ -5286,10 +5366,11 @@ function telaRevisoes(){
        agora e o que já foi concluído hoje — inclusive revisão que estava marcada
        para outro dia e foi cumprida hoje. */
     const agora = D.hoje();
-    const deHoje = det.filter(x => x.rev.data === agora ||
+    const deHoje = tudo.filter(x => x.rev.data === agora ||
                                    (x.rev.feita && (x.rev.feitaEm || x.rev.data) === agora));
     const peso = x => emAndamento(x.rev) ? 0 : x.rev.feita ? 2 : 1;   // em andamento, pendente, feita
-    deHoje.sort((a,b) => peso(a) - peso(b) || a.rev.data.localeCompare(b.rev.data));
+    deHoje.sort((a,b) => peso(a) - peso(b) || a.rev.data.localeCompare(b.rev.data) ||
+                         ordemNoDia(a).localeCompare(ordemNoDia(b)));
     const nFeitasHoje = deHoje.filter(x => x.rev.feita).length;
     const nAbertas = deHoje.length - nFeitasHoje;
     h += '<div class="card card-hoje"><h2>Agenda de hoje ' +
@@ -5322,7 +5403,7 @@ function telaRevisoes(){
        conteúdo dela (sem disciplina, o conteúdo lista todos, com a disciplina
        ao lado). O ✕ limpa os dois. O card "Agenda de hoje" não obedece. */
   const fase = ui.faseAgenda === "concluidos" ? "concluidos" : "abertos";
-  const nPorFazer = det.filter(x => !jaPassou(x)).length;
+  const nPorFazer = tudo.filter(x => !jaPassou(x)).length;
   const visao = ["dia","assunto","mes"].indexOf(ui.visaoAgenda) >= 0 ? ui.visaoAgenda : "dia";
   // as opções saem da agenda inteira, não da sub-aba: trocar de "Situação" não apaga a escolha
   const discsAgenda = [...new Set(det.map(x => x.ctx.disciplina))].sort((a,b) => a.localeCompare(b, "pt-BR"));
@@ -5331,11 +5412,15 @@ function telaRevisoes(){
   const filtroDisc = adc.disc, filtroAssunto = adc.cont;
   const passaFiltro = x => (!filtroDisc || x.ctx.disciplina === filtroDisc) &&
     (!filtroAssunto || (x.ctx.assuntos || []).some(a => chaveAssunto(x.ctx.disciplina, a) === filtroAssunto));
-  const naFaseTudo = fatiaAgenda(det, fase).filter(passaFiltro);
-  const naFase = fase === "abertos" ? agendaVisivel(naFaseTudo) : naFaseTudo;
+  // a tarefa não tem disciplina: com filtro, ela sai (passaFiltro não a reconhece)
+  const naFaseTudo = fatiaAgenda(tudo, fase).filter(passaFiltro);
+  // "só as próximas" corta por conteúdo; a tarefa não tem, então passa inteira
+  const naFase = fase === "abertos"
+    ? juntarTarefas(agendaVisivel(naFaseTudo.filter(x => !x.tarefa)), naFaseTudo.filter(x => x.tarefa))
+    : naFaseTudo;
   h += '<div class="card filtros-agenda barra-filtro" style="padding:11px 13px;margin-bottom:14px">' +
     '<div class="linha"><span class="hl-tema">Situação:</span>' +
-    [["abertos","A fazer",nPorFazer],["concluidos","Concluídos",det.length - nPorFazer]].map(([k,rot,n]) =>
+    [["abertos","A fazer",nPorFazer],["concluidos","Concluídos",tudo.length - nPorFazer]].map(([k,rot,n]) =>
       '<button class="aba" data-acao="fase-agenda" data-fase="'+k+'" aria-selected="'+(fase===k)+'">' +
       rot + '<span class="pin">'+n+'</span></button>').join("") +   // o total é neutro; o atraso tem o card dele
     '</div>' +
@@ -5374,7 +5459,9 @@ function telaRevisoes(){
 
   // agrupa por assunto (sessão de estudo ou revisão avulsa) — dentro da sub-aba escolhida
   const grupos = new Map();
+  const soTarefas = naFase.filter(x => x.tarefa);
   naFase.forEach(x => {
+    if (x.tarefa) return;                     // tarefa não tem assunto: vai no card "Tarefas", acima
     const k = chaveCard(x.rev);
     if (!grupos.has(k)) grupos.set(k, { chave: k, disciplina: x.ctx.disciplina, assunto: x.ctx.rotulo,
                                         sub: x.ctx.sub,
@@ -5382,11 +5469,13 @@ function telaRevisoes(){
     grupos.get(k).itens.push(x);
   });
 
-  if (!grupos.size && (filtroDisc || filtroAssunto)){
+  if (!grupos.size && !soTarefas.length && (filtroDisc || filtroAssunto)){
     return h + '<div class="vazio"><strong>' +
       (fase === "concluidos" ? "Nada concluído com este filtro em dias anteriores" : "Nada a fazer com este filtro") +
       '</strong>Troque a disciplina ou o conteúdo no filtro acima, ou use <b>✕ limpar</b>.</div>';
   }
+  if (soTarefas.length) h += cardTarefas(soTarefas, fase);
+  if (!grupos.size && soTarefas.length) return h;
   if (!grupos.size){
     return h + (fase === "concluidos"
       ? '<div class="vazio"><strong>Nada concluído em dias anteriores</strong>' +
@@ -5456,6 +5545,19 @@ function telaRevisoes(){
          '</button>';
   }
   return h + '</div>';
+}
+/* AS TAREFAS NA VISÃO POR ASSUNTO. Tarefa não tem assunto, então ganha um card
+   só dela, antes dos assuntos, em ordem de data (em "Concluídos", da mais
+   recente para a mais antiga, como o resto daquela sub-aba). */
+function cardTarefas(lista, fase){
+  const ord = fase === "concluidos"
+    ? lista.slice().sort((a,b) => diaConcluida(b.rev).localeCompare(diaConcluida(a.rev)))
+    : lista;
+  const quando = x => x.rev.feita ? "feita em " + D.br(diaConcluida(x.rev))
+                    : x.status === "atrasada" ? "atrasada desde " + D.extenso(x.rev.data)
+                    : x.status === "hoje" ? "hoje" : D.extenso(x.rev.data);
+  return '<div class="card"><h2>Tarefas <span class="dica">' + plural(lista.length, "tarefa", "tarefas") + '</span></h2>' +
+    ord.map(x => itemTarefa(x, quando(x), { editavel: true })).join("") + '</div>';
 }
 /* VISÃO POR DIA — o padrão. A pergunta que a pessoa traz para esta aba é "o
    que eu faço agora?", e ela se responde com os próximos dias em lista, não
@@ -5530,7 +5632,7 @@ function agendaJaFeita(det){
     blocos +
     (lista.length > CONFIG.AGENDA_VISIVEL
       ? '<button class="act ver-mais" data-acao="toggle-agenda">' +
-        (ui.verTodaAgenda ? "− mostrar menos" : "+ ver todas as " + lista.length + " revisões") + '</button>'
+        (ui.verTodaAgenda ? "− mostrar menos" : "+ ver todos os " + lista.length + " itens") + '</button>'
       : '') + '</div>';
 }
 
@@ -5546,8 +5648,9 @@ function agendaDoMes(det){
   const porDia = new Map();
   det.forEach(x => {
     const d = x.rev.feita ? (x.rev.feitaEm || x.rev.data) : x.rev.data;
-    const atual = porDia.get(d) || { total: 0, atrasadas: 0, feitas: 0 };
+    const atual = porDia.get(d) || { total: 0, atrasadas: 0, feitas: 0, tarefas: 0 };
     atual.total++;
+    if (x.tarefa) atual.tarefas++;
     if (x.rev.feita) atual.feitas++; else if (x.status === "atrasada") atual.atrasadas++;
     porDia.set(d, atual);
   });
@@ -5560,21 +5663,27 @@ function agendaDoMes(det){
     const cor = !info ? "" : info.atrasadas ? "var(--critico-soft)"
               : info.feitas === info.total ? "var(--bom-soft)" : "var(--accent-soft)";
     const sel = data === ui.diaAgenda;
+    // dia com tarefa ganha um segundo pontinho, na cor dela; só tarefa, só o dela
+    const soTarefa = info && info.tarefas === info.total;
     celulas += '<button class="cal-dia' + (doMes ? "" : " fora") + (data === hoje ? " hoje" : "") +
+      (info && info.tarefas && !soTarefa ? " dois-pts" : "") +
       (sel ? " sel" : "") + '" data-acao="dia-agenda" data-dia="' + data + '"' +
       (cor && !sel ? ' style="background:' + cor + '"' : '') +
       ' title="' + esc(D.extenso(data) + (info ? " — " + plural(info.total, "item", "itens") +
         (info.atrasadas ? ", " + plural(info.atrasadas, "atrasado", "atrasados") : "") : " — nada marcado")) + '">' +
       Number(data.slice(8)) +
-      (info ? '<span class="pt" style="background:' + (info.atrasadas ? "var(--critico)"
+      (info && !soTarefa ? '<span class="pt" style="background:' + (info.atrasadas ? "var(--critico)"
               : info.feitas === info.total ? "var(--bom)" : "var(--accent-forte)") + '"></span>' : '') +
+      (info && info.tarefas ? '<span class="pt pt-tarefa"></span>' : '') +
       '</button>';
   }
   const nomeMes = ["janeiro","fevereiro","março","abril","maio","junho",
                    "julho","agosto","setembro","outubro","novembro","dezembro"][m-1];
   const doDia = ui.diaAgenda ? det.filter(x => (x.rev.feita ? (x.rev.feitaEm || x.rev.data) : x.rev.data) === ui.diaAgenda)
                              : [];
-  return '<div class="card"><h2>Mês <span class="dica">clique num dia para ver o que há nele</span></h2>' +
+  const temTarefa = [...porDia.values()].some(i => i.tarefas);
+  return '<div class="card"><h2>Mês <span class="dica">clique num dia para ver o que há nele' +
+    (temTarefa ? ' · <span class="pt-legenda" style="background:var(--star)"></span> tarefa' : '') + '</span></h2>' +
     '<div class="cal" style="width:100%;max-width:420px">' +
       '<div class="cal-cab"><b>' + nomeMes + ' ' + ano + '</b>' +
         (mes === hoje.slice(0,7) ? '' : '<button class="act" data-acao="mes-agenda" data-delta="0">hoje</button>') +
@@ -5671,7 +5780,7 @@ function formRevisao(rev){
    também vale sozinha — sem etiqueta nenhuma, é um card só, como sempre foi.
    Dois atalhos geram as etiquetas a partir da data da caixa: "a cada N dias,
    K vezes" e a escada padrão. */
-function campoDatasEmCadeia(){
+function campoDatasEmCadeia(semEspacado){   // semEspacado: a tarefa não tem escada de revisão
   /* Revisão de UX (26/09): os atalhos eram links soltos ("gerar", "escada D+1…")
      e no celular a frase "a cada 7 dias, 4 vezes" quebrava no meio. Agora a caixa
      de data vale sozinha, e "Mais de uma data" guarda os três jeitos de marcar
@@ -5689,8 +5798,9 @@ function campoDatasEmCadeia(){
           '<span>vezes</span>' +
           '<button class="btn mini ghost" type="button" data-acao="gerar-datas-rev">Gerar</button>' +
         '</div>' +
+        (semEspacado ? '' :
         '<button class="btn mini ghost" type="button" data-acao="escada-datas-rev">Espaçado: ' +
-          CONFIG.INTERVALOS_LIVRES.slice(0, 5).join(", ").replace(/, (\d+)$/, " e $1") + ' dias</button>' +
+          CONFIG.INTERVALOS_LIVRES.slice(0, 5).join(", ").replace(/, (\d+)$/, " e $1") + ' dias</button>') +
       '</div></details>' +
     '<div id="datasRevisao" class="tags" style="margin-top:7px"></div></div>';
 }
@@ -5715,6 +5825,54 @@ function gerarDatasCadeia(escada){
         return Array.from({ length: vezes }, (_, i) => i * cada);
       })();
   offs.forEach(o => adicionarDataCadeia(D.soma(base, o)));
+}
+
+/* ---------- formulário da tarefa ----------
+   Título e data, e só. Hora e detalhes são opcionais. Nova, aceita várias datas
+   de uma vez (o mesmo "Mais de uma data" da revisão): cada data vira uma tarefa.
+   Dia de prova NÃO é barrado — "levar documento" cai justamente nele. */
+function formTarefa(t){
+  const novo = !t;
+  return '<form id="formTarefa"'+(t ? ' data-id="'+esc(t.id)+'"' : '')+'>' +
+    '<div class="campos">' +
+      campo("Título *", '<input name="titulo" maxlength="80" required value="'+esc(t ? t.titulo : "")+'" ' +
+            'placeholder="Ex.: pagar a inscrição, simulado geral, aula ao vivo" autocomplete="off">', true) +
+      (novo ? campoDatasEmCadeia(true)
+            : campo("Data *", '<input type="date" name="data" value="'+t.data+'" required>')) +
+      campo("Horário (opcional)", '<input type="time" name="hora" value="'+esc(t && t.hora ? t.hora : "")+'" style="max-width:140px">') +
+      campo("Detalhes (opcional)", '<textarea name="nota" class="texto-grande" placeholder="O que levar, link da aula, o que revisar antes…">' +
+            esc(t && t.nota ? t.nota : "") + '</textarea>', true) +
+    '</div>' +
+    '<div class="linha acoes-form"><button class="btn" type="submit">'+(novo ? "Adicionar tarefa" : "Salvar")+'</button>' +
+    '<button class="btn ghost" type="button" data-acao="cancelar-tarefa">Cancelar</button>' +
+    (t ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-tarefa" data-id="'+esc(t.id)+'">Excluir</button>' : '') +
+    '<span class="erro-form" id="erroTarefa"></span></div></form>';
+}
+function enviarTarefa(ev){
+  ev.preventDefault();
+  const f = ev.target, fd = new FormData(f);
+  const aviso = document.getElementById("erroTarefa");
+  const titulo = String(fd.get("titulo") || "").trim();
+  const hora = /^\d{2}:\d{2}$/.test(fd.get("hora") || "") ? fd.get("hora") : "";
+  const nota = String(fd.get("nota") || "").trim();
+  const existente = f.dataset.id ? acharTarefa(f.dataset.id) : null;
+  const datas = existente ? [fd.get("data")].filter(Boolean)
+              : (() => { const l = fd.getAll("datas").filter(Boolean);
+                         return l.length ? [...new Set(l)].sort() : [fd.get("data")].filter(Boolean); })();
+  if (!titulo){ aviso.textContent = "Dê um título à tarefa."; return; }
+  if (!datas.length){ aviso.textContent = "Informe a data da tarefa."; return; }
+  if (existente){
+    Object.assign(existente, { titulo, data: datas[0], hora, nota });
+  } else {
+    datas.forEach(data => getTarefas().push({ id: uid(), titulo, data, hora, nota,
+                                              feita: false, feitaEm: "", criadoEm: Date.now() }));
+  }
+  persistir();
+  ui.editandoTarefa = null;
+  render();
+  toast(existente ? "Tarefa atualizada."
+        : datas.length > 1 ? datas.length + " tarefas adicionadas (" + datas.map(D.br).join(", ") + ")."
+        : "Tarefa adicionada para " + D.brFull(datas[0]) + ".");
 }
 
 function enviarRevisao(ev){
@@ -7085,7 +7243,7 @@ function fecharModal(){
   esconderModal();
   if (eraForm){
     ui.editandoRegistro = null; ui.editandoRevisao = null; ui.editandoLancamento = null;
-    ui.editandoErro = null;                       // a edição da anotação mora aqui também
+    ui.editandoErro = null; ui.editandoTarefa = null;                       // a edição da anotação mora aqui também
     ui.prefRevisao = null; ui.formAberto = false; ui.ligarRevisao = "";
     render();
   }
@@ -8347,7 +8505,8 @@ function modalAjuda(){
         '<div class="aj-item"><dt>' + aba("Hoje") + '</dt><dd>O painel do dia: o <b>cronômetro</b>, o que está marcado para hoje e o que atrasou, os ' +
           '<b>próximos 7 dias</b> (só para ver — marcar é na Agenda), o que já foi <b>registrado hoje</b> e o mural ' +
           '<b>Falta estudar</b>. O <b>✓</b> de um item abre o registro da sessão que o cumpre, por cima da aba: ao salvar, o ' +
-          'item fica marcado e o sistema recalcula o que ainda falta. Clicar no nome do item leva até ele na Agenda.</dd></div>' +
+          'item fica marcado e o sistema recalcula o que ainda falta. Clicar no nome do item leva até ele na Agenda. ' +
+          'Numa <b>tarefa</b>, o ✓ só marca: não abre sessão nenhuma.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Sessões") + '</dt><dd>Tudo o que você estudou. <b>+ Registrar sessão</b> abre o formulário (data, disciplina, ' +
           'conteúdos, tempo, questões, dificuldade e descrição) — escolhido um conteúdo que já foi estudado, a dificuldade ' +
           'vem da última sessão dele. Clique numa linha para editar; <b>▶ continuar</b> abre uma ' +
@@ -8363,6 +8522,10 @@ function modalAjuda(){
           'sugestão de datas): até lá só elas valem para aquele conteúdo — em "Todas as agendadas" as outras aparecem ' +
           '<b>bloqueadas</b>, apagadas e sem ação —, o automático fica pausado e volta sozinho no dia ' +
           'seguinte à prova. <b>Atrasados</b>: remarque para hoje ou para a frente — a data original fica registrada. ' +
+          '<b>+ Adicionar tarefa</b> marca um lembrete que não é estudo de um conteúdo (pagar a inscrição, simulado, aula ' +
+          'ao vivo): título, data e, se quiser, horário e detalhes. Ela aparece no dia, no mês e na aba Hoje, com o selo ' +
+          '<b>tarefa</b>; o ✓ só marca, sem sessão, e ela não entra no cronograma nem no Progresso. Se o dia passar sem o ✓, ' +
+          'ela fica atrasada até ser marcada. Com filtro de disciplina ou conteúdo, as tarefas saem da lista. ' +
           'Os números do topo contam a agenda inteira, mesmo com a lista mostrando só as próximas.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Disciplinas") + '</dt><dd>O cadastro: criar disciplinas e conteúdos, <b>✓ concluir</b> e ' +
           '<b>↩ reabrir</b> um conteúdo (ou a disciplina inteira). A caixa de <b>dificuldade</b> de cada conteúdo muda a dele ' +
@@ -9813,6 +9976,37 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       }
       break;
     case "cancelar-revisao": ui.editandoRevisao = null; ui.prefRevisao = null; render(); break;
+    /* TAREFAS — o ✓ só marca e desmarca: não há sessão do outro lado para perguntar. */
+    case "nova-tarefa": ui.aba = "revisoes"; ui.editandoTarefa = "nova"; render(); break;
+    case "editar-tarefa": ui.editandoTarefa = id; render(); break;
+    case "cancelar-tarefa": ui.editandoTarefa = null; render(); break;
+    case "tarefa-check": {
+      const t = acharTarefa(id); if (!t) break;
+      t.feita = !t.feita; t.feitaEm = t.feita ? D.hoje() : "";
+      persistir(); render();
+      toast(t.feita ? "Tarefa feita." : "Tarefa desmarcada.");
+      break; }
+    case "remarcar-tarefa": {
+      const t = acharTarefa(id); if (!t) break;
+      pedirValor({ titulo: "Remarcar", rotulo: "Nova data", tipo: "date", min: D.hoje(), valor: D.hoje(), botao: "Remarcar",
+                   texto: t.titulo + " · estava marcada para " + D.brFull(t.data) + ".",
+                   validar: v => !/^\d{4}-\d{2}-\d{2}$/.test(v) ? "Escolha a data."
+                     : v < D.hoje() ? "Escolha hoje ou uma data à frente." : "" })
+        .then(nova => {
+          if (!nova) return;
+          t.data = nova; persistir(); render();
+          toast("Remarcada para " + D.brFull(nova) + ".");
+        });
+      break; }
+    case "excluir-tarefa": {
+      const t = acharTarefa(id); if (!t) break;
+      if (await confirmar({ titulo: "Excluir tarefa", botao: "Excluir", perigo: true,
+                            texto: "Excluir “" + t.titulo + "”? Não dá para desfazer." })){
+        db.tarefas = getTarefas().filter(x => x.id !== id);
+        ui.editandoTarefa = null; persistir(); render();
+        toast("Tarefa excluída.");
+      }
+      break; }
     case "excluir-revisao": {
       const rv = acharRevisao(id);
       const tx = termosDoItem(rv);

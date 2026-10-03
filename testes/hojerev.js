@@ -29,9 +29,11 @@ const cardDe=(doc,titulo)=>[...doc.querySelectorAll("#view .card")].find(c=>new 
   const card=cardDe(doc,"Agenda de hoje");
   ok("a aba Agenda abre com um card do que é de hoje", !!card,
      [...doc.querySelectorAll("#view .card h2")].map(h=>h.textContent));
-  /* ordem da aba: indicadores, + Adicionar revisão, o card de hoje (fixo,
-     fora do alcance dos filtros) e só então os filtros Situação / Organizar. */
-  const acima=[...doc.querySelectorAll("#view .card, #view .btn-add")].filter(e=>!e.classList.contains("tiles"));
+  /* ordem da aba: indicadores, + Adicionar revisão (com o + Adicionar tarefa ao
+     lado, na mesma linha), o card de hoje (fixo, fora do alcance dos filtros) e só
+     então os filtros Situação / Organizar. */
+  const acima=[...doc.querySelectorAll("#view .card, #view .btn-add")]
+    .filter(e=>!e.classList.contains("tiles") && e.dataset.acao!=="nova-tarefa");
   ok("o + Adicionar revisão vem logo abaixo dos indicadores", acima[0].classList.contains("btn-add"),
      acima[0].textContent.slice(0,60));
   ok("o card de hoje vem logo depois", acima[1]===card,

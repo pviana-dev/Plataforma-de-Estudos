@@ -92,7 +92,7 @@ immutable
 set search_path = ''
 as $$
   select coalesce(sum(case when jsonb_typeof(c -> k) = 'array' then jsonb_array_length(c -> k) else 0 end), 0)::integer
-    from unnest(array['registros', 'erros', 'conteudos', 'lancamentos']) as k
+    from unnest(array['registros', 'erros', 'conteudos', 'lancamentos', 'tarefas']) as k
 $$;
 
 create or replace function public.arquivar_versao_anterior()
