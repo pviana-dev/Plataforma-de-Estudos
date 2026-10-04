@@ -2200,10 +2200,20 @@ function grupoNaSessao(reg, assunto){
     .some(x => x.toLowerCase() === a);
   return doPrincipal || i < 0 ? 0 : i + 1;
 }
-/** separa os conteúdos pelos cards de onde vieram (ver grupoNaSessao) */
+/* CARD SEPARADO À MÃO (pedido do Pedro, 04/10). Cards juntados antes da
+   correção de 02/10 ("A · B") se refaziam juntos: a sessão dona punha os dois
+   no mesmo grupo. O botão "Separar" da janela do card grava em reg.separados
+   (nomes em minúsculas) os conteúdos que, nessa sessão, ficam cada um no seu
+   card — um grupo próprio para cada, que juntarIrmas e separarPorCard
+   respeitam. O grupoNaSessao continua dizendo só quem foi o card principal. */
+function grupoDoCard(reg, assunto){
+  const i = (reg && Array.isArray(reg.separados) ? reg.separados : []).indexOf(String(assunto).toLowerCase());
+  return i < 0 ? grupoNaSessao(reg, assunto) : 1000 + i;
+}
+/** separa os conteúdos pelos cards de onde vieram (ver grupoNaSessao e grupoDoCard) */
 function separarPorCard(reg, conteudos){
   const grupos = new Map();
-  conteudos.forEach(c => { const g = grupoNaSessao(reg, c);
+  conteudos.forEach(c => { const g = grupoDoCard(reg, c);
                            if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(c); });
   return [...grupos.keys()].sort((x, y) => x - y).map(g => grupos.get(g));
 }
@@ -2270,6 +2280,31 @@ function manterJuntasDoPassado(reg, antes){
     juntas.push(id);
   });
   if (juntas.length) reg.juntasIds = juntas;
+}
+/** o card fala de mais de um conteúdo e ainda está por fazer: dá para separar */
+const podeSeparar = rev => !!rev && !rev.feita && ((contextoRevisao(rev) || {}).assuntos || []).length > 1;
+/** Separa o card em um por conteúdo — e, com ele, os outros cards pendentes
+    com os mesmos conteúdos (a escada "A · B" inteira). Cada pedaço fica com
+    a data, o degrau, o passo e o tipo do original. A sessão dona guarda a
+    separação (reg.separados), para os próximos não nascerem juntos de novo.
+    Devolve quantos cards foram separados. */
+function separarCard(rev){
+  if (!podeSeparar(rev)) return 0;
+  const k = chaveCard(rev);
+  let n = 0;
+  db.revisoes.filter(r => !r.feita && chaveCard(r) === k).forEach(r => {
+    const lista = contextoRevisao(r).assuntos.slice();
+    const reg = r.registroId ? acharRegistro(r.registroId) : null;
+    if (reg){
+      const sep = new Set(reg.separados || []);
+      lista.forEach(a => sep.add(a.toLowerCase()));
+      reg.separados = [...sep];
+    }
+    r.assuntos = [lista[0]];
+    lista.slice(1).forEach(a => db.revisoes.push(Object.assign({}, r, { id: uid(), assuntos: [a] })));
+    n++;
+  });
+  return n;
 }
 /** "junto com B": o item foi cumprido por uma sessão que cumpriu outros também */
 function juntoCom(rev){
@@ -2779,7 +2814,7 @@ function juntarIrmas(){
     if (r.feita || r.manual || ehRetomada(r) || !r.registroId ||
         !Array.isArray(r.assuntos) || !Number.isInteger(r.degrau)) return true;
     const dono = acharRegistro(r.registroId);
-    const k = r.registroId + "|" + r.data + "|" + r.degrau + "|" + (dono ? grupoNaSessao(dono, r.assuntos[0] || "") : 0);
+    const k = r.registroId + "|" + r.data + "|" + r.degrau + "|" + (dono ? grupoDoCard(dono, r.assuntos[0] || "") : 0);
     const irma = vistos.get(k);
     if (!irma){ vistos.set(k, r); return true; }
     r.assuntos.forEach(a => { if (!irma.assuntos.includes(a)) irma.assuntos.push(a); });
@@ -5800,6 +5835,8 @@ function formRevisao(rev){
     '</div>' +
     '<div class="linha acoes-form"><button class="btn" type="submit">'+(novo ? "Adicionar revisão" : "Salvar")+'</button>' +
     '<button class="btn ghost" type="button" data-acao="cancelar-revisao">Cancelar</button>' +
+    (podeSeparar(rev) ? '<button class="btn ghost" type="button" data-acao="separar-revisao" data-id="'+esc(rev.id)+'" ' +
+      'title="Um card para cada conteúdo, cada um no próprio ritmo">Separar</button>' : '') +
     (rev ? '<button class="act excluir excluir-tela" type="button" data-acao="excluir-revisao" data-id="'+esc(rev.id)+'">Excluir</button>' : '') +
     '<span class="erro-form" id="erroRevisao"></span></div></form>';
 }
@@ -8720,7 +8757,9 @@ function modalAjuda(){
           'e nas questões. Por isso ele se <b>escolhe</b> numa lista, em vez de ser digitado.</li>' +
         '<li><b>Registrar uma sessão mexe na agenda sozinho:</b> cumpre o item vencido de cada conteúdo dela e marca o próximo — ' +
           'você não registra a mesma coisa duas vezes. Dois conteúdos com card para hoje? Estude os dois numa sessão só ' +
-          '(no formulário, <b>Estudar junto</b>): os dois cards ficam feitos e o tempo conta uma vez.</li>' +
+          '(no formulário, <b>Estudar junto</b>): os dois cards ficam feitos e o tempo conta uma vez. ' +
+          'Depois, cada um volta no seu próprio card. Um card que ficou com dois conteúdos ("A · B")? ' +
+          'Em <b>editar</b>, <b>Separar</b> divide em um card por conteúdo.</li>' +
         '<li><b>A fase mora no conteúdo.</b> Em andamento, a agenda chama para <b>continuar</b>; concluído, para <b>revisar</b>. ' +
           'Concluir em ' + aba("Disciplinas") + ', no card da ' + aba("Agenda") + ' ou no formulário da sessão dá no mesmo.</li>' +
         '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') é automático: todo conteúdo cadastrado sem sessão está nele, e sai na primeira sessão.</li>' +
@@ -10165,6 +10204,19 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
         toast("Tarefa excluída.");
       }
       break; }
+    case "separar-revisao": {
+      const rv = acharRevisao(id);
+      if (!podeSeparar(rv)) break;
+      const nomes = contextoRevisao(rv).assuntos;
+      if (await confirmar({ titulo: "Separar", botao: "Separar",
+                  texto: "Separar \"" + nomes.join(" · ") + "\" em um card para cada conteúdo? " +
+                         "Os próximos cards deles também vêm separados, cada um no próprio ritmo." })){
+        const n = separarCard(rv);
+        ui.editandoRevisao = null; persistir(); render();
+        toast(n > 1 ? n + " cards separados." : "Card separado.");
+      }
+      break;
+    }
     case "excluir-revisao": {
       const rv = acharRevisao(id);
       const tx = termosDoItem(rv);
