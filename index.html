@@ -583,7 +583,7 @@ html[data-tema="escuro"] .cal-dia.sel{color:#1b2224}
 .grupo-rev.disc-bloco .cab{align-items:flex-start;margin-bottom:9px;padding-bottom:0;border-bottom:0}
 .disc-tit{display:flex;flex-direction:column;gap:3px;min-width:0}
 .disc-resumo{font-size:12px;color:var(--muted)}
-.disc-acoes{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.disc-acoes{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .disc-barra{height:5px;margin:0 0 12px}
 .item-conteudo{align-items:center}
 .cont-nome{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -599,7 +599,7 @@ html[data-tema="escuro"] .cal-dia.sel{color:#1b2224}
   .cont-acoes .sel-dif-cont{flex:1 1 96px;width:auto;max-width:150px;min-width:0}
   .grupo-rev.disc-bloco .cab{flex-direction:column;gap:6px}
   .disc-bloco .cab .spacer{display:none}
-  .disc-acoes{justify-content:flex-start;margin-left:-8px}
+  .disc-acoes{justify-content:flex-start}
 }
 .pt-legenda{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 @media (max-width:820px){.heat-grid{grid-template-columns:1fr}}
@@ -1045,6 +1045,12 @@ tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
   background:var(--campo-fundo);display:grid;place-items:center;font-size:11px;line-height:1;color:#fff}
 .multi-op[aria-pressed="true"] .caixinha{background:var(--accent-forte);border-color:var(--accent-forte)}
 .multi-op[aria-pressed="true"] .caixinha::after{content:"✓"}
+/* a mesma caixa, de escolha ÚNICA (todos os filtros — listasDosFiltros): a escolhida fica
+   marcada na cor da identidade, com o ✓ à direita */
+.op-unica{justify-content:space-between}
+.op-unica[aria-selected="true"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.op-unica[aria-selected="true"]::after{content:"✓";font-size:12px}
+.lista-unica.aberto{z-index:31}
 @media (pointer:coarse){ .multi-caixa,.multi-op{font-size:16px} }      /* dentro de um card de filtros (Agenda, Progresso, Questões) */
 .filtros-campos{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
 /* disciplina de nome longo ("Legislação Específica do TRF da 5ª Região") virava uma torre de
@@ -3401,7 +3407,48 @@ function render(){
   view.innerHTML = ({ hoje: telaHoje, registros: telaRegistros, questoes: telaQuestoes,
                       revisoes: telaRevisoes, erros: telaErros, painel: telaPainel,
                       conteudos: telaConteudos })[ui.aba]();
+  listasDosFiltros(view);
   posRender();
+}
+/* OS FILTROS ABREM A LISTA DO APP (pedido do Pedro, 04/10). A caixa de escolha
+   do navegador abria, no celular, a lista do sistema — de fundo preto, por cima
+   de tudo. Agora todo filtro é como o de Disciplinas da aba Questões: a caixa
+   abre uma lista logo abaixo dela, com as cores do app. O <select> continua lá,
+   escondido, e é ele que guarda o valor: escolher na lista troca o valor dele e
+   avisa ("change"), e o resto do app segue igual. Só os FILTROS mudam — os
+   campos dos formulários e a lista do cronômetro continuam como estão. */
+const SELETOR_FILTROS = "select[data-filtro-dc], #fPeriodo, #fTipo, #fOrdem, #eDisciplina, #eAssunto";
+function listasDosFiltros(raiz){
+  raiz.querySelectorAll(SELETOR_FILTROS).forEach(sel => {
+    if (sel.hidden) return;
+    const atual = sel.options[sel.selectedIndex] || sel.options[0];
+    const caixa = document.createElement("div");
+    caixa.className = "multi-disc lista-unica";
+    caixa.innerHTML =
+      '<button class="multi-caixa" type="button" data-lista="' + esc(sel.id) + '" aria-haspopup="listbox" aria-expanded="false"' +
+        (sel.getAttribute("aria-labelledby") ? ' aria-labelledby="' + esc(sel.getAttribute("aria-labelledby")) + '"' : '') + '>' +
+        '<span>' + esc(atual ? atual.textContent : "") + '</span><span aria-hidden="true">▾</span></button>' +
+      '<div class="multi-lista" role="listbox">' +
+        [...sel.options].map(o => '<button class="multi-op op-unica" type="button" role="option" data-valor="' + esc(o.value) + '" ' +
+          'aria-selected="' + (o === atual) + '">' + esc(o.textContent) + '</button>').join("") +
+      '</div>';
+    sel.hidden = true;
+    sel.after(caixa);
+  });
+}
+/** abre (ou fecha) uma lista de filtro; abrir uma fecha as outras */
+function alternarListaFiltro(caixa, abrir){
+  document.querySelectorAll(".lista-unica.aberto").forEach(c => {
+    if (c === caixa && abrir) return;
+    c.classList.remove("aberto");
+    c.querySelector(".multi-caixa").setAttribute("aria-expanded", "false");
+  });
+  if (!caixa || !abrir) return;
+  caixa.classList.add("aberto");
+  caixa.querySelector(".multi-caixa").setAttribute("aria-expanded", "true");
+  const escolhida = caixa.querySelector('[aria-selected="true"]');
+  // lista comprida: rola só ela até a escolhida (a página fica parada)
+  if (escolhida) caixa.querySelector(".multi-lista").scrollTop = Math.max(0, escolhida.offsetTop - 40);
 }
 
 function posRender(){
@@ -8345,17 +8392,17 @@ function telaConteudos(){
           '<span class="spacer"></span><div class="disc-acoes">' +
           (ligacoesAtivas() ? seletorDiaDisciplina(d) : '') +
           (itens.length >= 2
-            ? '<button class="act" data-acao="juntar-conteudos" data-disc="'+esc(d)+'" ' +
+            ? '<button class="act atalho" data-acao="juntar-conteudos" data-disc="'+esc(d)+'" ' +
               'title="Dois ou mais conteúdos viram um só, daqui para a frente">⊕ juntar</button>' : '') +
-          '<button class="act" data-acao="renomear-disciplina" data-disc="'+esc(d)+'" ' +
+          '<button class="act atalho" data-acao="renomear-disciplina" data-disc="'+esc(d)+'" ' +
             'title="Renomear em todo o sistema — nas sessões, na agenda e nas anotações">✎ editar</button>' +
           /* o "a estudar" não conta: sem nada estudado em aberto, sobra reabrir o
              que foi fechado — ou nenhum dos dois, numa disciplina só de edital */
           (andando
-            ? '<button class="act" data-acao="concluir-disciplina" data-disc="'+esc(d)+'"' +
+            ? '<button class="act atalho" data-acao="concluir-disciplina" data-disc="'+esc(d)+'"' +
               (nov ? ' title="' + (nov === 1 ? 'O conteúdo a estudar fica' : 'Os '+nov+' conteúdos a estudar ficam') + ' de fora"' : '') + '>✓ concluir disciplina</button>'
             : itens.length > abertos
-              ? '<button class="act" data-acao="reabrir-disciplina" data-disc="'+esc(d)+'">↩ reabrir disciplina</button>'
+              ? '<button class="act atalho" data-acao="reabrir-disciplina" data-disc="'+esc(d)+'">reabrir disciplina</button>'
               : '') +
           '</div></div>' +
           (itens.length ? '<div class="barra disc-barra" title="' + fechados + ' de ' + itens.length + ' concluídos">' +
@@ -8398,7 +8445,7 @@ function linhaConteudo(d, c){
         ? '<button class="act" data-acao="separar-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'" ' +
           'title="Volta a ' + esc(juntos.join(", ")) + '">⇆ separar</button>' : '') +
       '<button class="act" data-acao="'+(fechado ? "reabrir-conteudo" : "concluir-conteudo")+'" ' +
-        'data-disc="'+esc(d)+'" data-conts="'+esc(c.nome)+'">' + (fechado ? "↩ reabrir" : "✓ concluir") + '</button>' +
+        'data-disc="'+esc(d)+'" data-conts="'+esc(c.nome)+'">' + (fechado ? "reabrir" : "✓ concluir") + '</button>' +
     '</div></div>';
 }
 
@@ -8955,7 +9002,7 @@ function modalAjuda(){
           'ela fica atrasada até ser marcada. Com filtro de disciplina ou conteúdo, as tarefas saem da lista. ' +
           'Os números do topo contam a agenda inteira, mesmo com a lista mostrando só as próximas.</dd></div>' +
         '<div class="aj-item"><dt>' + aba("Disciplinas") + '</dt><dd>O cadastro: criar disciplinas e conteúdos, <b>✓ concluir</b> e ' +
-          '<b>↩ reabrir</b> um conteúdo (ou a disciplina inteira). A caixa de <b>dificuldade</b> de cada conteúdo muda a dele ' +
+          '<b>reabrir</b> um conteúdo (ou a disciplina inteira). A caixa de <b>dificuldade</b> de cada conteúdo muda a dele ' +
           'no sistema todo: vale para a sessão mais recente, e a agenda, a aba Sessões e as próximas sessões seguem a nova ' +
           '(num conteúdo ainda sem sessão, ela vem preenchida na primeira). <b>✎ editar</b> muda o nome em todo o sistema e guarda, no canto, ' +
           'o <b>Excluir</b>: ele tira o conteúdo do cadastro e da agenda — as sessões continuam registradas, com as horas e as ' +
@@ -10013,6 +10060,21 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
   if (ui.menuPerfil && !(ev.target.closest && ev.target.closest("#btnPerfil"))){
     if (!ev.target.closest("#menuPerfil") || ev.target.closest(".menu-item,.menu-estado")) abrirMenuPerfil(false);
   }
+  /* a lista de um filtro (listasDosFiltros): a caixa abre e fecha; escolher troca o
+     valor do <select> escondido e avisa; clicar fora fecha */
+  const caixaLista = ev.target.closest && ev.target.closest(".lista-unica");
+  if (caixaLista){
+    const op = ev.target.closest(".op-unica");
+    if (!op){ alternarListaFiltro(caixaLista, !caixaLista.classList.contains("aberto")); return; }
+    const sel = caixaLista.previousElementSibling;
+    alternarListaFiltro(null, false);
+    if (sel && sel.value !== op.dataset.valor){
+      sel.value = op.dataset.valor;
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    return;
+  }
+  if (document.querySelector(".lista-unica.aberto")) alternarListaFiltro(null, false);
   // a lista de várias disciplinas (Questões) fecha ao clicar em qualquer lugar fora dela
   if (ui.qDiscsAberto && !(ev.target.closest && ev.target.closest(".multi-disc"))){
     ui.qDiscsAberto = false;
@@ -10616,6 +10678,8 @@ document.addEventListener("keydown", ev => {
 });
 document.addEventListener("keydown", ev => {
   if (ev.key !== "Escape") return;
+  const listaAberta = document.querySelector(".lista-unica.aberto");
+  if (listaAberta){ alternarListaFiltro(null, false); listaAberta.querySelector(".multi-caixa").focus(); return; }
   if (dialogoAberto){ dialogoAberto.cancelar(); return; }       // a pergunta curta fecha sozinha
   if (ui.menuPerfil){ abrirMenuPerfil(false); const b = document.getElementById("btnPerfil"); if (b) b.focus(); return; }
   if (!$("#overlay").hidden) fecharModal();
