@@ -573,6 +573,34 @@ html[data-tema="escuro"] .cal-dia.sel{color:#1b2224}
 .item.tarefa .hora{font-variant-numeric:tabular-nums;font-weight:650;color:var(--star-ink);margin-right:7px}
 .linha-add{display:flex;column-gap:10px;flex-wrap:wrap}   /* a linha de baixo já tem a margem do botão */
 .linha-add .btn-add{flex:1 1 220px;width:auto}
+/* ABA DISCIPLINAS (04/10). Cada disciplina: título e resumo à esquerda, ações à
+   direita, e uma barra fina do quanto já foi concluído. Cada conteúdo: nome com
+   o selo da situação; dificuldade e ações juntas, à direita (no celular, numa
+   linha só embaixo, separada por um fio). O conteúdo juntado tem a borda na cor
+   da identidade e diz de quem é feito. */
+.tiles-disc{margin-bottom:16px}
+.disc-bloco{margin-bottom:12px}
+.grupo-rev.disc-bloco .cab{align-items:flex-start;margin-bottom:9px;padding-bottom:0;border-bottom:0}
+.disc-tit{display:flex;flex-direction:column;gap:3px;min-width:0}
+.disc-resumo{font-size:12px;color:var(--muted)}
+.disc-acoes{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.disc-barra{height:5px;margin:0 0 12px}
+.item-conteudo{align-items:center}
+.cont-nome{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cont-acoes{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end;flex:none}
+.cont-acoes .sel-dif-cont{margin-right:4px}
+.item-conteudo.juntado{border-left-color:var(--accent)}
+.meta.juntou{color:var(--accent-ink)}
+.opcoes-juntar .opcao small{color:var(--muted);font-weight:400;margin-left:3px}
+@media (max-width:620px){
+  .item-conteudo{flex-wrap:wrap;row-gap:9px}
+  .item-conteudo .corpo{flex:1 1 100%}
+  .cont-acoes{flex:1 1 100%;justify-content:flex-start;padding-top:9px;border-top:1px solid var(--border)}
+  .cont-acoes .sel-dif-cont{flex:1 1 96px;width:auto;max-width:150px;min-width:0}
+  .grupo-rev.disc-bloco .cab{flex-direction:column;gap:6px}
+  .disc-bloco .cab .spacer{display:none}
+  .disc-acoes{justify-content:flex-start;margin-left:-8px}
+}
 .pt-legenda{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 @media (max-width:820px){.heat-grid{grid-template-columns:1fr}}
 .dia-info{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);
@@ -1144,11 +1172,6 @@ html[data-tema="escuro"] .aj-num{color:#1b2224}
 @media (max-width:620px){
   .wrap{padding:16px 13px 70px}
   .tile .val{font-size:21px}
-  /* aba Disciplinas: o nome do conteúdo fica com a linha inteira e os botões
-     (renomear, concluir, excluir) descem para a linha de baixo — lado a lado, o
-     nome era espremido a uma palavra por linha e o "renomear" ia por cima dele */
-  .item-conteudo .rev-topo{flex-wrap:wrap;row-gap:4px}
-  .item-conteudo .rev-topo .corpo{flex:1 1 100%}
 
   /* SESSÕES EM CARTÕES. A tabela de 7 colunas rolava para o lado e o conteúdo
      ficava numa coluna estreita. Aqui cada sessão vira um bloco: o conteúdo (e a
@@ -2384,7 +2407,8 @@ function faseDe(alvo){
 /** as fichas de conteúdo de uma sessão */
 function conteudosDoAlvo(alvo){
   if (!alvo) return [];
-  return assuntosDe(alvo).map(a => acharConteudo(alvo.disciplina, a)).filter(Boolean);
+  // duas sessões antigas de A e B juntados apontam para a mesma ficha: uma vez só
+  return [...new Set(assuntosDe(alvo).map(a => acharConteudo(alvo.disciplina, a)).filter(Boolean))];
 }
 /* SEM FICHA, NADA É AGENDADO. Quem planeja olha a SESSÃO, não o cadastro: sem
    esta guarda, excluir um conteúdo não pegaria — garantirRetomadas() (e o
@@ -2551,7 +2575,13 @@ function sessoesDaFicha(ficha){
    principal. Onde ele só foi "junto" (Estudar junto, 02/10), a sessão é do
    outro conteúdo — a dificuldade dela não é a dele, e ele segue no ritmo
    próprio. */
-const sessaoPropriaDaFicha = ficha => sessoesDaFicha(ficha).find(s => grupoNaSessao(s, ficha.nome) === 0) || null;
+const sessaoPropriaDaFicha = ficha => sessoesDaFicha(ficha).find(s => grupoNaSessao(s, ficha.nome) === 0 && depoisDaJuncao(ficha, s)) || null;
+/* Juntado, o conteúdo começa com a dificuldade mais alta dos que entraram nele
+   (decisão do Pedro, 04/10), guardada na ficha. As sessões antigas de A e B
+   contam como contato, mas não falam pela dificuldade: só as do conteúdo
+   juntado, registradas depois da junção. */
+const depoisDaJuncao = (ficha, s) => !ficha.juntadoEm ||
+  ((s.criadoEm || 0) >= ficha.juntadoEm && assuntosDe(s).some(a => a.toLowerCase() === ficha.nome.toLowerCase()));
 /** a dificuldade de AGORA: a da sessão mais recente do conteúdo, revisão ou estudo */
 function dificuldadeDaFicha(ficha){
   const s = sessaoPropriaDaFicha(ficha);
@@ -3011,9 +3041,25 @@ function conteudosDaDisciplina(disc){
   return conteudosCad().filter(c => c.disciplina === disc)
     .sort((a,b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
+/* CONTEÚDOS JUNTADOS (pedido do Pedro, 04/10). Juntar A e B na aba
+   Disciplinas cria UMA ficha nova ("A + B", ou o nome que você der), que guarda
+   as fichas de A e B em `juntados`, como estavam (para separar depois), e a
+   hora da junção em `juntadoEm`. A e B saem do cadastro, mas o nome deles
+   continua apontando para a ficha nova: as sessões antigas de A e de B seguem
+   escritas "A" e "B" — o feito não muda —, e para a agenda elas contam como
+   contato com o conteúdo juntado. Junção de junção guarda a de dentro inteira:
+   separar volta um passo de cada vez. */
+const nomesDaFicha = f => [f.nome].concat((f.juntados || []).flatMap(nomesDaFicha));
 function acharConteudo(disc, nome){
   const n = (nome || "").trim().toLowerCase();
-  return conteudosCad().find(c => c.disciplina === disc && c.nome.toLowerCase() === n) || null;
+  const daDisc = conteudosCad().filter(c => c.disciplina === disc);
+  return daDisc.find(c => c.nome.toLowerCase() === n) ||
+         daDisc.find(c => c.juntados && nomesDaFicha(c).some(x => x.toLowerCase() === n)) || null;
+}
+/** a ficha que tem EXATAMENTE este nome (sem passar pela junção) */
+function fichaDoNome(disc, nome){
+  const f = acharConteudo(disc, nome);
+  return f && f.nome.toLowerCase() === (nome || "").trim().toLowerCase() ? f : null;
 }
 /** cria a ficha do conteúdo se ela ainda não existe; devolve a ficha */
 function registrarConteudo(disc, nome){
@@ -7560,7 +7606,7 @@ function marcarConteudos(fichas, fase){
    sessões, as revisões avulsas e as anotações. Antes o nome vivia
    solto em cada sessão, e renomear numa não mexia nas outras.               */
 function renomearConteudo(disc, antigo, novo){
-  const ficha = acharConteudo(disc, antigo);
+  const ficha = fichaDoNome(disc, antigo);
   if (ficha) ficha.nome = novo;
   const bate = a => (a || "").toLowerCase() === antigo.toLowerCase();
   db.registros.forEach(r => {
@@ -7825,6 +7871,67 @@ function htmlJanelaConteudo(ficha){
       'Personalizar revisões até a prova</button></div>' + metaAteProva(ficha);
   return h;
 }
+/* A JANELA DE JUNTAR (aba Disciplinas, ⊕ juntar na disciplina). Marque dois
+   ou mais conteúdos; o nome vem como a soma deles ("A + B") e pode ser
+   trocado. As regras estão em juntarConteudos. */
+function modalJuntar(disc){
+  const itens = conteudosDaDisciplina(disc);
+  if (itens.length < 2){ toast("A disciplina precisa de dois conteúdos para juntar."); return; }
+  const situacao = c => c.fase === "concluido" ? "concluído" : aEstudar(c) ? "a estudar" : "em andamento";
+  abrirModal("Juntar conteúdos",
+    '<form id="formJuntar">' +
+    '<p class="intro-rev-prova"><b>' + esc(disc) + '</b><br>Daqui para a frente, os escolhidos viram um conteúdo só. ' +
+      'O que já foi feito continua com o nome de cada um.</p>' +
+    '<div class="campos">' +
+      '<div class="campo largo"><span>Conteúdos (dois ou mais)</span><div class="opcoes opcoes-juntar">' +
+        itens.map(c => '<label class="opcao"><input type="checkbox" name="juntar" value="' + esc(c.nome) + '">' +
+          '<span>' + esc(c.nome) + ' <small>' + situacao(c) + '</small></span></label>').join("") +
+      '</div></div>' +
+      campo("Nome do conteúdo juntado", '<input name="nome" maxlength="120" autocomplete="off" placeholder="Escolha os conteúdos acima">', true) +
+    '</div>' +
+    '<div class="linha acoes-form"><button class="btn" type="submit">Juntar</button>' +
+    '<button class="btn ghost" type="button" data-acao="fechar-modal">Cancelar</button>' +
+    '<span class="erro-form" id="erroJuntar"></span></div></form>',
+    () => {
+      const f = $("#formJuntar"), campoNome = f.querySelector('[name="nome"]');
+      const marcados = () => [...f.querySelectorAll('[name="juntar"]:checked')].map(i => i.value);
+      let mexido = false;                          // o nome escrito por você não é trocado
+      campoNome.addEventListener("input", () => { mexido = !!campoNome.value.trim(); });
+      f.addEventListener("change", ev => {
+        if (ev.target.name !== "juntar" || mexido) return;
+        campoNome.value = marcados().length >= 2 ? marcados().join(" + ") : "";
+      });
+      f.addEventListener("submit", ev => {
+        ev.preventDefault();
+        const erro = $("#erroJuntar");
+        const fichas = marcados().map(n => fichaDoNome(disc, n)).filter(Boolean);
+        const nome = campoNome.value.trim().replace(/\s+/g, " ");
+        if (fichas.length < 2){ erro.textContent = "Marque dois ou mais conteúdos."; return; }
+        if (!nome){ erro.textContent = "Dê um nome ao conteúdo juntado."; return; }
+        const outro = acharConteudo(disc, nome);
+        if (outro && !fichas.includes(outro)){ erro.textContent = "Já existe um conteúdo com esse nome nesta disciplina."; return; }
+        juntarConteudos(fichas, nome);
+        persistir(); fecharModal(); render();
+        toast("“" + nome + "” criado. Daqui para a frente, é um conteúdo só.");
+      });
+    });
+}
+async function separarConteudoPerguntando(disc, nome){
+  const ficha = fichaDoNome(disc, nome);
+  if (!ficha || !(ficha.juntados || []).length) return;
+  const nomes = ficha.juntados.map(j => j.nome);
+  const lista = nomes.slice(0, -1).join(", ") + " e " + nomes[nomes.length - 1];
+  const ok = await confirmar({ titulo: "Separar", botao: "Separar",
+    texto: "Separar “" + ficha.nome + "” de volta em " + lista + "?\n\n" +
+           (ficha.fase === "concluido"
+             ? "Como ele está concluído, todos voltam concluídos."
+             : "Cada um volta como estava antes de juntar.") +
+           " O que foi feito como “" + ficha.nome + "” continua com esse nome." });
+  if (!ok) return;
+  separarConteudo(ficha);
+  persistir(); render();
+  toast("Separado: " + lista + " voltaram, cada um com o próprio card.");
+}
 async function editarConteudo(disc, antigo){
   const ficha = acharConteudo(disc, antigo);
   if (!ficha) return;
@@ -7936,7 +8043,9 @@ function agendaVolta(reg){
 /** marca a volta daquela sessão, cobrindo só os conteúdos passados */
 function marcarVolta(reg, conteudos, base){
   /* conteúdo que veio junto (Estudar junto) volta no ritmo dele, não no do card principal */
-  const ficha = grupoNaSessao(reg, conteudos[0]) ? acharConteudo(reg.disciplina, conteudos[0]) : null;
+  /* e o juntado, numa sessão de antes da junção, no ritmo do conteúdo juntado */
+  const daFicha = acharConteudo(reg.disciplina, conteudos[0]);
+  const ficha = daFicha && (grupoNaSessao(reg, conteudos[0]) || !depoisDaJuncao(daFicha, reg)) ? daFicha : null;
   const nivel = ficha ? dificuldadeDaFicha(ficha) : dificuldadeDe(reg);
   const quando = foraDaProva(D.soma(base || D.hoje(), diasDaVolta(nivel)));
   if (quando > limiteDe(reg)) return null;          // o teto que você definiu manda
@@ -7970,7 +8079,13 @@ function garantirRetomadas(){
 }
 /** as sessões que falam destes conteúdos — é o alcance de fechar um deles */
 function sessoesDoConteudo(disc, nomes){
-  const alvo = new Set((nomes || []).map(n => (n || "").toLowerCase()));
+  const alvo = new Set();
+  (nomes || []).forEach(n => {
+    alvo.add((n || "").toLowerCase());
+    // o conteúdo juntado responde também pelas sessões dos que entraram nele
+    const f = fichaDoNome(disc, n);
+    if (f) nomesDaFicha(f).forEach(x => alvo.add(x.toLowerCase()));
+  });
   return db.registros.filter(r => r.disciplina === disc &&
                                   assuntosDe(r).some(a => alvo.has(a.toLowerCase())));
 }
@@ -8017,6 +8132,100 @@ function excluirConteudo(disc, nome){
   });
   if (ficha) db.conteudos = conteudosCad().filter(c => c !== ficha);
   return { itens: saindo.length, sessoes: sessoesDoConteudo(disc, [nome]).length };
+}
+
+/* JUNTAR CONTEÚDOS (pedido do Pedro, 04/10; ver acharConteudo). Diferente do
+   "Estudar junto" da sessão, que vale só para aquele dia, aqui a junção fica:
+   daqui para a frente é um conteúdo só. Regras que ele escolheu:
+   - fase: basta um em andamento para o juntado ficar em andamento;
+   - ritmo: a dificuldade mais alta entre eles;
+   - agenda: o que já foi feito fica como está; os cards PENDENTES deles dão
+     lugar a um card só, na data do mais próximo, e o ritmo segue dali.
+   Devolve a ficha nova. */
+function juntarConteudos(fichas, nome){
+  fichas = [...new Set((fichas || []).filter(Boolean))];
+  if (fichas.length < 2 || !nome) return null;
+  const disc = fichas[0].disciplina;
+  const chaves = new Set(fichas.map(chaveDaFicha));
+  const difs = fichas.filter(f => sessoesDaFicha(f).length || f.dificuldade).map(dificuldadeDaFicha);
+  const fala = r => { const ctx = contextoRevisao(r);
+                      return !!ctx && ctx.disciplina === disc && ctx.assuntos.some(a => chaves.has(chaveAssunto(disc, a))); };
+  const pendentes = db.revisoes.filter(r => !r.feita && fala(r)).sort(porData);
+  const proxima = pendentes.length ? pendentes[0].data : "";
+  const daEscada = pendentes.find(r => !ehRetomada(r) && Number.isInteger(r.degrau));
+  // os pendentes saem; card que fala também de outro conteúdo fica, só sem estes
+  const saem = new Set();
+  pendentes.forEach(r => {
+    const resto = contextoRevisao(r).assuntos.filter(a => !chaves.has(chaveAssunto(disc, a)));
+    if (resto.length) r.assuntos = resto; else saem.add(r.id);
+  });
+  db.revisoes = db.revisoes.filter(r => !saem.has(r.id));
+
+  const aberto = fichas.some(f => f.fase !== "concluido");
+  const agora = Date.now();
+  const nova = { id: uid(), nome, disciplina: disc, fase: aberto ? "andamento" : "concluido",
+                 concluidoEm: aberto ? null : (fichas.map(f => f.concluidoEm || "").sort().pop() || D.hoje()),
+                 criadoEm: agora, juntadoEm: agora,
+                 juntados: fichas.map(f => JSON.parse(JSON.stringify(f))) };
+  if (difs.length) nova.dificuldade = Math.max.apply(null, difs);
+  const dias = new Set(fichas.map(f => f.diaProva || ""));
+  if (dias.size === 1 && fichas[0].diaProva) nova.diaProva = fichas[0].diaProva;
+  if (fichas.every(f => f.semAutomaticas)) nova.semAutomaticas = true;
+  db.conteudos = conteudosCad().filter(c => !fichas.includes(c)).concat([nova]);
+
+  // o card único, na data do mais próximo (sem sessão nenhuma, é "a estudar": nada a marcar)
+  if (proxima && agendamentoAtivo()){
+    const base = { id: uid(), assuntos: [nome], data: proxima, feita: false, feitaEm: null, minutos: null,
+                   questoes: null, acertos: null, dificuldade: null, atividade: "", nota: "", manual: false };
+    if (aberto){
+      const dono = sessoesDaFicha(nova).find(agendaVolta);
+      if (dono) db.revisoes.push(Object.assign(base, { registroId: dono.id, ordem: 1, retomada: true }));
+    } else if (escadaAtiva(nova)){
+      const dono = donoDaEscada(nova);
+      const degraus = degrausDa(dificuldadeDaFicha(nova));
+      const k = Math.max(1, Math.min(daEscada ? daEscada.degrau : 1, degraus.length - 1));
+      if (dono) db.revisoes.push(Object.assign(base, { registroId: dono.id, ordem: k, degrau: k,
+                                                       passo: degraus[k] - degraus[k - 1] }));
+    }
+  }
+  garantirAgenda();
+  juntarIrmas();
+  return nova;
+}
+/* SEPARAR O QUE FOI JUNTADO. O que foi feito como conteúdo juntado continua
+   com o nome dele (as sessões não mudam). As fichas voltam como estavam antes
+   da junção — a não ser que o juntado esteja concluído: aí todas voltam
+   concluídas. Os cards pendentes viram um por conteúdo, na mesma data (o card
+   de continuar vai para quem voltou aberto; o da escada, para quem voltou
+   concluído; o que faltar, a garantia da agenda marca). Devolve as fichas. */
+function separarConteudo(ficha){
+  if (!ficha || !(ficha.juntados || []).length) return [];
+  const chave = chaveDaFicha(ficha);
+  const fechado = ficha.fase === "concluido";
+  const voltam = ficha.juntados.map(j => {
+    const c = JSON.parse(JSON.stringify(j));
+    if (fechado && c.fase !== "concluido"){ c.fase = "concluido"; c.concluidoEm = ficha.concluidoEm || D.hoje(); }
+    return c;
+  });
+  const pendentes = db.revisoes.filter(r => !r.feita && falaDe(r, chave));
+  db.conteudos = conteudosCad().filter(c => c !== ficha).concat(voltam);
+  const saem = new Set(), novos = [];
+  pendentes.forEach(r => {
+    const ctx = contextoRevisao(r);
+    voltam.forEach(c => {
+      if (ehRetomada(r) !== (c.fase !== "concluido")) return;
+      novos.push(Object.assign({}, r, { id: uid(), assuntos: [c.nome] }));
+    });
+    // a sessão dona não junta os pedaços de novo (ver grupoDoCard)
+    const dono = r.registroId ? acharRegistro(r.registroId) : null;
+    if (dono) dono.separados = [...new Set((dono.separados || []).concat(voltam.map(c => c.nome.toLowerCase())))];
+    const resto = ctx.assuntos.filter(a => chaveAssunto(ctx.disciplina, a) !== chave);
+    if (resto.length) r.assuntos = resto; else saem.add(r.id);
+  });
+  db.revisoes = db.revisoes.filter(r => !saem.has(r.id)).concat(novos);
+  garantirAgenda();
+  juntarIrmas();
+  return voltam;
 }
 
 /* "A ESTUDAR" é o conteúdo cadastrado que ainda não tem nenhuma sessão — o
@@ -8072,17 +8281,33 @@ function telaConteudos(){
     n + daDisc(d).filter(c => c.fase !== "concluido" && !aEstudar(c)).length, 0);
   const nAEstudar = discs.reduce((n, d) => n + daDisc(d).filter(aEstudar).length, 0);
 
-  let h = '<div class="card"><h2>Disciplinas</h2>';
+  const nConcl = discs.reduce((n, d) => n + daDisc(d).filter(c => c.fase === "concluido").length, 0);
+
+  /* LAYOUT (04/10, junto com o Juntar). No padrão das outras abas: os botões
+     de criar ficam acima do card, lado a lado (como na Agenda); o card abre
+     com título e contagem (como em Sessões), o filtro e os números em quadros.
+     Cada disciplina tem a barra do quanto já foi concluído; cada conteúdo, um
+     selo com a situação — antes ela era só uma palavra no meio da linha. */
+  /* + NOVO CONTEÚDO obedece ao filtro: cria na disciplina escolhida nele. Em
+     "Todas", a janela pede a disciplina (travado, o botão não respondia ao
+     toque e a explicação morava num title que o celular não mostra). */
+  const alvoNovo = filtro || (todas.length === 1 ? todas[0] : "");
+  let h = '<div class="linha-add">' +
+    '<button class="btn-add" data-acao="nova-disciplina"><span class="mais">+</span> Nova disciplina</button>' +
+    (todas.length
+      ? '<button class="btn-add" data-acao="novo-conteudo"' + (alvoNovo ? ' data-disc="'+esc(alvoNovo)+'"' : '') + '>' +
+        '<span class="mais">+</span> Novo conteúdo</button>' : '') +
+    '</div>';
+
+  h += '<div class="card tela-disciplinas"><h2>Disciplinas <span class="dica">' +
+    (discs.length ? discs.length + (discs.length === 1 ? " disciplina" : " disciplinas") + ' · ' +
+                    fichas + (fichas === 1 ? " conteúdo" : " conteúdos") : "nenhuma ainda") + '</span></h2>';
 
   if (ligacoesAtivas())
     h += '<p class="sub">Vestibular com ' + diasDeProva().length + ' dias de prova: se quiser, ligue a disciplina ' +
       '(ou um conteúdo) ao dia em que ela cai. O conteúdo ligado é cobrado até a véspera do dia dele e fica em ' +
       'silêncio até o último dia de prova; depois volta normalmente. <b>É opcional</b> — sem ligação, vale até ' +
       'o último dia, como sempre.</p>';
-
-  h += '<button class="btn-add" data-acao="nova-disciplina" style="margin-bottom:12px">' +
-    '<span class="mais">+</span> Nova disciplina' +
-    '</button>';
 
   // o filtro de disciplina e conteúdo, igual ao das outras abas (filtroDiscCont)
   if (todas.length)
@@ -8092,24 +8317,13 @@ function telaConteudos(){
           '<button class="btn mini ghost" data-acao="limpar-filtro-conteudos">limpar filtros</button></div>' : '') +
       '</div>';
 
-  /* + NOVO CONTEÚDO. Obedece ao filtro: cria na disciplina escolhida nele. Em
-     "Todas" não há para onde criar, então o botão fica travado até a escolha —
-     com uma disciplina só, ela é a escolha. */
-  /* Em "Todas" o botão NÃO fica travado: a janela pede a disciplina. Travado, ele
-     não respondia ao toque e a explicação morava num title que o celular não mostra. */
-  const alvoNovo = filtro || (todas.length === 1 ? todas[0] : "");
-  if (todas.length)
-    h += '<div style="margin-bottom:12px"><button class="btn-add menor" data-acao="novo-conteudo"' +
-      (alvoNovo ? ' data-disc="'+esc(alvoNovo)+'"' : '') + '>' +
-      '<span class="mais">+</span> Novo conteúdo</button></div>';
-
-  if (discs.length)
-    h += '<div class="linha" style="margin-bottom:10px">' +
-      '<span class="badge">'+discs.length+(discs.length === 1 ? " disciplina" : " disciplinas")+'</span>' +
-      '<span class="badge">'+fichas+(fichas === 1 ? " conteúdo" : " conteúdos")+'</span>' +
-      (emAndamento ? '<span class="badge b-misto">'+emAndamento+' em andamento</span>' : '') +
-      (nAEstudar ? '<span class="badge">'+nAEstudar+' a estudar</span>' : '') +
-      (emAndamento || nAEstudar ? '' : '<span class="badge b-bom">tudo concluído</span>') +
+  if (fichas)
+    h += '<div class="tiles tiles-disc">' +
+      tile("Em andamento", String(emAndamento), emAndamento ? "a agenda chama para continuar" : "nada aberto agora") +
+      tile("A estudar", String(nAEstudar), nAEstudar ? "ainda sem sessão" : "tudo já começado") +
+      tile("Concluídos", String(nConcl), "de " + fichas + (fichas === 1 ? " conteúdo" : " conteúdos"),
+           '<div class="barra"><i class="'+(nConcl === fichas ? "cheia" : "")+'" style="width:'+Math.round(nConcl / fichas * 100)+'%"></i></div>',
+           nConcl === fichas ? "bom" : "accent") +
       '</div>';
 
   h += discs.length
@@ -8120,14 +8334,19 @@ function telaConteudos(){
         const abertos = itens.filter(c => c.fase !== "concluido").length;
         const nov = itens.filter(aEstudar).length;
         const andando = abertos - nov;
-        return '<div class="grupo-rev'+(abertos ? " aberto" : "")+'" style="margin-bottom:12px">' +
-          '<div class="linha cab"><strong>'+esc(d)+'</strong>' +
-          '<span class="badge">'+itens.length+(itens.length === 1 ? " conteúdo" : " conteúdos")+'</span>' +
-          (andando ? '<span class="badge b-misto">'+andando+' em andamento</span>' : '') +
-          (nov ? '<span class="badge">'+nov+' a estudar</span>' : '') +
-          (abertos ? '' : '<span class="badge b-bom">tudo concluído</span>') +
-          '<span class="spacer"></span>' +
+        const fechados = itens.length - abertos;
+        const resumo = [itens.length + (itens.length === 1 ? " conteúdo" : " conteúdos")];
+        if (andando) resumo.push(andando + " em andamento");
+        if (nov) resumo.push(nov + " a estudar");
+        if (fechados) resumo.push(fechados + (fechados === 1 ? " concluído" : " concluídos"));
+        return '<div class="grupo-rev disc-bloco'+(abertos ? " aberto" : "")+'">' +
+          '<div class="linha cab"><div class="disc-tit"><strong>'+esc(d)+'</strong>' +
+            '<span class="disc-resumo">' + esc(resumo.join(" · ")) + '</span></div>' +
+          '<span class="spacer"></span><div class="disc-acoes">' +
           (ligacoesAtivas() ? seletorDiaDisciplina(d) : '') +
+          (itens.length >= 2
+            ? '<button class="act" data-acao="juntar-conteudos" data-disc="'+esc(d)+'" ' +
+              'title="Dois ou mais conteúdos viram um só, daqui para a frente">⊕ juntar</button>' : '') +
           '<button class="act" data-acao="renomear-disciplina" data-disc="'+esc(d)+'" ' +
             'title="Renomear em todo o sistema — nas sessões, na agenda e nas anotações">✎ editar</button>' +
           /* o "a estudar" não conta: sem nada estudado em aberto, sobra reabrir o
@@ -8138,27 +8357,11 @@ function telaConteudos(){
             : itens.length > abertos
               ? '<button class="act" data-acao="reabrir-disciplina" data-disc="'+esc(d)+'">↩ reabrir disciplina</button>'
               : '') +
-          '</div>' +
+          '</div></div>' +
+          (itens.length ? '<div class="barra disc-barra" title="' + fechados + ' de ' + itens.length + ' concluídos">' +
+            '<i class="'+(fechados === itens.length ? "cheia" : "")+'" style="width:'+Math.round(fechados / itens.length * 100)+'%"></i></div>' : '') +
           (lista.length
-            ? lista.map(c => {
-                const nSess = sessoesDoConteudo(d, [c.nome]).length;
-                return '<div class="item item-conteudo"><div class="rev-topo">' +
-                  '<div class="corpo"><div class="titulo">'+esc(c.nome)+'</div>' +
-                  '<div class="meta">'+nSess+(nSess === 1 ? " sessão" : " sessões")+' · ' +
-                  (c.fase === "concluido" ? "concluído" + (c.concluidoEm ? " em " + D.br(c.concluidoEm) : "")
-                                          : nSess ? "em andamento" : "a estudar")+'</div>' +
-                  (ligacoesAtivas() ? '<div class="meta dia-cont">Dia de prova: ' + seletorDiaConteudo(c) + '</div>' : '') +
-                  metaAteProva(c) +
-                  (c.fase === "concluido" && c.semAutomaticas && agendamentoAtivo()
-                    ? '<div class="meta sem-auto">revisões automáticas desligadas — só as que você marcar</div>' : '') +
-                  '</div>' +
-                  seletorDificuldadeConteudo(c, nSess) +
-                  '<button class="act" data-acao="renomear-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'">✎ editar</button>' +
-                  '<button class="act" data-acao="'+(c.fase === "concluido" ? "reabrir-conteudo" : "concluir-conteudo")+'" ' +
-                    'data-disc="'+esc(d)+'" data-conts="'+esc(c.nome)+'">' +
-                    (c.fase === "concluido" ? "↩ reabrir" : "✓ concluir") + '</button>' +
-                  '</div></div>';
-              }).join("")
+            ? lista.map(c => linhaConteudo(d, c)).join("")
             : '<div class="vazio" style="padding:14px">Nenhum conteúdo cadastrado nesta disciplina.</div>') +
           '</div>';
       }).join("")
@@ -8166,6 +8369,37 @@ function telaConteudos(){
       'Use o <b>+ Nova disciplina</b> acima — ou registre uma sessão na aba <b>Sessões</b>, que cria a disciplina junto.</div>';
 
   return h + '</div>';
+}
+/** um conteúdo na aba Disciplinas: nome e situação; embaixo (ou à direita) dificuldade e ações */
+function linhaConteudo(d, c){
+  const nSess = sessoesDoConteudo(d, [c.nome]).length;
+  const fechado = c.fase === "concluido";
+  const selo = fechado ? '<span class="badge b-bom">concluído</span>'
+             : nSess ? '<span class="badge b-misto">em andamento</span>'
+             : '<span class="badge">a estudar</span>';
+  const juntos = (c.juntados || []).map(j => j.nome);
+  return '<div class="item item-conteudo'+(juntos.length ? " juntado" : "")+'">' +
+    '<div class="corpo">' +
+      '<div class="cont-nome"><span class="titulo">'+esc(c.nome)+'</span>' + selo + '</div>' +
+      '<div class="meta">'+nSess+(nSess === 1 ? " sessão" : " sessões") +
+        (fechado && c.concluidoEm ? ' · concluído em ' + D.br(c.concluidoEm) : '') + '</div>' +
+      (juntos.length
+        ? '<div class="meta juntou">⊕ juntou ' + esc(juntos.slice(0, -1).join(", ") + " e " + juntos[juntos.length - 1]) +
+          (c.juntadoEm ? ' em ' + D.br(D.iso(new Date(c.juntadoEm))) : '') + '</div>' : '') +
+      (ligacoesAtivas() ? '<div class="meta dia-cont">Dia de prova: ' + seletorDiaConteudo(c) + '</div>' : '') +
+      metaAteProva(c) +
+      (fechado && c.semAutomaticas && agendamentoAtivo()
+        ? '<div class="meta sem-auto">revisões automáticas desligadas — só as que você marcar</div>' : '') +
+    '</div>' +
+    '<div class="cont-acoes">' +
+      seletorDificuldadeConteudo(c, nSess) +
+      '<button class="act" data-acao="renomear-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'">✎ editar</button>' +
+      (juntos.length
+        ? '<button class="act" data-acao="separar-conteudo" data-disc="'+esc(d)+'" data-cont="'+esc(c.nome)+'" ' +
+          'title="Volta a ' + esc(juntos.join(", ")) + '">⇆ separar</button>' : '') +
+      '<button class="act" data-acao="'+(fechado ? "reabrir-conteudo" : "concluir-conteudo")+'" ' +
+        'data-disc="'+esc(d)+'" data-conts="'+esc(c.nome)+'">' + (fechado ? "↩ reabrir" : "✓ concluir") + '</button>' +
+    '</div></div>';
 }
 
 /** a dificuldade do conteúdo, editável na linha (vale para o sistema todo — ver definirDificuldadeDoConteudo) */
@@ -8760,6 +8994,11 @@ function modalAjuda(){
           '(no formulário, <b>Estudar junto</b>): os dois cards ficam feitos e o tempo conta uma vez. ' +
           'Depois, cada um volta no seu próprio card. Um card que ficou com dois conteúdos ("A · B")? ' +
           'Em <b>editar</b>, <b>Separar</b> divide em um card por conteúdo.</li>' +
+        '<li><b>Juntar conteúdos de vez:</b> em ' + aba("Disciplinas") + ', o <b>⊕ juntar</b> da disciplina faz de dois ou mais ' +
+          'conteúdos um só, daqui para a frente (o nome vem como "A + B" e pode ser trocado). O que já foi feito continua ' +
+          'com o nome de cada um; os cards pendentes viram um só, na data do mais próximo. Basta um em andamento para o ' +
+          'juntado ficar em andamento, e o ritmo é o do mais difícil. O <b>⇆ separar</b> desfaz: cada um volta como estava ' +
+          '(ou todos concluídos, se o juntado estava concluído), e o feito como juntado mantém o nome.</li>' +
         '<li><b>A fase mora no conteúdo.</b> Em andamento, a agenda chama para <b>continuar</b>; concluído, para <b>revisar</b>. ' +
           'Concluir em ' + aba("Disciplinas") + ', no card da ' + aba("Agenda") + ' ou no formulário da sessão dá no mesmo.</li>' +
         '<li><b>O mural Falta estudar</b> (' + aba("Hoje") + ') é automático: todo conteúdo cadastrado sem sessão está nele, e sai na primeira sessão.</li>' +
@@ -10204,6 +10443,8 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
         toast("Tarefa excluída.");
       }
       break; }
+    case "juntar-conteudos": modalJuntar(alvo.dataset.disc); break;
+    case "separar-conteudo": separarConteudoPerguntando(alvo.dataset.disc, alvo.dataset.cont); break;
     case "separar-revisao": {
       const rv = acharRevisao(id);
       if (!podeSeparar(rv)) break;

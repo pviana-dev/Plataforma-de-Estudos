@@ -38,11 +38,12 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   let doc=w.document, $=s=>doc.querySelector(s);
   const btn=()=>$('[data-acao="novo-conteudo"]');
   ok("há o botão + Novo conteúdo", !!btn());
-  ok("ele é o menor (btn-add menor)", btn().classList.contains("menor"));
-  // ordem: + Nova disciplina, o filtro (caixas de disciplina e conteúdo), + Novo conteúdo
+  /* layout de 04/10: os dois botões de criar ficam lado a lado, acima do card (como na Agenda) */
+  ok("ele fica ao lado do + Nova disciplina", btn().parentElement.classList.contains("linha-add") &&
+     !!btn().parentElement.querySelector('[data-acao="nova-disciplina"]'));
   const ordem=[...doc.querySelectorAll('#view [data-acao="nova-disciplina"], #view #cDisciplina, #view [data-acao="novo-conteudo"]')]
     .map(e=>e.dataset.acao||e.id);
-  ok("fica abaixo dos filtros de disciplina", ordem[0]==="nova-disciplina" && ordem[ordem.length-1]==="novo-conteudo", ordem);
+  ok("e acima dos filtros de disciplina", ordem[ordem.length-1]==="cDisciplina", ordem);
   /* Em Todas o botão responde (revisão de UX, 26/09): travado, não reagia ao toque e a
      explicação ficava num title que o celular não mostra. A janela pede a disciplina. */
   ok("em Todas, o botão responde e diz só '+ Novo conteúdo'", !btn().disabled && btn().textContent.trim()==="+ Novo conteúdo",
@@ -76,7 +77,7 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   ok("nada entra na agenda", db(w).revisoes.length===revsAntes, [revsAntes,db(w).revisoes.length]);
   const txt=$("#view").textContent;
   ok("os novos aparecem como 'a estudar'", /Regência2?.*a estudar/.test(txt) || /0 sessões · a estudar/.test(txt), txt.slice(0,400));
-  ok("Crase, que tem sessão, segue em andamento", /1 sessão · em andamento/.test(txt));
+  ok("Crase, que tem sessão, segue em andamento", /Crase\s*em andamento\s*1 sessão/.test(txt));
   ok("o resumo conta os a estudar à parte", /2 a estudar/.test(txt) && /1 em andamento/.test(txt));
 
   // tudo repetido: avisa e não fecha
