@@ -1074,6 +1074,9 @@ tbody tr.realce td{animation:acendeLinha 2.2s ease-out}
 .campo-busca .lupa{position:absolute;left:10px;bottom:8px;font-size:15px;color:var(--muted);
   line-height:1;pointer-events:none}
 mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px}
+/* a pesquisa das Anotações, logo abaixo do título da lista */
+.busca-anot{margin:2px 0 14px}
+.busca-anot input{width:100%}
 .hl-tema{font-size:12.5px;color:var(--muted)}
 /* filtros da Agenda: Situação, Organizar e Assunto, um abaixo do outro */
 .filtros-agenda .linha + .linha{margin-top:8px}
@@ -3228,7 +3231,9 @@ const view = $("#view");
 const ui = {
   aba: "hoje", foco: null, editandoRegistro: null,
   fDisciplina: "", fPeriodo: "todos", fOrdem: "data-desc", fBusca: "", fTipo: "todos",
-  eDisciplina: "", eAssunto: "", eSoImportantes: false, eJuntarTudo: false, qVisao: "disciplina", qOrdemTaxa: "asc",
+  eDisciplina: "", eAssunto: "", eSoImportantes: false, eJuntarTudo: false,
+  eBusca: "",                       // pesquisa nas Anotações (não vai para CAMPOS_TELA: some ao fechar o app)
+  qVisao: "disciplina", qOrdemTaxa: "asc",
   qPeriodo: 30,                     // janela do gráfico de questões, em dias
   qDiscs: [],                       // filtro da aba Questões: VÁRIAS disciplinas ao mesmo tempo
   compondo: false, rascunhoAnot: "", editandoErro: null, prefill: null,
@@ -3489,6 +3494,7 @@ function posRender(){
       setTimeout(() => linha.classList.remove("realce"), 2400);
     }
   }
+  if (ui.aba === "erros" && ui.eBusca) realcarBusca(view);
   // devolve o foco ao campo que estava sendo digitado (a tela é redesenhada a cada tecla)
   if (ui.foco){
     const el = document.getElementById(ui.foco);
@@ -6243,7 +6249,7 @@ function telaErros(){
   let h = '<div class="card"><h2>Anotações</h2>';
 
   // ----- filtros: disciplina e conteúdo (só o que já existe em Registros)
-  const filtrandoFb = !!(disc || ui.eAssunto || ui.eSoImportantes);
+  const filtrandoFb = !!(disc || ui.eAssunto || ui.eSoImportantes || ui.eBusca);
   h += '<div class="filtros"><div class="filtros-campos">' +
     campo("Disciplina", '<select id="eDisciplina"><option value="">Todas as disciplinas</option>' +
       discsComConteudo.map(d => '<option'+(disc === d ? " selected" : "")+'>'+esc(d)+'</option>').join("") + '</select>') +
@@ -6353,13 +6359,27 @@ function telaErros(){
   if (ui.eAssunto)  itens = itens.filter(e => chaveAssunto(e.disciplina, e.assunto || "") === ui.eAssunto);
   else if (disc)    itens = itens.filter(e => e.disciplina === disc);
   if (ui.eSoImportantes) itens = itens.filter(e => e.importante);
+  const antesDaBusca = itens.length;
+  const busca = termoDaBusca();
+  if (busca) itens = itens.filter(e => anotacaoTem(e, busca));
   itens.sort((a,b) => (b.importante - a.importante) || (b.criadoEm - a.criadoEm));
 
   h += '</div>';                       // fecha o card dos filtros
   h += '<div class="card"><h2>' + (ui.eSoImportantes ? ESTRELA().titulo : "Todas as anotações") +
        '<span class="dica">' + itens.length + (itens.length === 1 ? " anotação" : " anotações") +
+       (busca ? " com “" + esc(ui.eBusca.trim()) + "”" : "") +
        (sel ? " em " + esc(sel.assunto || sel.disciplina) : disc ? " em " + esc(disc) : "") + '</span></h2>';
-  if (!itens.length){
+  /* PESQUISAR (pedido do Pedro, 05/10): só no texto da anotação, dentro do que
+     os filtros de cima já escolheram. Parte da palavra vale, e maiúsculas e
+     acentos não contam ("funcao" acha "Função"). */
+  if (antesDaBusca || busca)
+    h += '<div class="campo campo-busca busca-anot"><span class="lupa" aria-hidden="true">⌕</span>' +
+      '<input id="eBusca" type="search" aria-label="Pesquisar nas anotações" autocomplete="off" ' +
+        'value="' + esc(ui.eBusca) + '" placeholder="Pesquisar nas anotações…"></div>';
+  if (!itens.length && busca){
+    h += '<div class="vazio"><strong>Nenhuma anotação com “' + esc(ui.eBusca.trim()) + '”</strong>' +
+      'Tente outro termo' + (disc || ui.eAssunto || ui.eSoImportantes ? ' ou limpe os filtros de cima' : '') + '.</div>';
+  } else if (!itens.length){
     h += '<div class="vazio">' + (sel
       ? '<strong>Nenhuma anotação '+(sel.assunto ? "neste conteúdo" : "solta nesta disciplina")+' ainda</strong>' +
         'Use o botão + acima: escreva o que você quer lembrar sobre isso.'
@@ -6385,6 +6405,47 @@ function telaErros(){
       .map(cardConteudo).join("");
   }
   return h + '</div>';
+}
+
+/* A PESQUISA DAS ANOTAÇÕES. Compara sem maiúsculas e sem acentos, e sem os
+   marcadores de formatação (** e _), que não aparecem na tela. */
+const semAcento = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const termoDaBusca = () => semAcento(ui.eBusca.trim());
+const anotacaoTem = (e, termo) =>
+  semAcento(((e.ensinamento || "") + "\n" + (e.oQueErrei || "")).replace(/\*\*|_/g, "")).includes(termo);
+/* Marca o trecho encontrado no texto já desenhado. Anda só pelos nós de texto
+   (as tags da formatação ficam intactas) e acha o termo letra a letra, para que
+   "funcao" marque "Função" inteira. O rótulo "O que me confundiu:" não conta. */
+function realcarBusca(raiz){
+  const termo = termoDaBusca(); if (!termo) return;
+  raiz.querySelectorAll(".apr-item .aprendizado, .apr-item .detalhe").forEach(bloco => {
+    const andador = document.createTreeWalker(bloco, NodeFilter.SHOW_TEXT);
+    const nos = [];
+    while (andador.nextNode()) nos.push(andador.currentNode);
+    nos.forEach(no => {
+      if (no.parentNode.matches(".detalhe > b:first-child")) return;
+      const texto = no.nodeValue;
+      // o texto sem acento, guardando de que letra do original veio cada letra
+      let norm = "", origem = [];
+      for (let i = 0; i < texto.length; i++){
+        const c = semAcento(texto[i]);
+        for (let j = 0; j < c.length; j++){ norm += c[j]; origem.push(i); }
+      }
+      let pos = norm.indexOf(termo); if (pos < 0) return;
+      const frag = document.createDocumentFragment();
+      let ultimo = 0;
+      while (pos >= 0){
+        const ini = origem[pos], fim = origem[pos + termo.length - 1] + 1;
+        if (ini > ultimo) frag.appendChild(document.createTextNode(texto.slice(ultimo, ini)));
+        const m = document.createElement("mark"); m.textContent = texto.slice(ini, fim);
+        frag.appendChild(m);
+        ultimo = fim;
+        pos = norm.indexOf(termo, pos + termo.length);
+      }
+      if (ultimo < texto.length) frag.appendChild(document.createTextNode(texto.slice(ultimo)));
+      no.parentNode.replaceChild(frag, no);
+    });
+  });
 }
 
 /* A ORDEM DENTRO DO CARD. Enquanto ninguém arrastou nada, ela é automática:
@@ -10269,12 +10330,12 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       ui.fDisciplina = ""; ui.fAssunto = ""; ui.fPeriodo = "todos"; ui.fBusca = ""; ui.fTipo = "todos";
       ui.foco = null; render(); break;
     case "limpar-filtros-fb":
-      ui.eDisciplina = ""; ui.eAssunto = ""; ui.eSoImportantes = false;
+      ui.eDisciplina = ""; ui.eAssunto = ""; ui.eSoImportantes = false; ui.eBusca = "";
       ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null; render(); break;
     case "ver-erros":
       ui.aba = "erros"; ui.eDisciplina = alvo.dataset.disc;
       ui.eAssunto = chaveAssunto(alvo.dataset.disc, alvo.dataset.ass);
-      ui.eSoImportantes = false; ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null;
+      ui.eSoImportantes = false; ui.eBusca = ""; ui.compondo = false; ui.rascunhoAnot = ""; ui.editandoErro = null;
       render(); break;
     case "toggle-mural": ui.verTodoMural = !ui.verTodoMural; render(); break;
     case "mover-toque": {                          // ↑ ↓ no celular: o mesmo passo das setas do teclado
@@ -10588,8 +10649,12 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
 });
 
 // filtros (mudam o estado e redesenham, preservando o foco do campo)
+/* tocou fora da pesquisa das Anotações: o próximo redesenho não devolve o foco a
+   ela (no celular, o teclado subiria de novo a cada ★ ou "editar") */
+document.addEventListener("pointerdown", ev => { if (ui.foco === "eBusca" && ev.target.id !== "eBusca") ui.foco = null; }, true);
 document.addEventListener("input", ev => {
   if (ev.target.id === "fBusca"){ ui.fBusca = ev.target.value; ui.foco = "fBusca"; render(); }
+  if (ev.target.id === "eBusca"){ ui.eBusca = ev.target.value; ui.foco = "eBusca"; render(); }
   // o que está sendo escrito na anotação sobrevive a um recarregamento
   if (ev.target.id === "txtNovo"){
     ui.rascunhoAnot = ev.target.value; guardarTela();
