@@ -3,7 +3,8 @@
      seguintes do conteúdo andam junto, mantendo a distância.
    - O ✎ editar do conteúdo (aba Disciplinas) mostra a situação, a chave das
      revisões automáticas DELE (só concluído) e o atalho das revisões até a prova.
-   - Desligar: pergunta Manter/Apagar as automáticas pendentes; a escada não renasce.
+   - Desligar: pergunta Manter/Desabilitar as automáticas pendentes; a escada não renasce.
+   - Religar: pergunta a partir de quando; nada automático nasce antes desse dia.
    - Reabrir o conteúdo religa. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8");
@@ -109,7 +110,7 @@ const salvar=(w)=>w.document.querySelector("#formDialogo").dispatchEvent(new w.E
     const d=await janela(w,"LAI");
     const chave=d.querySelector('[name="autoConteudo"]');
     chave.checked=false; chave.dispatchEvent(new w.Event("change",{bubbles:true}));
-    ok("desmarcar mostra a pergunta Manter/Apagar", !d.querySelector("#painelAutoConteudo").hidden);
+    ok("desmarcar mostra a pergunta Manter/Desabilitar", d.querySelector("#painelAutoConteudo").classList.contains("aberto"));
     salvar(w); await espera(200);
     const f=db(w).conteudos.find(c=>c.nome==="LAI");
     ok("o conteúdo ficou com o automático desligado", f.semAutomaticas===true);
@@ -122,13 +123,13 @@ const salvar=(w)=>w.document.querySelector("#formDialogo").dispatchEvent(new w.E
     ok("a garantia de revisão não recria a escada", pend(w2).length===nAntes && pend(w2).every(r=>r.manual), pend(w2).map(r=>[r.id,r.manual]));
     ok("e o atalho da Agenda some (não há conteúdo para personalizar)", !w2.document.querySelector('[data-acao="revisoes-prova"]'));
   }
-  /* ---- 7. desligar apagando: saem as automáticas, fica a manual ---- */
+  /* ---- 7. desligar desabilitando: saem as automáticas, fica a manual ---- */
   {
     const w=abrir(base(),"conteudos"); await espera(300);
     const d=await janela(w,"LAI");
     const chave=d.querySelector('[name="autoConteudo"]');
     chave.checked=false; chave.dispatchEvent(new w.Event("change",{bubbles:true}));
-    d.querySelector('[name="jaNaAgendaConteudo"][value="apagar"]').checked=true;
+    d.querySelector('[name="jaNaAgendaConteudo"][value="desabilitar"]').checked=true;
     salvar(w); await espera(200);
     ok("só a manual ficou", JSON.stringify(pend(w).map(r=>r.id))==='["rm"]', pend(w).map(r=>r.id));
     // religar pela janela: a escada volta, depois da manual
@@ -160,6 +161,45 @@ const salvar=(w)=>w.document.querySelector("#formDialogo").dispatchEvent(new w.E
     const rj=achar(w,"rj"), copia=db(w).revisoes.find(r=>r.id!=="rj" && r.data===dia(4) && (r.assuntos||[]).join()==="LAI");
     ok("o item compartilhado ficou só com LGPD, automático", rj.assuntos.join()==="LGPD" && !rj.manual, rj);
     ok("e a parte de LAI virou item próprio, manual", !!copia && copia.manual && copia.data===dia(4), copia);
+  }
+  /* ---- 10. religar a partir de um dia: nada automático antes dele ---- */
+  {
+    const s=base(); s.revisoes=s.revisoes.filter(r=>r.id!=="rm");
+    const w=abrir(s,"conteudos"); await espera(300);
+    const d=await janela(w,"LAI");
+    const chave=d.querySelector('[name="autoConteudo"]');
+    chave.checked=false; chave.dispatchEvent(new w.Event("change",{bubbles:true}));
+    d.querySelector('[name="jaNaAgendaConteudo"][value="desabilitar"]').checked=true;
+    salvar(w); await espera(200);
+    ok("desabilitar tira as automáticas da agenda", pend(w).length===0, pend(w).map(r=>r.id));
+    const d2=await janela(w,"LAI");
+    const ch2=d2.querySelector('[name="autoConteudo"]'), painel=d2.querySelector("#painelAutoConteudo");
+    ok("desligada, o painel não aparece antes de mexer", !painel.classList.contains("aberto"));
+    ch2.checked=true; ch2.dispatchEvent(new w.Event("change",{bubbles:true}));
+    const desde=d2.querySelector('[name="religarDesde"]');
+    ok("religar pergunta a partir de quando (hoje por padrão)", painel.classList.contains("aberto") && desde && desde.value===hoje, desde && desde.value);
+    desde.value=dia(20);
+    salvar(w); await espera(200);
+    const f=db(w).conteudos.find(c=>c.nome==="LAI");
+    ok("religou guardando o dia", !f.semAutomaticas && f.automaticasDesde===dia(20), f);
+    const p=pend(w);
+    ok("a primeira automática nasce no dia escolhido", p.length && p[0].data===dia(20) && !p[0].manual, p.map(r=>[r.data,r.degrau]));
+    ok("e nenhuma antes dele", p.every(r=>r.data>=dia(20)));
+    ok("a aba Disciplinas avisa quando voltam", /revisões automáticas voltam em/.test(w.document.getElementById("view").textContent));
+    const w2=abrir(db(w),"revisoes"); await espera(300);
+    ok("recarregar não cria nada antes do dia", pend(w2).every(r=>r.data>=dia(20)) && pend(w2).length===p.length, pend(w2).map(r=>r.data));
+  }
+  /* ---- 11. religar deixando hoje: volta já, sem guardar dia ---- */
+  {
+    const s=base(); s.revisoes=[]; s.conteudos[0].semAutomaticas=true;
+    const w=abrir(s,"conteudos"); await espera(300);
+    const d=await janela(w,"LAI");
+    const ch=d.querySelector('[name="autoConteudo"]');
+    ch.checked=true; ch.dispatchEvent(new w.Event("change",{bubbles:true}));
+    salvar(w); await espera(200);
+    const f=db(w).conteudos.find(c=>c.nome==="LAI");
+    ok("religou sem dia guardado", !f.semAutomaticas && !("automaticasDesde" in f), f);
+    ok("a escada volta já", pend(w).length>0 && pend(w)[0].data===hoje, pend(w).map(r=>r.data));
   }
 }catch(e){console.log("ERRO",e.stack);falhas++;}
 console.log(falhas?"\n"+falhas+" FALHA(S)":"\nremarcar e janela do conteúdo funcionando");

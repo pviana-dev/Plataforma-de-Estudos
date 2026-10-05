@@ -49,7 +49,7 @@ function abrir(tela){
 
   /* ---- a virada do dia com a aba aberta ---- */
   ok("existe um relógio que confere a virada", /function verificarVirada\(\)/.test(html));
-  ok("ele roda de minuto em minuto", /setInterval\(verificarVirada, 60000\)/.test(html));
+  ok("ele roda de minuto em minuto", /setInterval\(\(\) => \{ if \(!document.hidden\) verificarVirada\(\); \}, 60000\)/.test(html));
   ok("e também quando a aba volta a aparecer",
      /visibilitychange[\s\S]{0,80}verificarVirada/.test(html) && /"focus", verificarVirada/.test(html));
   // simula a virada: o relógio do documento avança um dia

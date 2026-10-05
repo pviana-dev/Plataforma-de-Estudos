@@ -762,6 +762,8 @@ html[data-tema="escuro"] .faixa.agora{color:#1b2224}
 .pulso{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--critico);margin-right:7px;
   animation:pisca 1.6s ease-in-out infinite;vertical-align:middle}
 @keyframes pisca{0%,100%{opacity:1}50%{opacity:.25}}
+/* aba escondida: as animações sem fim param (ver marcarAbaOculta) */
+html.aba-oculta .pulso,html.aba-oculta .girando{animation-play-state:paused}
 /* O MEIO DO CABEÇALHO: a contagem da prova e, embaixo dela, o cronômetro rodando.
    Na versão web (cabeçalho em três colunas), quando o cronômetro aparece, a
    contagem sobe um pouco e o conjunto não empurra as abas para baixo. */
@@ -2033,6 +2035,11 @@ const agendamentoAtivo = () => db.posProva !== "encerrei" && agendaAutomatica();
    escolhida à garantia de revisão. Vale só para concluído (o em andamento sempre
    tem o card de continuar) e reabrir o conteúdo religa (marcarConteudos). */
 const escadaAtiva = f => agendamentoAtivo() && !(f && f.semAutomaticas);
+/* RELIGAR A PARTIR DE UM DIA (pedido do Pedro, 05/10). Ao religar as automáticas
+   de um conteúdo, a pessoa diz a partir de quando a escada volta: nenhuma revisão
+   automática dele nasce antes desse dia. A escada volta do degrau em que parou.
+   Passado o dia, a regra não segura mais nada. */
+const inicioDasAutomaticas = f => f && typeof f.automaticasDesde === "string" && f.automaticasDesde > D.hoje() ? f.automaticasDesde : "";
 /* ATÉ QUANDO O SISTEMA AGENDA: o teto que você escolheu ("revisar até") ou,
    sem ele, o horizonte livre, que anda junto com hoje. A PROVA NÃO É TETO: as
    revisões seguem depois dela — só o dia da prova é pulado (foraDaProva).
@@ -2725,12 +2732,13 @@ function continuarEscada(ficha){
     dia = inicio; k = 0; piso = hoje;
   }
   const limite = ultimoDiaRevisao();
-  const pausa = pausaAteProva(ficha);
+  const pausa = pausaAteProva(ficha), desde = inicioDasAutomaticas(ficha);
   let criadas = 0;
   for (let j = k + 1; j < degraus.length; j++){
     const passo = degraus[j] - degraus[j - 1];
     let quando = D.soma(dia, passo);
     if (quando < piso) quando = piso;           // o que era para ontem vira hoje, não uma pilha
+    if (desde && quando < desde) quando = desde;  // religada a partir de um dia: nada antes dele
     // revisões escolhidas até a prova: a escada automática só volta DEPOIS dela
     if (pausa && quando <= pausa) quando = D.soma(pausa, 1);
     quando = foraDaProva(quando);
@@ -2829,6 +2837,8 @@ function reespacarEscada(ficha){
     if (k >= degraus.length){ sobra.add(r.id); return; }
     let nova = foraDaProva(D.soma(ant, degraus[k] - degraus[k - 1]));
     if (nova < hoje) nova = hoje;
+    const desde = inicioDasAutomaticas(ficha);
+    if (desde && nova < desde) nova = desde;                    // religada a partir de um dia
     const pausa = pausaAteProva(ficha);
     if (pausa && nova <= pausa) nova = D.soma(pausa, 1);        // pausada até a prova
     if (nova !== r.data) mudou++;
@@ -7629,6 +7639,7 @@ function marcarConteudos(fichas, fase){
     c.concluidoEm = fase === "concluido" ? D.hoje() : null;
     delete c.revisoesProva;                   // revisões até a prova são de conteúdo concluído
     delete c.semAutomaticas;                  // reabrir (ou fechar de novo) religa o automático (Pedro, 03/10)
+    delete c.automaticasDesde;
   });
   const chaves = new Set(tocadas.map(chaveDaFicha));
 
@@ -7904,14 +7915,22 @@ function htmlJanelaConteudo(ficha){
   const ligado = !ficha.semAutomaticas;
   h += '<div class="campos uma-coluna">' + campoOpcoes("Revisões", [{ nome: "autoConteudo", marcado: ligado,
          texto: "Criar revisões automáticas para este conteúdo" }]);
+  /* Desligando: manter as pendentes (viram suas) ou desabilitá-las (saem da
+     agenda). Religando: a partir de quando a escada volta (pedido do Pedro, 05/10). */
   if (ligado)
-    h += '<div class="campo largo painel-questao" id="painelAutoConteudo" hidden><div class="interno">' +
-      '<span>O que já está na agenda dele</span><div class="opcoes">' +
+    h += '<div class="campo largo painel-questao" id="painelAutoConteudo"><div class="interno">' +
+      '<span>As revisões programadas dele</span><div class="opcoes">' +
       '<label class="opcao"><input type="radio" name="jaNaAgendaConteudo" value="manter" checked>' +
-        '<span>Manter — as revisões automáticas pendentes passam a ser suas</span></label>' +
-      '<label class="opcao"><input type="radio" name="jaNaAgendaConteudo" value="apagar">' +
-        '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+        '<span>Manter — as revisões automáticas pendentes continuam na agenda, como suas</span></label>' +
+      '<label class="opcao"><input type="radio" name="jaNaAgendaConteudo" value="desabilitar">' +
+        '<span>Desabilitar — as automáticas pendentes saem da agenda; fica só o que eu marquei</span></label>' +
       '</div></div></div>';
+  else
+    h += '<div class="campo largo painel-questao" id="painelAutoConteudo"><div class="interno">' +
+      '<span>A partir de quando as revisões automáticas voltam?</span>' +
+      '<input type="date" name="religarDesde" value="' + D.hoje() + '" min="' + D.hoje() + '">' +
+      '<span class="dica">A escada continua do degrau em que parou; nenhuma revisão automática antes desse dia.</span>' +
+      '</div></div>';
   h += '</div>';
   if (ligado && podeEscolherAteProva(ficha))
     h += '<div class="linha linha-rev-prova"><button class="act atalho" type="button" data-dialogo="ate-prova">' +
@@ -7988,14 +8007,17 @@ async function editarConteudo(disc, antigo){
     depois: htmlJanelaConteudo(ficha),
     aoAbrir: (f, fechar) => {
       const chave = f.querySelector('[name="autoConteudo"]'), painel = f.querySelector("#painelAutoConteudo");
-      if (chave && painel) chave.addEventListener("change", () => { painel.hidden = chave.checked; });
+      // o painel aparece quando a chave muda: ao desligar (manter/desabilitar) ou ao religar (a partir de quando)
+      if (chave && painel){ const antes = chave.checked; chave.addEventListener("change", () => painel.classList.toggle("aberto", chave.checked !== antes)); }
       const ate = f.querySelector('[data-dialogo="ate-prova"]');
       if (ate) ate.onclick = ev => { ev.stopPropagation(); fechar(); modalRevisoesProva(ficha); };
     },
     ler: f => {
       const chave = f.querySelector('[name="autoConteudo"]');
-      const apagar = f.querySelector('[name="jaNaAgendaConteudo"]:checked');
-      return { auto: chave ? chave.checked : null, apagar: !!apagar && apagar.value === "apagar" };
+      const escolha = f.querySelector('[name="jaNaAgendaConteudo"]:checked');
+      const desde = f.querySelector('[name="religarDesde"]');
+      return { auto: chave ? chave.checked : null, apagar: !!escolha && escolha.value === "desabilitar",
+               desde: desde ? desde.value : "" };
     },
     validar: v => !v ? "Escreva o nome."
       : acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()
@@ -8004,10 +8026,10 @@ async function editarConteudo(disc, antigo){
   const avisos = [];
   if (res.extra.auto === false && !ficha.semAutomaticas){
     desligarAutomaticasDoConteudo(ficha, res.extra.apagar);
-    avisos.push("revisões automáticas desligadas" + (res.extra.apagar ? " — as pendentes saíram" : " — as pendentes passaram a ser suas"));
+    avisos.push("revisões automáticas desligadas" + (res.extra.apagar ? " — as pendentes foram desabilitadas" : " — as pendentes passaram a ser suas"));
   } else if (res.extra.auto === true && ficha.semAutomaticas){
-    religarAutomaticasDoConteudo(ficha);
-    avisos.push("revisões automáticas religadas");
+    religarAutomaticasDoConteudo(ficha, res.extra.desde);
+    avisos.push("revisões automáticas religadas" + (inicioDasAutomaticas(ficha) ? " a partir de " + D.br(ficha.automaticasDesde) : ""));
   }
   if (res.valor !== antigo){
     renomearConteudo(disc, antigo, res.valor);
@@ -8218,6 +8240,8 @@ function juntarConteudos(fichas, nome){
   const dias = new Set(fichas.map(f => f.diaProva || ""));
   if (dias.size === 1 && fichas[0].diaProva) nova.diaProva = fichas[0].diaProva;
   if (fichas.every(f => f.semAutomaticas)) nova.semAutomaticas = true;
+  const desde = fichas.map(inicioDasAutomaticas).sort().pop();
+  if (desde && !nova.semAutomaticas) nova.automaticasDesde = desde;
   db.conteudos = conteudosCad().filter(c => !fichas.includes(c)).concat([nova]);
 
   // o card único, na data do mais próximo (sem sessão nenhuma, é "a estudar": nada a marcar)
@@ -8437,6 +8461,8 @@ function linhaConteudo(d, c){
       metaAteProva(c) +
       (fechado && c.semAutomaticas && agendamentoAtivo()
         ? '<div class="meta sem-auto">revisões automáticas desligadas — só as que você marcar</div>' : '') +
+      (fechado && !c.semAutomaticas && inicioDasAutomaticas(c) && agendamentoAtivo()
+        ? '<div class="meta sem-auto">revisões automáticas voltam em ' + D.br(c.automaticasDesde) + '</div>' : '') +
     '</div>' +
     '<div class="cont-acoes">' +
       seletorDificuldadeConteudo(c, nSess) +
@@ -8882,11 +8908,15 @@ function desligarAutomaticasDoConteudo(ficha, apagar){
   });
   novos.forEach(n => { delete n.planoProva; db.revisoes.push(n); });
   delete ficha.revisoesProva;
+  delete ficha.automaticasDesde;
   ficha.semAutomaticas = true;
 }
-function religarAutomaticasDoConteudo(ficha){
+/* `desde`: a partir de quando a escada volta (vazio ou passado = hoje) */
+function religarAutomaticasDoConteudo(ficha, desde){
   if (!ficha) return;
   delete ficha.semAutomaticas;
+  if (desde && desde > D.hoje()) ficha.automaticasDesde = desde;
+  else delete ficha.automaticasDesde;
   continuarEscada(ficha);
   juntarIrmas();
 }
@@ -9065,8 +9095,8 @@ function modalAjuda(){
         '<li><b>Dia cheio?</b> Mova a revisão para outro dia (<b>remarcar</b>, no card de hoje ou no atrasado, ou editando a data): as do mesmo conteúdo ' +
           'que vinham depois dela <b>andam junto</b>. Puxar uma para mais cedo não mexe nas outras.</li>' +
         '<li><b>Não quer mais revisões automáticas de um conteúdo?</b> No <b>✎ editar</b> dele (aba Disciplinas), desmarque ' +
-          '<b>Criar revisões automáticas</b>: as pendentes ficam como suas ou saem, à sua escolha, e só vale o que você marcar. ' +
-          'Reabrir o conteúdo religa.</li>' +
+          '<b>Criar revisões automáticas</b>: escolha <b>manter</b> as pendentes (ficam como suas) ou <b>desabilitar</b> (saem da agenda), e só vale o que você marcar. ' +
+          'Para religar, marque de novo e diga <b>a partir de quando</b>: a escada continua do degrau em que parou. Reabrir o conteúdo também religa.</li>' +
         '<li><b>A dificuldade da sessão mais recente manda:</b> revisar e marcar "difícil" aproxima o que vem.</li>' +
         '<li><b>A prova não corta nada:</b> as revisões seguem depois dela; só o dia da prova é pulado.</li>' +
         '<li>Na agenda aparecem, por padrão, as <b>2 próximas revisões</b> e o <b>próximo card de continuar</b> de cada conteúdo — ' +
@@ -9234,7 +9264,17 @@ function atualizarCrono(){
   const el = document.getElementById("cronoTempo"); if (el) el.textContent = t;
 }
 
-setInterval(atualizarCrono, 1000);
+/* ECONOMIA DE ENERGIA (Safari, 05/10: "esta página foi recarregada porque estava
+   usando muita energia"). Com a aba escondida, nada anda: o relógio não é
+   redesenhado e as animações sem fim (bolinha do cronômetro, rodinha) param. O
+   tempo não se perde — ele é contado da hora de início — e ao voltar para a aba
+   tudo se atualiza na hora. */
+setInterval(() => { if (!document.hidden) atualizarCrono(); }, 1000);
+function marcarAbaOculta(){
+  document.documentElement.classList.toggle("aba-oculta", document.hidden);
+  if (!document.hidden) atualizarCrono();
+}
+document.addEventListener("visibilitychange", marcarAbaOculta);
 
 /* ---------- backup ---------- */
 /* ==========================================================================
@@ -10878,7 +10918,7 @@ function verificarVirada(){
   toast("Virou o dia: a tela agora mostra " + D.brFull(agora) + ".");
   if (precisaPerguntarPosProva() && $("#overlay").hidden) modalPosProva();
 }
-setInterval(verificarVirada, 60000);
+setInterval(() => { if (!document.hidden) verificarVirada(); }, 60000);   // escondida, confere ao voltar (abaixo)
 document.addEventListener("visibilitychange", () => { if (!document.hidden) verificarVirada(); });
 window.addEventListener("focus", verificarVirada);
 
