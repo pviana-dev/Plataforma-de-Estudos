@@ -7884,18 +7884,10 @@ function pedirValor(o){
     if (o.aoAbrir) o.aoAbrir(f, () => fechar(null));
     caixa.onclick = ev => { ev.stopPropagation(); if (ev.target === caixa) fechar(null); };
     inp.addEventListener("input", () => { $("#erroDialogo").textContent = ""; inp.classList.remove("campo-errado"); });
-    /* escolheu o dia no calendário: ele fecha. Só o blur não basta no Safari (o
-       calendário fica aberto); trocar o tipo do campo e voltar desmonta o
-       calendário. Digitando no teclado não: a data ainda está pela metade. */
-    if (o.tipo === "date"){
-      let tecla = 0;
-      inp.addEventListener("keydown", () => { tecla = Date.now(); });
-      inp.addEventListener("change", () => {
-        if (Date.now() - tecla < 400) return;
-        const v = inp.value;
-        inp.blur(); inp.type = "text"; inp.type = "date"; inp.value = v;
-      });
-    }
+    /* NÃO FORÇAR O CALENDÁRIO A FECHAR (05/10). Trocar o tipo do campo (date →
+       text → date) com o calendário aberto derrubava a página no Safari do Mac
+       ("A problem repeatedly occurred"): o calendário some, e na segunda escolha
+       a aba cai sem salvar. O calendário fecha sozinho ao clicar fora dele. */
     f.addEventListener("submit", ev => {
       ev.preventDefault();
       const v = (inp.value || "").trim().replace(/\s+/g, " ");
