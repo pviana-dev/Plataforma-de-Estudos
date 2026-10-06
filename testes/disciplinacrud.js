@@ -50,6 +50,10 @@ const discsNaTela=doc=>[...doc.querySelectorAll("#view .grupo-rev .cab strong")]
   ok("e aparece na tela, ainda sem conteúdos",
      discsNaTela(doc).includes("Matemática") && /Nenhum conteúdo cadastrado/.test($("#view").textContent),
      discsNaTela(doc));
+  ok("o filtro da aba passa para a disciplina nova",
+     $("#cDisciplina").value==="Matemática" && discsNaTela(doc).join()==="Matemática" &&
+     $('[data-acao="novo-conteudo"]').dataset.disc==="Matemática",
+     [$("#cDisciplina").value, discsNaTela(doc)]);
   ok("nenhum conteúdo foi inventado junto",
      !(db(w).conteudos||[]).some(c=>c.disciplina==="Matemática"), db(w).conteudos);
 

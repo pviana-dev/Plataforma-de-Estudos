@@ -9033,7 +9033,10 @@ function modalNovaDisciplina(){
         const erro = msg => { $("#erroNovaDisciplina").textContent = msg; campoNome.classList.add("campo-errado"); campoNome.focus(); };
         if (!nome) return erro("Escreva o nome da disciplina.");
         if (disciplinas().some(d => d.toLowerCase() === nome.toLowerCase())) return erro("Já existe uma disciplina com esse nome.");
-        registrarDisciplina(nome); persistir(); fecharModal(); render();
+        registrarDisciplina(nome);
+        // o filtro da aba passa para a disciplina nova: o "+ Novo conteúdo" já cai nela
+        ui.cDisciplina = nome; ui.cAssunto = "";
+        persistir(); fecharModal(); render();
         toast("Disciplina “" + nome + "” criada.");
       });
     });
