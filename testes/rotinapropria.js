@@ -70,8 +70,9 @@ async function abrirNovaRevisao(w, conteudo){
   ok("conteúdo concluído, com o automático desligado, não ganha escada", pend(w).length===0, pend(w));
 
   /* ---- 3. desligar APAGANDO as automáticas pendentes ---- */
+  // marcada à mão como o app grava (salvarRevisaoManual sempre deixa `rotulo`, mesmo vazio)
   w=abrir(base({revisoes:[{id:"mm",registroId:"r1",data:dia(40),ordem:1,feita:false,manual:true,minutos:null,
-    questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]})); await espera(400);
+    questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"",rotulo:""}]})); await espera(400);
   await ajustes(w, doc=>{
     const cx=doc.querySelector('#formAjustes [name="automatico"]'); cx.checked=false;
     doc.querySelector('#formAjustes [name="jaNaAgenda"][value="apagar"]').checked=true;
@@ -81,6 +82,81 @@ async function abrirNovaRevisao(w, conteudo){
   /* ---- 4. religar recria a agenda ---- */
   await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
   ok("religando, a agenda automática volta", db(w).agendaAutomatica===true && pend(w).length>1, pend(w).length);
+
+  /* ---- 4b. desligar MANTENDO, religar e desligar APAGANDO (defeito de 06/10):
+     o que o "Manter" fez virar seu volta ao automático ao religar, e o "Apagar"
+     alcança; a revisão marcada à mão fica nas três voltas ---- */
+  w=abrir(base({revisoes:[{id:"mm",registroId:"r1",data:dia(40),ordem:1,feita:false,manual:true,minutos:null,
+    questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"",rotulo:""}]})); await espera(400);
+  const desligar=apagar=>ajustes(w, doc=>{
+    doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+    if(apagar) doc.querySelector('#formAjustes [name="jaNaAgenda"][value="apagar"]').checked=true;
+  });
+  await desligar(false);
+  ok("'manter' guarda que a revisão veio do automático", pend(w).filter(r=>r.id!=="mm").every(r=>r.manual && r.doAutomatico)
+     && !pend(w).find(r=>r.id==="mm").doAutomatico, pend(w).map(r=>r.id+(r.doAutomatico?"A":"")));
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+  ok("religando, as mantidas voltam a ser automáticas (sem cópia por cima)",
+     pend(w).filter(r=>r.id!=="mm").every(r=>!r.manual && !r.doAutomatico) && pend(w).find(r=>r.id==="mm").manual,
+     pend(w).map(r=>r.id+(r.manual?"M":"")));
+  await desligar(true);
+  ok("e desligar com 'apagar' tira todas elas, menos a marcada à mão", pend(w).length===1 && pend(w)[0].id==="mm",
+     pend(w).map(r=>r.id));
+
+  /* ---- 4c. editar a mantida a torna sua de verdade: o 'apagar' não a alcança ---- */
+  w=abrir(base()); await espera(400);
+  await desligar(false);
+  const alvo=pend(w).find(r=>r.doAutomatico);
+  click(w, w.document.querySelector('[data-aba="revisoes"]')); await espera(200);
+  const bEd=w.document.querySelector('[data-acao="editar-revisao"][data-id="'+alvo.id+'"]');
+  ok("a mantida tem o botão editar na agenda", !!bEd);
+  click(w, bEd); await espera(400);
+  w.document.querySelector("#formRevisao").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
+  await espera(400);
+  ok("salvar a edição tira a marca", !db(w).revisoes.find(r=>r.id===alvo.id).doAutomatico);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+  await desligar(true);
+  ok("a mantida que foi editada fica", pend(w).some(r=>r.id===alvo.id), pend(w).map(r=>r.id));
+
+  /* ---- 4d. dados de antes da marca: as mantidas são reconhecidas na carga ---- */
+  w=abrir(base({agendaAutomatica:false, revisoes:[
+    {id:"velha",registroId:"r1",data:dia(5),ordem:1,degrau:1,passo:1,feita:false,manual:true,minutos:null,
+     questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""},
+    {id:"minha",registroId:"r1",data:dia(6),ordem:2,feita:false,manual:true,minutos:null,
+     questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"",rotulo:""},
+    {id:"prova",registroId:"r1",data:dia(7),ordem:3,feita:false,manual:true,planoProva:true,minutos:null,
+     questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]})); await espera(400);
+  const marca=id=>!!db(w).revisoes.find(r=>r.id===id).doAutomatico;
+  ok("sem rótulo e com sessão dona: reconhecida como vinda do automático", marca("velha"));
+  ok("a marcada à mão e a escolhida até a prova não", !marca("minha") && !marca("prova"));
+  ok("a busca roda uma vez só", db(w).mantidasMarcadas===true);
+
+  /* ---- 4e. desligar APAGANDO TUDO: automáticas e marcadas à mão saem; feitas ficam ---- */
+  const comMinha=()=>base({revisoes:[
+    {id:"mm",registroId:"r1",data:dia(40),ordem:1,feita:false,manual:true,minutos:null,
+     questoes:null,acertos:null,dificuldade:null,atividade:"",nota:"",rotulo:""},
+    {id:"ff",registroId:"r1",data:dia(-1),feitaEm:dia(-1),ordem:1,feita:true,manual:false,minutos:null,
+     questoes:null,acertos:null,dificuldade:null,atividade:"",nota:""}]});
+  w=abrir(comMinha()); await espera(400);
+  let perguntou="";
+  w.confirm=t=>{ perguntou=t; return false; };
+  await ajustes(w, doc=>{
+    doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+    const op=doc.querySelector('#formAjustes [name="jaNaAgenda"][value="tudo"]');
+    ok("a opção 'apagar todas' aparece ao desligar", !!op); op.checked=true;
+  });
+  ok("apagar todas pede confirmação, dizendo que as marcadas à mão também saem",
+     /Apagar todas/.test(perguntou) && /marcou à mão/.test(perguntou), perguntou);
+  ok("cancelando, nada muda (nem o automático é desligado)", db(w).agendaAutomatica!==false && pend(w).length>1,
+     [db(w).agendaAutomatica, pend(w).length]);
+  w.confirm=()=>true;
+  await ajustes(w, doc=>{
+    doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+    doc.querySelector('#formAjustes [name="jaNaAgenda"][value="tudo"]').checked=true;
+  });
+  ok("confirmando, nenhuma revisão pendente fica — nem a marcada à mão", db(w).agendaAutomatica===false && pend(w).length===0,
+     pend(w).map(r=>r.id));
+  ok("a revisão feita continua no histórico", db(w).revisoes.some(r=>r.id==="ff"), db(w).revisoes.map(r=>r.id));
 
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);

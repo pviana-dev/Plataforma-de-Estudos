@@ -1564,6 +1564,29 @@ function migrarDificuldades(d){
   d.dificuldadesMigradas = true;
   return n;
 }
+/* As revisões que o "Manter" fez virar suas ANTES da marca `doAutomatico`
+   (ver desligarAgendaAutomatica) não guardaram de onde vieram. Pedido do
+   Pedro (06/10): reconhecer pelas pistas, uma vez só. A que você criou ou
+   editou passou por salvarRevisaoManual, que sempre grava `rotulo` (mesmo
+   vazio); a automática nunca tem `rotulo` e sempre tem sessão dona. Ficam de
+   fora as escolhidas até a prova (planoProva) e as de conteúdo com as
+   automáticas desligadas — essas viraram suas por outra escolha. */
+function marcarMantidasAntigas(x){
+  if (x.mantidasMarcadas) return 0;
+  const semAuto = new Set((x.conteudos || []).filter(c => c && c.semAutomaticas)
+    .map(c => chaveAssunto(c.disciplina, c.nome)));
+  let n = 0;
+  (x.revisoes || []).forEach(r => {
+    if (r.feita || !r.manual || r.doAutomatico || r.planoProva || "rotulo" in r || !r.registroId) return;
+    const reg = (x.registros || []).find(s => s.id === r.registroId);
+    if (!reg) return;
+    const assuntos = Array.isArray(r.assuntos) && r.assuntos.length ? r.assuntos : assuntosDe(reg);
+    if (assuntos.some(a => semAuto.has(chaveAssunto(r.disciplina || reg.disciplina, a)))) return;
+    r.doAutomatico = true; n++;
+  });
+  x.mantidasMarcadas = true;
+  return n;
+}
 const normalizarRevisoes = lista => (lista||[]).map(r =>
   Object.assign({}, r, { dificuldade: r.dificuldade || (r.dominio ? 6 - Number(r.dominio) : null) }));
 /* TAREFAS (pedido do Pedro, 02/10): lembretes da agenda que NÃO são estudo de um
@@ -1831,8 +1854,9 @@ function prepararDados(d){
   migrarPlanoManual(x);
   x.registros.forEach(ajustarBlocosAoTempo);   // tempo baixado antes de 26/09 deixava o dia com o tempo antigo
   const fichas = migrarConteudos(x);
+  const mantidas = marcarMantidasAntigas(x);
   const soltos = migrarIntegracoes(x).concat(migrarGrupos(x));
-  return { db: x, abertos, fichas, objetivoDeduzido, soltos };
+  return { db: x, abertos, fichas, objetivoDeduzido, soltos, mantidas };
 }
 /* DADO DANIFICADO NÃO É APAGADO. Se o que está salvo não se lê, o app começa
    vazio — mas antes o texto original é copiado para uma chave à parte. Sem isso,
@@ -1848,7 +1872,7 @@ function carregar(){
     try {
       const r = prepararDados(JSON.parse(bruto));
       return { db: r.db, migrados: 0, desintegrados: r.soltos, abertos: r.abertos, fichas: r.fichas,
-               objetivoDeduzido: r.objetivoDeduzido, atualizadoEm: Number(r.db.atualizadoEm || 0) };
+               objetivoDeduzido: r.objetivoDeduzido, mantidas: r.mantidas, atualizadoEm: Number(r.db.atualizadoEm || 0) };
     } catch(e){
       try { localStorage.setItem(CHAVE_DANIFICADO, bruto); } catch(x){}
       return { db: base, migrados: 0, desintegrados: [], danificado: true };
@@ -6156,6 +6180,7 @@ function salvarRevisaoManual(existente, data, disciplina, listaAssuntos, d){
   rev.rotulo = (d.rotulo || "").trim();       // vazio = volta a se chamar pela ordem
   rev.nota = (d.nota || "").trim();
   rev.manual = true;                       // não é reescrita pelo replanejamento automático
+  delete rev.doAutomatico;                 // editada: é sua de verdade (ver desligarAgendaAutomatica)
   /* A revisão é agenda: quem guarda tempo e questões é a sessão que a cumpre.
      A EXCEÇÃO é a revisão feita no modelo antigo, sem sessão ligada: os números
      moram nela, e editar (dar um nome, corrigir a data) não pode desmarcá-la
@@ -9251,10 +9276,25 @@ function modalObjetivo(){
 
 /* DESLIGAR O AUTOMÁTICO. O que o sistema tinha marcado e ainda está pendente
    vira seu (manual: o replanejamento não reescreve) ou sai, conforme você
-   escolher. O que já foi feito é história e fica. */
-function desligarAgendaAutomatica(apagar){
-  if (apagar) db.revisoes = db.revisoes.filter(r => r.feita || r.manual);
-  else db.revisoes.forEach(r => { if (!r.feita && !r.manual) r.manual = true; });
+   escolher. O que já foi feito é história e fica.
+   A que vira sua pelo "Manter" leva a marca `doAutomatico` (defeito achado pelo
+   Pedro em 06/10: sem ela, desligar → ligar → desligar com "Apagar" não apagava
+   nada, porque tudo já parecia marcado à mão). Com a marca, religar devolve a
+   revisão ao automático (religarAgendaAutomatica) e o "Apagar" a alcança.
+   Editar a revisão (salvarRevisaoManual) tira a marca: aí ela é sua de verdade.
+   `modo`: "manter", "apagar" (só as automáticas pendentes) ou "tudo" (pedido do
+   Pedro, 06/10: toda revisão pendente sai, automática ou sua — começar do zero). */
+function desligarAgendaAutomatica(modo){
+  if (modo === "tudo") db.revisoes = db.revisoes.filter(r => r.feita);
+  else if (modo === "apagar") db.revisoes = db.revisoes.filter(r => r.feita || (r.manual && !r.doAutomatico));
+  else db.revisoes.forEach(r => { if (!r.feita && !r.manual){ r.manual = true; r.doAutomatico = true; } });
+}
+function religarAgendaAutomatica(){
+  db.revisoes.forEach(r => {
+    if (!r.doAutomatico) return;
+    if (!r.feita) r.manual = false;
+    delete r.doAutomatico;
+  });
 }
 /* O MESMO, NUM CONTEÚDO SÓ (ver escadaAtiva). As revisões pendentes dele que eram
    automáticas viram suas ou saem; as escolhidas até a prova viram revisões comuns
@@ -9315,6 +9355,8 @@ function modalAjustes(){
               '<span>Manter — as revisões e os cards de continuar automáticos passam a ser seus</span></label>' +
             '<label class="opcao"><input type="radio" name="jaNaAgenda" value="apagar">' +
               '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="tudo">' +
+              '<span>Apagar todas as revisões agendadas — as automáticas e as que eu marquei</span></label>' +
           '</div></div></div>'
         : '') +
       campo("Meta diária (min)", '<input type="number" name="meta" min="15" max="960" value="'+db.metaDiariaMin+'">') +
@@ -9491,8 +9533,9 @@ function modalAjuda(){
       '</ul>'],
     ["rotina", "Sua própria rotina",
       '<p>Já tem uma rotina — sua ou trazida de fora? Nos ajustes, desmarque <b>Criar os agendamentos automaticamente</b>: ' +
-        'a agenda passa a ser só o que você marca, e o sistema não cria nem move nada. Dá para manter ou apagar o que ele já ' +
-        'tinha marcado.</p>' +
+        'a agenda passa a ser só o que você marca, e o sistema não cria nem move nada. Dá para manter o que ele já tinha ' +
+        'marcado, apagar só isso ou apagar todas as revisões agendadas (as suas também) e começar do zero. ' +
+        'As já feitas ficam sempre no histórico.</p>' +
       '<p>Para marcar rápido, o <b>+ Adicionar revisão</b> (aba ' + aba("Agenda") + ') aceita <b>várias datas de uma vez</b>: ' +
         'uma data só? Basta a caixa. Várias? Abra <b>Mais de uma data</b> e adicione uma a uma, gere "a cada N dias, K vezes" ou ' +
         'use o <b>Espaçado</b> (1, 3, 7, 16 e 35 dias). Cada data vira um card, todos com o mesmo conteúdo.</p>'],
@@ -9578,11 +9621,19 @@ function ligarAjustes(){
       });
       const auto = document.querySelector('#formAjustes [name="automatico"]'), painel = $("#painelAutomatico");
       if (auto && painel) auto.addEventListener("change", () => painel.classList.toggle("aberto", !auto.checked));
-      $("#formAjustes").addEventListener("submit", ev => {
+      $("#formAjustes").addEventListener("submit", async ev => {   // async: a confirmação do "apagar todas"
         ev.preventDefault();
         const d = Object.fromEntries(new FormData(ev.target).entries());
         const novo = lerObjetivo(ev.target);
         if (novo.erro){ $("#erroAjustes").textContent = novo.erro; return; }
+        /* apagar TODAS não tem volta (as marcadas à mão também saem): pergunta antes,
+           com a conta do que vai sair. Feitas ficam — são história. */
+        if (agendaAutomatica() && !d.automatico && d.jaNaAgenda === "tudo"){
+          const n = db.revisoes.filter(r => !r.feita).length;
+          if (n && !(await confirmar({ titulo: "Apagar todas as revisões agendadas?", botao: "Apagar todas", perigo: true,
+                texto: plural(n, "revisão pendente vai", "revisões pendentes vão") + " sair da agenda, inclusive as que você " +
+                       "marcou à mão. As já feitas continuam no histórico." }))) return;
+        }
         const tetoAntes = db.revisarAte;
         /* Só o que decide DATAS replaneja. Antes todo "Salvar" refazia a agenda
            inteira contando de hoje — mudar a meta diária remarcava os cards de
@@ -9603,7 +9654,8 @@ function ligarAjustes(){
           if (v >= 1) db.diasRetomada[n] = Math.min(CONFIG.VOLTA_MAX_ESCOLHA, v);
         });
         const automaticoAntes = agendaAutomatica(), automatico = !!d.automatico;
-        if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda === "apagar");
+        if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda || "manter");
+        if (!automaticoAntes && automatico) religarAgendaAutomatica();
         db.agendaAutomatica = automatico;
         const mudouDatas = mudouObjetivo || datasAntes !== JSON.stringify([db.revisarAte || "", db.estudoAte || "",
                              db.diasRetomada || {}, agendaAutomatica(), db.posProva || ""]);
@@ -11343,6 +11395,7 @@ if (inicio.abertos){
   toast(plural(inicio.abertos, "conteúdo passou", "conteúdos passaram") + " a “em andamento” — a agenda agora chama para voltar ao assunto. " +
         "Conclua cada um quando terminar.");
 }
+if (inicio.mantidas) persistir();  // a marca das mantidas antigas (marcarMantidasAntigas) fica gravada
 arranqueFeito = true;             // daqui em diante, gravar é mexer de verdade (ver dataDoLocal)
 iniciarArquivo();                 // religa o .json escolhido antes, se houver
 iniciarNuvem();                   // e a conta da nuvem, se houver sessão salva
