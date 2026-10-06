@@ -332,6 +332,30 @@ html[data-tema="escuro"] .aba[aria-selected="true"] .pin{background:rgba(255,255
 #dialogo .campo input[type="date"]{max-width:160px;padding:6px 10px;height:38px;line-height:1.2}
 #dialogo .campos + .acoes-form{margin-top:16px}
 .meta.sem-auto{color:var(--muted);font-style:italic}
+/* o cronograma das revisões automáticas (janela de concluir e ✎ editar do conteúdo) */
+.modal-pequeno:has(.bloco-escada){max-width:540px}
+.form-concluir .opcoes{margin:4px 0 10px}
+.modo-escada{display:flex;flex-wrap:wrap;gap:6px 14px}
+.bloco-escada{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.cab-escada{margin:0 0 8px;line-height:1.4}
+.cab-escada .dica{font-size:12.5px;color:var(--muted)}
+.qtd-escada{gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
+.qtd-escada label{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text-2)}
+.lista-escada{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.linha-escada{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+.linha-escada .num{min-width:2.2em;font-weight:600}
+.bloco-escada input[type="number"]{width:64px;flex:none;padding:5px 8px;font-size:14px}
+.linha-escada .unid{white-space:nowrap}
+.linha-escada .data-escada{margin-left:auto;white-space:nowrap;color:var(--text);font-variant-numeric:tabular-nums}
+.linha-escada .data-escada.feita{color:var(--bom-ink)}
+.linha-escada .data-escada.longe{color:var(--muted)}
+.nota-escada{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;line-height:1.45}
+.cronograma-conteudo{margin-top:12px}
+.cronograma-conteudo .rot-escada{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+@media (max-width:480px){
+  .linha-escada{flex-wrap:wrap}
+  .linha-escada .data-escada{margin-left:0;flex-basis:100%;padding-left:calc(2.2em + 8px)}
+}
 .ajuda-campo:empty{display:none}
 /* Bloco que cresce e encolhe conforme a resposta. O truque do grid (0fr → 1fr)
    anima a altura sem precisar saber quanto o conteúdo mede; o `visibility` no
@@ -2173,6 +2197,32 @@ function degrausDa(dificuldade){
     lista.push(Math.max(lista[lista.length - 1] + 1, Math.round(d * fator))));
   return lista;
 }
+/* O CRONOGRAMA ESCOLHIDO (pedido do Pedro, 06/10). Ao concluir, a pessoa vê a
+   escada inteira e escolhe quantas revisões e quantos dias cada uma espera depois
+   da anterior. Guardado na ficha só quando difere da sugestão:
+   ficha.escada = [1, 2, 4, 9, …]  → dias depois da anterior (a 1ª, depois da conclusão).
+   Com ele, a dificuldade não estica nem encurta mais a escada desse conteúdo; o
+   resto vale igual (atraso e revisão extra empurram, mantendo as distâncias). */
+const MAX_ESCOLHA = 20;
+const escadaValida = l => Array.isArray(l) && l.length >= 1 && l.length <= MAX_ESCOLHA &&
+                          l.every(n => Number.isInteger(n) && n >= 1 && n <= 999);
+const passosDe = degraus => degraus.slice(1).map((d, i) => d - degraus[i]);
+/** os passos que a dificuldade sugere para o conteúdo */
+const passosSugeridos = ficha => passosDe(degrausDa(dificuldadeDaFicha(ficha)));
+/** os degraus que valem para o conteúdo: os escolhidos ou os da dificuldade */
+function degrausDaFicha(ficha){
+  if (!ficha || !escadaValida(ficha.escada)) return degrausDa(dificuldadeDaFicha(ficha));
+  const lista = [0];
+  ficha.escada.forEach(p => lista.push(lista[lista.length - 1] + p));
+  return lista;
+}
+/** guarda os passos escolhidos; iguais à sugestão, a ficha volta a seguir a dificuldade */
+function definirEscada(ficha, passos){
+  if (!ficha || !escadaValida(passos)) return;
+  const sug = passosSugeridos(ficha);
+  if (passos.length === sug.length && passos.every((p, i) => p === sug[i])) delete ficha.escada;
+  else ficha.escada = passos.slice();
+}
 /** o degrau mais perto de uma distância (em dias) do fechamento; no empate, o de cima */
 function degrauMaisPerto(degraus, dias){
   let k = 0;
@@ -2688,7 +2738,7 @@ function definirRevisoesProva(ficha, datas){
   } else {
     ficha.revisoesProva = prova;
     const inicio = ficha.concluidoEm || "";
-    const degraus = degrausDa(dificuldadeDaFicha(ficha));
+    const degraus = degrausDaFicha(ficha);
     const feitas = itensDaFicha(ficha).filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
       .sort((a,b) => (a.feitaEm || a.data).localeCompare(b.feitaEm || b.data));
     const ultima = feitas[feitas.length - 1];
@@ -2716,7 +2766,7 @@ function continuarEscada(ficha){
   const dono = donoDaEscada(ficha);
   if (!dono) return 0;
   const inicio = ficha.concluidoEm || D.hoje();
-  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  const degraus = degrausDaFicha(ficha);
   const itens = itensDaFicha(ficha);
   const pendentes = itens.filter(r => !r.feita);
   const feitas = itens.filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
@@ -2761,7 +2811,7 @@ function continuarEscada(ficha){
 function fixarPassos(ficha, novoId){
   const inicio = ficha.concluidoEm || "";
   const seq = itensDaFicha(ficha).filter(r => !r.feita || (r.feitaEm || r.data) >= inicio);
-  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  const degraus = degrausDaFicha(ficha);
   let ant = inicio;
   seq.filter(r => r.id !== novoId).forEach(r => {
     if (!r.feita && !Number.isInteger(r.passo)) r.passo = Math.max(1, D.dif(ant || r.data, r.data));
@@ -2822,7 +2872,7 @@ function reancorarEscada(fichas, data, opcoes){
 function reespacarEscada(ficha){
   if (!ficha || ficha.fase !== "concluido" || !escadaAtiva(ficha)) return 0;
   const inicio = ficha.concluidoEm || "";
-  const degraus = degrausDa(dificuldadeDaFicha(ficha));
+  const degraus = degrausDaFicha(ficha);
   const itens = itensDaFicha(ficha);
   const feitas = itens.filter(r => r.feita && (r.feitaEm || r.data) >= inicio)
     .sort((a,b) => (a.feitaEm || a.data).localeCompare(b.feitaEm || b.data));
@@ -7692,7 +7742,10 @@ function espalharRetorno(guardados){
 /* Fechar e reabrir agora acontecem no CONTEÚDO, não na sessão: o conteúdo é a
    unidade que se aprende, e todas as sessões que falam dele acompanham. Dá
    para fechar uma disciplina inteira — é o mesmo, aplicado a cada ficha.    */
-function marcarConteudos(fichas, fase){
+/* `escolhas` (só ao concluir): Map ficha → { auto, passos } — o que a janela de
+   concluir respondeu. auto=false nasce sem revisões automáticas; `passos` é o
+   cronograma escolhido (definirEscada). Sem escolha, fica como estava. */
+function marcarConteudos(fichas, fase, escolhas){
   const tocadas = fichas.filter(Boolean);
   if (!tocadas.length) return 0;
   tocadas.forEach(c => {
@@ -7701,6 +7754,9 @@ function marcarConteudos(fichas, fase){
     delete c.revisoesProva;                   // revisões até a prova são de conteúdo concluído
     delete c.semAutomaticas;                  // reabrir (ou fechar de novo) religa o automático (Pedro, 03/10)
     delete c.automaticasDesde;
+    const e = fase === "concluido" && escolhas && escolhas.get(c);
+    if (e && e.auto === false) c.semAutomaticas = true;
+    if (e && e.passos) definirEscada(c, e.passos);
   });
   const chaves = new Set(tocadas.map(chaveDaFicha));
 
@@ -7950,6 +8006,235 @@ async function pedirNomeDoConteudo(disc, antigo){
   return novo;
 }
 
+/* A PRÉVIA DO CRONOGRAMA. As datas que as janelas mostram saem do cálculo de
+   verdade: a mesma conta da agenda (marcarConteudos ao concluir, reespacarEscada
+   no ✎ editar) roda numa CÓPIA dos dados, e a cópia é jogada fora. Assim a prévia
+   já conta com as revisões marcadas à mão e com os dias de prova pulados — e
+   nunca diz uma coisa para a agenda fazer outra.
+   `aplicar(fichasDaCopia)` mexe na cópia; devolve, por ficha, uma linha por
+   revisão do cronograma: { data, feita, longe } (longe = além do horizonte da
+   agenda: entra nela quando chegar mais perto). */
+function previaDoCronograma(fichas, aplicar){
+  const real = db, limite = ultimoDiaRevisao();
+  db = JSON.parse(JSON.stringify(real));
+  try {
+    const copias = fichas.map(f => conteudosCad().find(c => chaveDaFicha(c) === chaveDaFicha(f)));
+    aplicar(copias);
+    return copias.map(c => c ? datasDoCronograma(c, limite) : []);
+  } catch(e){
+    return fichas.map(() => []);
+  } finally { db = real; }
+}
+function datasDoCronograma(ficha, limite){
+  const degraus = degrausDaFicha(ficha), inicio = ficha.concluidoEm || D.hoje();
+  const itens = itensDaFicha(ficha).filter(r => !r.manual && (!r.feita || (r.feitaEm || r.data) >= inicio));
+  const linhas = [];
+  let ant = inicio;
+  for (let j = 1; j < degraus.length; j++){
+    const r = itens.find(x => degrauDoItem(x, ficha, degraus) === j);
+    if (r){
+      const data = r.feita ? (r.feitaEm || r.data) : r.data;
+      linhas.push({ data, feita: !!r.feita });
+      ant = data;
+      continue;
+    }
+    // ainda não nasceu: depois do horizonte, a agenda cria quando chegar mais perto
+    const data = foraDaProva(D.soma(ant, degraus[j] - degraus[j - 1]));
+    linhas.push({ data, longe: data > limite });
+    ant = data;
+  }
+  return linhas;
+}
+
+/* O EDITOR DO CRONOGRAMA: quantas revisões e quantos dias cada uma espera depois
+   da anterior, com a data ao lado. O mesmo bloco serve à janela de concluir e à
+   janela do conteúdo (✎ editar), para as duas dizerem a mesma coisa. */
+const nomeDificuldade = n => (CONFIG.DIFICULDADES[n] || CONFIG.DIFICULDADES[2]).nome;
+const unidadePasso = (p, i) => (p === 1 ? "dia" : "dias") + " depois " + (i ? "da anterior" : "de concluir");
+const linhaEscada = (p, i) => '<li class="linha-escada"><span class="num">' + (i + 1) + 'ª</span>' +
+  '<input type="number" name="passo" min="1" max="999" value="' + p + '" inputmode="numeric" ' +
+    'aria-label="Dias da ' + (i + 1) + 'ª revisão depois ' + (i ? "da anterior" : "de concluir") + '">' +
+  '<span class="unid">' + unidadePasso(p, i) + '</span><span class="data-escada"></span></li>';
+function htmlEditorEscada(i, titulo, sub, passos){
+  return '<div class="bloco-escada" data-bloco="' + i + '">' +
+    (titulo ? '<div class="cab-escada"><b>' + esc(titulo) + '</b>' + (sub ? ' <span class="dica">' + esc(sub) + '</span>' : '') + '</div>' : '') +
+    '<div class="linha qtd-escada"><label>Quantas revisões <input type="number" name="quantas" min="1" max="' + MAX_ESCOLHA + '" ' +
+      'value="' + passos.length + '" inputmode="numeric"></label>' +
+    '<button class="act atalho" type="button" data-escada="sugestao" title="O cronograma que a dificuldade sugere">usar a sugestão</button></div>' +
+    '<ol class="lista-escada">' + passos.map(linhaEscada).join("") + '</ol></div>';
+}
+/** os passos escritos num bloco; null se algum estiver vazio ou fora de 1–999 */
+function lerPassos(bloco){
+  const l = [...bloco.querySelectorAll('[name="passo"]')].map(i => Number(i.value));
+  return escadaValida(l) ? l : null;
+}
+/** escreve as datas da prévia ao lado de cada linha */
+function pintarDatas(bloco, linhas){
+  bloco.querySelectorAll(".linha-escada").forEach((li, i) => {
+    const x = linhas && linhas[i], span = li.querySelector(".data-escada");
+    span.classList.toggle("feita", !!(x && x.feita));
+    span.classList.toggle("longe", !!(x && x.longe));
+    const ano = x && x.data.slice(0, 4) !== D.hoje().slice(0, 4) ? "/" + x.data.slice(2, 4) : "";   // 23/02/27
+    span.textContent = !x ? "" : "→ " + D.semana(x.data) + " " + D.br(x.data) + ano + (x.feita ? " · feita" : "");
+    span.title = x && x.longe ? "Além do horizonte da agenda: entra nela quando a data chegar mais perto" : "";
+  });
+}
+/* Liga os blocos de `raiz`. `sugestao(bloco)` dá os passos sugeridos daquele
+   bloco (completar e "usar a sugestão"); `aoMudar()` refaz a prévia. */
+function ligarEditoresEscada(raiz, sugestao, aoMudar){
+  const refazer = (bloco, passos) => {
+    bloco.querySelector(".lista-escada").innerHTML = passos.map(linhaEscada).join("");
+    bloco.querySelector('[name="quantas"]').value = passos.length;
+  };
+  raiz.addEventListener("input", ev => {
+    const bloco = ev.target.closest(".bloco-escada"); if (!bloco) return;
+    if (ev.target.name === "quantas"){
+      const n = Number(ev.target.value);
+      if (!Number.isInteger(n) || n < 1 || n > MAX_ESCOLHA) return;
+      const atuais = [...bloco.querySelectorAll('[name="passo"]')].map(i => Number(i.value) || 1);
+      const sug = sugestao(bloco);
+      while (atuais.length < n){
+        const k = atuais.length;
+        atuais.push(sug[k] || Math.min(365, (atuais[k - 1] || 1) * 2));   // passada a sugestão, dobra
+      }
+      bloco.querySelector(".lista-escada").innerHTML = atuais.slice(0, n).map(linhaEscada).join("");
+    } else if (ev.target.name === "passo"){
+      const li = ev.target.closest(".linha-escada");
+      const i = [...bloco.querySelectorAll(".linha-escada")].indexOf(li);
+      li.querySelector(".unid").textContent = unidadePasso(Number(ev.target.value), i);
+    } else return;
+    aoMudar();
+  });
+  raiz.addEventListener("click", ev => {
+    const b = ev.target.closest('[data-escada="sugestao"]'); if (!b) return;
+    const bloco = b.closest(".bloco-escada");
+    refazer(bloco, sugestao(bloco));
+    aoMudar();
+  });
+}
+
+/* A JANELA DE CONCLUIR (pedido do Pedro, 06/10). Concluir um conteúdo — pela aba
+   Disciplinas, pela Agenda ou pela sessão — ou uma disciplina inteira pergunta
+   SEMPRE se as revisões automáticas devem nascer, com o cronograma inteiro à
+   vista: quantas revisões, quantos dias cada uma espera e em que data cai. Só ao
+   confirmar o conteúdo é concluído; cancelar não muda nada. Com vários
+   conteúdos, a pessoa escolhe um cronograma para todos ou um para cada.
+   o = { titulo, texto, botao }. Devolve o Map de escolhas de marcarConteudos, ou
+   null (cancelou). Nos testes (__confirmarNativo): responde pelo w.confirm e,
+   havendo w.__escolhaConcluir(ficha), por ele. */
+function janelaConcluir(fichas, o){
+  if (window.__confirmarNativo){
+    if (!window.confirm(o.titulo + "\n\n" + o.texto)) return Promise.resolve(null);
+    const f = window.__escolhaConcluir;
+    return Promise.resolve(new Map(fichas.map(c => [c, f ? f(c) : {}])));
+  }
+  return new Promise(resolve => {
+    const caixa = $("#dialogo"), corpo = $("#dialogoCorpo");
+    const foco = document.activeElement;
+    const ativo = agendamentoAtivo(), varios = fichas.length > 1;
+    const inicial = c => escadaValida(c.escada) ? c.escada.slice() : passosSugeridos(c);
+    // o conjunto começa pelo cronograma que todos já têm; diferentes, pela sugestão do mais difícil
+    const maisDificil = fichas.slice().sort((a, b) => dificuldadeDaFicha(b) - dificuldadeDaFicha(a))[0];
+    const iguais = fichas.every(c => JSON.stringify(inicial(c)) === JSON.stringify(inicial(fichas[0])));
+    const passos = { conjunto: iguais ? inicial(fichas[0]) : passosSugeridos(maisDificil), cada: fichas.map(inicial) };
+    let modo = "conjunto";
+    $("#dialogoTitulo").textContent = o.titulo;
+    corpo.innerHTML = '<form id="formDialogo" class="form-concluir" novalidate>' +
+      String(o.texto || "").split(/\n{2,}/).filter(Boolean).map(t => '<p class="sub" style="margin:0 0 10px">' + esc(t) + '</p>').join("") +
+      (!ativo
+        ? '<p class="sub nota-conteudo">O agendamento automático está desligado para todos os conteúdos (engrenagem no topo): ' +
+            'nenhuma revisão automática será criada.</p>'
+        : '<div class="opcoes"><label class="opcao"><input type="checkbox" name="criarAuto" checked>' +
+            '<span>Criar revisões automáticas</span></label></div>' +
+          '<div id="painelEscadaConcluir">' +
+            (varios
+              ? '<div class="opcoes modo-escada">' +
+                  '<label class="opcao"><input type="radio" name="modoEscada" value="conjunto" checked><span>Um cronograma para todos</span></label>' +
+                  '<label class="opcao"><input type="radio" name="modoEscada" value="cada"><span>Um cronograma para cada conteúdo</span></label>' +
+                '</div>'
+              : '') +
+            '<div id="blocosEscada"></div>' +
+            '<p class="dica nota-escada">Cada revisão conta os dias a partir da anterior. Revisão atrasada ou feita a mais empurra as seguintes, mantendo as distâncias.</p>' +
+          '</div>' +
+          '<p class="sub nota-conteudo" id="notaSemAuto" hidden>Nenhuma revisão automática será criada: fica só o que você marcar. ' +
+            'Dá para ligar depois no ✎ editar do conteúdo.</p>') +
+      '<div class="linha acoes-form" style="margin-top:14px">' +
+        '<button class="btn" type="submit">' + esc(o.botao || "Concluir") + '</button>' +
+        '<button class="btn ghost" type="button" data-dialogo="cancelar">Cancelar</button>' +
+        '<span class="erro-form" id="erroDialogo"></span></div></form>';
+    const f = $("#formDialogo"), blocos = $("#blocosEscada");
+    const subDe = c => "dificuldade: " + nomeDificuldade(dificuldadeDaFicha(c)) +
+                       (escadaValida(c.escada) ? " · cronograma seu" : "");
+    const guardar = () => {                        // o que está escrito sobrevive à troca de modo
+      if (!blocos) return;
+      blocos.querySelectorAll(".bloco-escada").forEach(b => {
+        const l = [...b.querySelectorAll('[name="passo"]')].map(i => Number(i.value) || 1);
+        if (modo === "conjunto") passos.conjunto = l; else passos.cada[Number(b.dataset.bloco)] = l;
+      });
+    };
+    const desenhar = () => {
+      blocos.innerHTML = modo === "conjunto"
+        ? htmlEditorEscada(0, varios ? "Os " + fichas.length + " conteúdos" : fichas[0].nome,
+                           varios ? "o mesmo cronograma para todos" : subDe(fichas[0]), passos.conjunto)
+        : fichas.map((c, i) => htmlEditorEscada(i, c.nome, subDe(c), passos.cada[i])).join("");
+      previa();
+    };
+    /** o que a janela responde agora (ou null, com algum campo inválido) */
+    const escolhas = () => {
+      const lidos = [...blocos.querySelectorAll(".bloco-escada")].map(lerPassos);
+      if (lidos.some(l => !l)) return null;
+      return new Map(fichas.map((c, i) => [c, { auto: true, passos: modo === "conjunto" ? lidos[0] : lidos[i] }]));
+    };
+    const previa = () => {
+      const e = escolhas();
+      const linhas = e ? previaDoCronograma(fichas, copias =>
+        marcarConteudos(copias, "concluido", new Map(copias.map((c, i) => [c, e.get(fichas[i])])))) : [];
+      blocos.querySelectorAll(".bloco-escada").forEach((b, i) => pintarDatas(b, linhas[i]));
+    };
+    if (ativo){
+      const chave = f.querySelector('[name="criarAuto"]');
+      chave.addEventListener("change", () => {
+        $("#painelEscadaConcluir").hidden = !chave.checked;
+        $("#notaSemAuto").hidden = chave.checked;
+      });
+      f.querySelectorAll('[name="modoEscada"]').forEach(r => r.addEventListener("change", () => {
+        guardar(); modo = r.value; desenhar();
+      }));
+      ligarEditoresEscada(f, b => modo === "conjunto" ? passosSugeridos(maisDificil) : passosSugeridos(fichas[Number(b.dataset.bloco)]),
+                          () => { $("#erroDialogo").textContent = ""; previa(); });
+      desenhar();
+    }
+    const fechar = v => {
+      caixa.hidden = true; corpo.innerHTML = ""; dialogoAberto = null;
+      if (foco && foco.focus && document.contains(foco)) try { foco.focus(); } catch(e){}
+      resolve(v);
+    };
+    dialogoAberto = { cancelar: () => fechar(null) };
+    caixa.querySelectorAll('[data-dialogo="cancelar"]').forEach(b => { b.onclick = ev => { ev.stopPropagation(); fechar(null); }; });
+    caixa.onclick = ev => { ev.stopPropagation(); if (ev.target === caixa) fechar(null); };
+    f.addEventListener("submit", ev => {
+      ev.preventDefault();
+      if (!ativo) return fechar(new Map());
+      if (!f.querySelector('[name="criarAuto"]').checked) return fechar(new Map(fichas.map(c => [c, { auto: false }])));
+      const e = escolhas();
+      if (!e){ $("#erroDialogo").textContent = "Cada revisão precisa de 1 a 999 dias, e a quantidade vai de 1 a " + MAX_ESCOLHA + "."; return; }
+      fechar(e);
+    });
+    caixa.hidden = false;
+    const b = f.querySelector("button[type=submit]"); if (b) b.focus();
+  });
+}
+/** a frase do toast depois de concluir: o que a agenda ganhou */
+function fraseDaConclusao(fichas){
+  if (!agendamentoAtivo()) return "";
+  const sem = fichas.filter(c => c.semAutomaticas).length;
+  if (sem === fichas.length) return " — sem revisões automáticas";
+  const prox = fichas.filter(c => !c.semAutomaticas)
+    .map(c => (itensDaFicha(c).find(r => !r.feita) || {}).data).filter(Boolean).sort()[0];
+  return (prox ? " — a 1ª revisão é " + (prox === D.hoje() ? "hoje" : "em " + D.br(prox)) : "") +
+         (sem ? " (" + plural(sem, "conteúdo ficou", "conteúdos ficaram") + " sem automáticas)" : "");
+}
+
 /* A JANELA DO CONTEÚDO (✎ editar da aba Disciplinas; pedido do Pedro, 03/10). Além
    do nome e do Excluir: em que pé o conteúdo está, a chave das revisões automáticas
    DELE (ver escadaAtiva) e o atalho para as revisões até a prova. As duas últimas só
@@ -7985,6 +8270,14 @@ function htmlJanelaConteudo(ficha){
       '<span class="dica">A escada continua do degrau em que parou; nenhuma revisão automática antes desse dia.</span>' +
       '</div></div>';
   h += '</div>';
+  /* o cronograma das automáticas, o mesmo editor da janela de concluir (pedido do Pedro, 06/10) */
+  if (ligado)
+    h += '<div class="cronograma-conteudo" id="cronogramaConteudo"><span class="rot-escada">Cronograma das revisões automáticas</span>' +
+      htmlEditorEscada(0, "", "", passosDe(degrausDaFicha(ficha))) +
+      '<p class="dica nota-escada">' + (escadaValida(ficha.escada)
+        ? 'Cronograma escolhido por você: a dificuldade não muda mais estes dias.'
+        : 'Sugestão pela dificuldade (' + nomeDificuldade(dificuldadeDaFicha(ficha)).toLowerCase() + '). Mudando, o cronograma passa a ser seu.') +
+      ' As pendentes automáticas são refeitas ao salvar; as feitas e as marcadas por você não mudam.</p></div>';
   if (ligado && podeEscolherAteProva(ficha))
     h += '<div class="linha linha-rev-prova"><button class="act atalho" type="button" data-dialogo="ate-prova">' +
       'Personalizar revisões até a prova</button></div>' + metaAteProva(ficha);
@@ -8061,7 +8354,20 @@ async function editarConteudo(disc, antigo){
     aoAbrir: (f, fechar) => {
       const chave = f.querySelector('[name="autoConteudo"]'), painel = f.querySelector("#painelAutoConteudo");
       // o painel aparece quando a chave muda: ao desligar (manter/desabilitar) ou ao religar (a partir de quando)
-      if (chave && painel){ const antes = chave.checked; chave.addEventListener("change", () => painel.classList.toggle("aberto", chave.checked !== antes)); }
+      const crono = f.querySelector("#cronogramaConteudo");
+      if (chave && painel){ const antes = chave.checked; chave.addEventListener("change", () => {
+        painel.classList.toggle("aberto", chave.checked !== antes);
+        if (crono) crono.hidden = !chave.checked;   // desligando, não há cronograma a escolher
+      }); }
+      if (crono){
+        const bloco = crono.querySelector(".bloco-escada");
+        const previa = () => {
+          const passos = lerPassos(bloco);
+          pintarDatas(bloco, passos ? previaDoCronograma([ficha], ([c]) => { definirEscada(c, passos); reespacarEscada(c); })[0] : []);
+        };
+        ligarEditoresEscada(crono, () => passosSugeridos(ficha), previa);
+        previa();
+      }
       const ate = f.querySelector('[data-dialogo="ate-prova"]');
       if (ate) ate.onclick = ev => { ev.stopPropagation(); fechar(); modalRevisoesProva(ficha); };
     },
@@ -8069,12 +8375,16 @@ async function editarConteudo(disc, antigo){
       const chave = f.querySelector('[name="autoConteudo"]');
       const escolha = f.querySelector('[name="jaNaAgendaConteudo"]:checked');
       const desde = f.querySelector('[name="religarDesde"]');
+      const bloco = f.querySelector("#cronogramaConteudo .bloco-escada");
       return { auto: chave ? chave.checked : null, apagar: !!escolha && escolha.value === "desabilitar",
-               desde: desde ? desde.value : "" };
+               desde: desde ? desde.value : "", passos: bloco ? lerPassos(bloco) : null };
     },
-    validar: v => !v ? "Escreva o nome."
-      : acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()
-        ? "Já existe um conteúdo com esse nome nesta disciplina." : "" });
+    validar: v => {
+      if (!v) return "Escreva o nome.";
+      if (acharConteudo(disc, v) && v.toLowerCase() !== antigo.toLowerCase()) return "Já existe um conteúdo com esse nome nesta disciplina.";
+      const bloco = document.querySelector("#formDialogo #cronogramaConteudo:not([hidden]) .bloco-escada");
+      return bloco && !lerPassos(bloco) ? "Cada revisão precisa de 1 a 999 dias, e a quantidade vai de 1 a " + MAX_ESCOLHA + "." : "";
+    } });
   if (!res) return;
   const avisos = [];
   if (res.extra.auto === false && !ficha.semAutomaticas){
@@ -8083,6 +8393,14 @@ async function editarConteudo(disc, antigo){
   } else if (res.extra.auto === true && ficha.semAutomaticas){
     religarAutomaticasDoConteudo(ficha, res.extra.desde);
     avisos.push("revisões automáticas religadas" + (inicioDasAutomaticas(ficha) ? " a partir de " + D.br(ficha.automaticasDesde) : ""));
+  }
+  const atuais = passosDe(degrausDaFicha(ficha)), novos = res.extra.passos;
+  if (res.extra.auto && !ficha.semAutomaticas && novos && JSON.stringify(novos) !== JSON.stringify(atuais)){
+    definirEscada(ficha, novos);
+    reespacarEscada(ficha);
+    juntarIrmas();
+    avisos.push("cronograma das revisões: " + plural(novos.length, "revisão", "revisões") +
+                (escadaValida(ficha.escada) ? "" : " (a sugestão pela dificuldade)"));
   }
   if (res.valor !== antigo){
     renomearConteudo(disc, antigo, res.valor);
@@ -8306,7 +8624,7 @@ function juntarConteudos(fichas, nome){
       if (dono) db.revisoes.push(Object.assign(base, { registroId: dono.id, ordem: 1, retomada: true }));
     } else if (escadaAtiva(nova)){
       const dono = donoDaEscada(nova);
-      const degraus = degrausDa(dificuldadeDaFicha(nova));
+      const degraus = degrausDaFicha(nova);
       const k = Math.max(1, Math.min(daEscada ? daEscada.degrau : 1, degraus.length - 1));
       if (dono) db.revisoes.push(Object.assign(base, { registroId: dono.id, ordem: k, degrau: k,
                                                        passo: degraus[k] - degraus[k - 1] }));
@@ -9204,7 +9522,9 @@ function modalAjuda(){
       '</ul>'],
     ["metodo", "Metodologias",
       '<ul class="aj-lista">' +
-        '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes; atraso ou revisão extra empurram as seguintes.</li>' +
+        '<li><b>Repetição espaçada</b> — revisões em intervalos crescentes; atraso ou revisão extra empurram as seguintes. ' +
+          'Ao concluir um conteúdo você vê o cronograma inteiro e escolhe se as revisões nascem, quantas são e quantos dias ' +
+          'cada uma espera; depois, dá para mudar no ✎ editar do conteúdo.</li>' +
         '<li><b>Curva do esquecimento (Ebbinghaus)</b> — a primeira revisão vem cedo, quando o esquecimento é mais rápido.</li>' +
         '<li><b>Recordação ativa</b> — revisar é resolver questões, não reler: por isso a sessão pede questões e acertos.</li>' +
         '<li><b>Sistema Leitner</b> — dificuldade alta = revisar antes e mais vezes; fácil = mais espaço entre as revisões.</li>' +
@@ -10439,11 +10759,14 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
       const n = concluiveisDaDisciplina(disc).length;
       const pula = conteudosDaDisciplina(disc).filter(aEstudar).length;
       if (!n) break;
-      if (!(await confirmar({ titulo: "Concluir disciplina", botao: "Concluir",
+      const fichas = concluiveisDaDisciplina(disc);
+      const escolhas = await janelaConcluir(fichas, { titulo: "Concluir disciplina",
                    texto: "Concluir " + plural(n, "conteúdo", "conteúdos") + " de " + disc + "? Todas as sessões deles passam a ser revisadas." +
-                   (pula ? "\n\n" + plural(pula, "conteúdo a estudar fica", "conteúdos a estudar ficam") + " de fora — ainda não têm sessão." : "") }))) break;
-      concluirDisciplina(disc); persistir(); render();
-      toast(disc + ": " + plural(n, "conteúdo concluído", "conteúdos concluídos") + (pula ? " · " + pula + " a estudar ficaram de fora" : "") + ".");
+                   (pula ? "\n\n" + plural(pula, "conteúdo a estudar fica", "conteúdos a estudar ficam") + " de fora — ainda não têm sessão." : "") });
+      if (!escolhas) break;
+      marcarConteudos(fichas, "concluido", escolhas); persistir(); render();
+      toast(disc + ": " + plural(n, "conteúdo concluído", "conteúdos concluídos") + (pula ? " · " + pula + " a estudar ficaram de fora" : "") +
+            fraseDaConclusao(fichas) + ".");
       break; }
     case "reabrir-disciplina": {
       const disc = alvo.dataset.disc;
@@ -10496,12 +10819,15 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
     case "concluir-conteudo": {
       const disc = alvo.dataset.disc, nomes = (alvo.dataset.conts || "").split("|").filter(Boolean);
       const quantas = sessoesDoConteudo(disc, nomes).length;
-      if (quantas > 1 && !(await confirmar({ titulo: "Concluir", botao: "Concluir",
-          texto: "Concluir " + (nomes.length > 1 ? "estes conteúdos" : "este conteúdo") +
-          " vale para as " + quantas + " sessões que falam dele." }))) break;
-      marcarConteudos(nomes.map(n => acharConteudo(disc, n)), "concluido");
+      const fichas = nomes.map(n => acharConteudo(disc, n)).filter(Boolean);
+      if (!fichas.length) break;
+      const escolhas = await janelaConcluir(fichas, { titulo: fichas.length > 1 ? "Concluir conteúdos" : "Concluir conteúdo",
+          texto: "Concluir " + (fichas.length > 1 ? fichas.map(c => "“" + c.nome + "”").join(", ") : "“" + fichas[0].nome + "”") + "?" +
+          (quantas > 1 ? " Vale para as " + quantas + " sessões que falam " + (fichas.length > 1 ? "deles" : "dele") + "." : "") });
+      if (!escolhas) break;
+      marcarConteudos(fichas, "concluido", escolhas);
       persistir(); render();
-      toast("Conteúdo fechado — as revisões começam a partir de hoje.");
+      toast((fichas.length > 1 ? "Conteúdos fechados" : "Conteúdo fechado") + fraseDaConclusao(fichas) + ".");
       break; }
     case "reabrir-conteudo": {
       const disc = alvo.dataset.disc, nomes = (alvo.dataset.conts || "").split("|").filter(Boolean);
