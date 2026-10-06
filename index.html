@@ -10799,6 +10799,10 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", () => { clearTimeout(tArquivo); gravarArquivo(); clearTimeout(tNuvem); subirParaNuvem(); });
 window.addEventListener("beforeunload", () => { clearTimeout(tArquivo); gravarArquivo(); });
+/* VOLTAR PELO HISTÓRICO (05/10). O Back/Forward do Safari pode devolver uma cópia
+   da página guardada inteira, com os dados de quando ela saiu de cena — e a
+   próxima gravação dela subiria dado velho por cima do novo. Volta assim, recarrega. */
+window.addEventListener("pageshow", ev => { if (ev.persisted) location.reload(); });
 $("#btnImportar").onclick = () => $("#arquivo").click();
 $("#arquivo").onchange = ev => { const f = ev.target.files[0]; if (f) importar(f); ev.target.value = ""; };
 /* ARRASTAR PARA REORDENAR AS ANOTAÇÕES DE UM CARD.
