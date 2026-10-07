@@ -9283,11 +9283,18 @@ function modalObjetivo(){
    revisão ao automático (religarAgendaAutomatica) e o "Apagar" a alcança.
    Editar a revisão (salvarRevisaoManual) tira a marca: aí ela é sua de verdade.
    `modo`: "manter", "apagar" (só as automáticas pendentes) ou "tudo" (pedido do
-   Pedro, 06/10: toda revisão pendente sai, automática ou sua — começar do zero). */
+   Pedro, 06/10: toda revisão pendente sai, automática ou sua — começar do zero).
+   "revisoes" e "continuar" (pedido do Pedro, 07/10) apagam só um dos dois tipos
+   de automática; o outro fica, como no "Manter". */
 function desligarAgendaAutomatica(modo){
-  if (modo === "tudo") db.revisoes = db.revisoes.filter(r => r.feita);
-  else if (modo === "apagar") db.revisoes = db.revisoes.filter(r => r.feita || (r.manual && !r.doAutomatico));
-  else db.revisoes.forEach(r => { if (!r.feita && !r.manual){ r.manual = true; r.doAutomatico = true; } });
+  const automatica = r => !r.feita && (!r.manual || r.doAutomatico);
+  const sai = modo === "tudo" ? r => !r.feita
+            : modo === "apagar" ? automatica
+            : modo === "revisoes" ? r => automatica(r) && !ehRetomada(r)
+            : modo === "continuar" ? r => automatica(r) && ehRetomada(r)
+            : () => false;
+  db.revisoes = db.revisoes.filter(r => !sai(r));
+  db.revisoes.forEach(r => { if (!r.feita && !r.manual){ r.manual = true; r.doAutomatico = true; } });
 }
 function religarAgendaAutomatica(){
   db.revisoes.forEach(r => {
@@ -9355,6 +9362,10 @@ function modalAjustes(){
               '<span>Manter — as revisões e os cards de continuar automáticos passam a ser seus</span></label>' +
             '<label class="opcao"><input type="radio" name="jaNaAgenda" value="apagar">' +
               '<span>Apagar as automáticas pendentes — fico só com o que eu marquei</span></label>' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="revisoes">' +
+              '<span>Apagar só as revisões automáticas — os cards de continuar ficam e passam a ser seus</span></label>' +
+            '<label class="opcao"><input type="radio" name="jaNaAgenda" value="continuar">' +
+              '<span>Apagar só os cards de continuar automáticos — as revisões ficam e passam a ser suas</span></label>' +
             '<label class="opcao"><input type="radio" name="jaNaAgenda" value="tudo">' +
               '<span>Apagar todas as revisões agendadas — as automáticas e as que eu marquei</span></label>' +
           '</div></div></div>'
@@ -9534,7 +9545,7 @@ function modalAjuda(){
     ["rotina", "Sua própria rotina",
       '<p>Já tem uma rotina — sua ou trazida de fora? Nos ajustes, desmarque <b>Criar os agendamentos automaticamente</b>: ' +
         'a agenda passa a ser só o que você marca, e o sistema não cria nem move nada. Dá para manter o que ele já tinha ' +
-        'marcado, apagar só isso ou apagar todas as revisões agendadas (as suas também) e começar do zero. ' +
+        'marcado, apagar só isso (tudo, só as revisões ou só os cards de continuar) ou apagar todas as revisões agendadas (as suas também) e começar do zero. ' +
         'As já feitas ficam sempre no histórico.</p>' +
       '<p>Para marcar rápido, o <b>+ Adicionar revisão</b> (aba ' + aba("Agenda") + ') aceita <b>várias datas de uma vez</b>: ' +
         'uma data só? Basta a caixa. Várias? Abra <b>Mais de uma data</b> e adicione uma a uma, gere "a cada N dias, K vezes" ou ' +

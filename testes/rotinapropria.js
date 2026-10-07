@@ -158,6 +158,25 @@ async function abrirNovaRevisao(w, conteudo){
      pend(w).map(r=>r.id));
   ok("a revisão feita continua no histórico", db(w).revisoes.some(r=>r.id==="ff"), db(w).revisoes.map(r=>r.id));
 
+  /* ---- 4f. apagar só um tipo (pedido de 07/10): só as revisões ou só os cards de continuar.
+     O outro tipo fica, com a marca de que veio do automático; a marcada à mão fica sempre ---- */
+  for (const [modo, saiRet] of [["revisoes", false], ["continuar", true]]){
+    w=abrir(comMinha()); await espera(400);
+    const antes=pend(w).filter(r=>r.id!=="mm");
+    ok("["+modo+"] a agenda tem revisões e card de continuar automáticos",
+       antes.some(r=>r.retomada) && antes.some(r=>!r.retomada), antes.map(r=>r.retomada?"C":"R"));
+    await ajustes(w, doc=>{
+      doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+      const op=doc.querySelector('#formAjustes [name="jaNaAgenda"][value="'+modo+'"]');
+      ok("["+modo+"] a opção aparece ao desligar", !!op); op.checked=true;
+    });
+    const resto=pend(w).filter(r=>r.id!=="mm");
+    ok("["+modo+"] sai só o tipo escolhido", resto.length>0 && resto.every(r=>!!r.retomada===!saiRet),
+       resto.map(r=>r.retomada?"C":"R"));
+    ok("["+modo+"] o que fica vira seu, guardando a origem", resto.every(r=>r.manual && r.doAutomatico));
+    ok("["+modo+"] a marcada à mão e a feita ficam", pend(w).some(r=>r.id==="mm") && db(w).revisoes.some(r=>r.id==="ff"));
+  }
+
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);
   let f=await abrirNovaRevisao(w,"LGPD");
