@@ -1891,6 +1891,9 @@ let tSalvar = null;
    navegador limpo, o "vazio" pareceria mais novo que o arquivo e a nuvem, e iria
    por cima deles. Até o arranque terminar vale a data de quando o dado foi lido. */
 let arranqueFeito = false, mexeuDesdeAbertura = false;
+/* Ligado só durante replanejarAoReligar: as datas contam do último estudo, e o
+   que já passou conta como feito (ver pularPassadas). */
+let contarDoUltimoEstudo = false;
 const dataDoLocal = () => mexeuDesdeAbertura ? Number(db.atualizadoEm || 0) : Number(inicio.atualizadoEm || 0);
 /** persistir(true) grava na hora — usado onde perder o instante importa (cronômetro). */
 function persistir(agora){
@@ -2607,7 +2610,7 @@ function gerarRevisoes(reg, opcoes){
   conteudosDoAlvo(reg).filter(c => c.fase === "concluido").forEach(continuarEscada);
   if (!conteudoAberto(reg) || !autoContinuar()) return;        // cards de continuar fora do automático
 
-  const base = (opcoes && opcoes.base) || reg.data;
+  const base = contarDoUltimoEstudo ? reg.data : (opcoes && opcoes.base) || reg.data;
   // revisões feitas e as criadas/editadas à mão nunca são reescritas pelo replanejamento
   const mantidas = db.revisoes.filter(r => r.registroId === reg.id && (r.feita || r.manual));
   // o que se refaz aqui são as VOLTAS; a escada dos conteúdos fechados fica
@@ -2621,7 +2624,7 @@ function gerarRevisoes(reg, opcoes){
   const feitas = mantidas.filter(r => r.feita);
 
   const hoje = D.hoje();
-  let partida = base < hoje ? hoje : base;                      // nunca agenda no passado
+  let partida = base < hoje && !contarDoUltimoEstudo ? hoje : base;   // nunca agenda no passado (religando, pularPassadas cuida)
   const ultimaFeita = feitas.map(f => f.feitaEm || f.data).sort().pop();
   if (ultimaFeita && ultimaFeita > partida) partida = ultimaFeita;
 
@@ -2629,7 +2632,7 @@ function gerarRevisoes(reg, opcoes){
      retornos de um assunto que você nem terminou de ver — o que serve é saber
      quando voltar da próxima vez. Feita a volta, a seguinte nasce dali.     */
   if (mantidas.some(r => !r.feita)) return;                     // já existe uma volta marcada à mão
-  const quando = foraDaProva(D.soma(partida, diasDaVolta(dificuldadeDe(reg))));
+  const quando = foraDaProva(pularPassadas(partida, diasDaVolta(dificuldadeDe(reg))));
   if (quando > limiteDe(reg)) return;
   if (mantidas.some(r => r.data === quando)) return;
   /* CONTINUAÇÃO. Conteúdo grande leva várias sessões, e cada sessão é dona do
@@ -2813,10 +2816,12 @@ function continuarEscada(ficha){
     const ultima = pendentes[pendentes.length - 1];
     dia = ultima.data; k = degrauDoItem(ultima, ficha, degraus);
     piso = D.soma(hoje, 1);                     // a pendente atrasada ainda é a de hoje
-  } else if (feitas.length){
+  } else if (feitas.length && !(ficha.ancoraEscada && ficha.ancoraEscada.dia > (feitas[feitas.length - 1].feitaEm || feitas[feitas.length - 1].data))){
     const ultima = feitas[feitas.length - 1];
     dia = ultima.feitaEm || ultima.data; k = degrauDoItem(ultima, ficha, degraus);
     piso = hoje;
+  } else if (ficha.ancoraEscada && ficha.ancoraEscada.dia >= inicio){
+    dia = ficha.ancoraEscada.dia; k = ficha.ancoraEscada.degrau; piso = hoje;   // ver replanejarAoReligar
   } else {
     dia = inicio; k = 0; piso = hoje;
   }
@@ -2826,6 +2831,13 @@ function continuarEscada(ficha){
   for (let j = k + 1; j < degraus.length; j++){
     const passo = degraus[j] - degraus[j - 1];
     let quando = D.soma(dia, passo);
+    /* Religando (replanejarAoReligar): o degrau que já passou conta como feito,
+       sem marcar nada. Fica gravado no conteúdo (ancoraEscada) para a próxima
+       conta não refazer a escada do começo. */
+    if (contarDoUltimoEstudo && !pendentes.length && quando < hoje){
+      dia = quando; ficha.ancoraEscada = { dia, degrau: j };
+      continue;
+    }
     if (quando < piso) quando = piso;           // o que era para ontem vira hoje, não uma pilha
     if (desde && quando < desde) quando = desde;  // religada a partir de um dia: nada antes dele
     // revisões escolhidas até a prova: a escada automática só volta DEPOIS dela
@@ -7795,6 +7807,7 @@ function marcarConteudos(fichas, fase, escolhas){
     delete c.revisoesProva;                   // revisões até a prova são de conteúdo concluído
     delete c.semAutomaticas;                  // reabrir (ou fechar de novo) religa o automático (Pedro, 03/10)
     delete c.automaticasDesde;
+    delete c.ancoraEscada;                    // a conta da escada recomeça (ver replanejarAoReligar)
     const e = fase === "concluido" && escolhas && escolhas.get(c);
     if (e && e.auto === false) c.semAutomaticas = true;
     if (e && e.passos) definirEscada(c, e.passos);
@@ -8530,7 +8543,7 @@ function marcarVolta(reg, conteudos, base){
   const daFicha = acharConteudo(reg.disciplina, conteudos[0]);
   const ficha = daFicha && (grupoNaSessao(reg, conteudos[0]) || !depoisDaJuncao(daFicha, reg)) ? daFicha : null;
   const nivel = ficha ? dificuldadeDaFicha(ficha) : dificuldadeDe(reg);
-  const quando = foraDaProva(D.soma(base || D.hoje(), diasDaVolta(nivel)));
+  const quando = foraDaProva(pularPassadas(base || (contarDoUltimoEstudo ? reg.data : D.hoje()), diasDaVolta(nivel)));
   if (quando > limiteDe(reg)) return null;          // o teto que você definiu manda
   /* Sem `disciplina`: ela vem da sessão dona (a volta sempre tem uma). Gravá-la
      aqui faria disciplinas() — que varre db.revisoes — manter viva a disciplina
@@ -8744,8 +8757,29 @@ function replanejarTudo(){
     if (dono && sessaoEmSilencio(dono)) return true;
     return r.data <= ultimoDiaRevisao() && !diaDeProva(r.data);
   });
-  db.registros.forEach(r => gerarRevisoes(r, { base: D.hoje(), manterAtrasadas: true }));
+  /* Da sessão mais antiga para a mais nova: a volta de um conteúdo fica com a
+     última sessão dele (ver voltaEmAberto). Contando de hoje a ordem não pesava;
+     contando do último estudo (replanejarAoReligar), pesa. */
+  db.registros.slice().sort((a,b) => String(a.data).localeCompare(String(b.data)) || (a.criadoEm||0) - (b.criadoEm||0))
+    .forEach(r => gerarRevisoes(r, { base: D.hoje(), manterAtrasadas: true }));
   garantirAgenda();
+}
+/* RELIGAR CONTA DO ÚLTIMO ESTUDO (pedido do Pedro, 07/10). Religado o automático,
+   contar tudo de hoje punha a agenda inteira nos mesmos dias: todo card de
+   continuar a N dias de hoje, toda revisão vencida hoje. Agora cada conteúdo
+   conta do próprio último estudo (ou da conclusão / última revisão feita), e o
+   que já passou conta como FEITO, sem marcar nada: o cronograma segue dali e
+   só nasce a próxima data que ainda está por vir. Decisão dele: nem pilha de
+   atrasados, nem espalhar à força. */
+function replanejarAoReligar(){
+  contarDoUltimoEstudo = true;
+  try { replanejarTudo(); } finally { contarDoUltimoEstudo = false; }
+}
+/** `dia` + `passo`; religando, o que cai antes de hoje conta como feito e anda mais um passo */
+function pularPassadas(dia, passo){
+  let q = D.soma(dia, passo);
+  if (contarDoUltimoEstudo && passo > 0) while (q < D.hoje()) q = D.soma(q, passo);
+  return q;
 }
 
 /* ABA DISCIPLINAS. O cadastro num lugar só: ver o que existe, renomear (em todo
@@ -9729,9 +9763,11 @@ function ligarAjustes(){
         const automaticoAntes = agendaAutomatica(), automatico = !!d.automatico;
         const tiposAntes = automaticoAntes ? tiposAutomaticos() : [];
         if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda || "manter");
+        let religou = !!d.religar || (!automaticoAntes && automatico);
         if (automatico){
           // o tipo que sai fica (vira seu) ou é apagado; o que entra volta ao automático
           const novos = tiposDaEscolha(d.tiposAuto);
+          if (novos.some(t => !tiposAntes.includes(t))) religou = true;
           tiposAntes.filter(t => !novos.includes(t)).forEach(t => desligarAgendaAutomatica(d.tipoSai === "apagar" ? t : "manter", t));
           religarAgendaAutomatica(novos.filter(t => !tiposAntes.includes(t)));
           if (novos.length === 1) db.automaticoTipos = novos[0]; else delete db.automaticoTipos;
@@ -9739,7 +9775,7 @@ function ligarAjustes(){
         db.agendaAutomatica = automatico;
         const mudouDatas = mudouObjetivo || datasAntes !== JSON.stringify([db.revisarAte || "", db.estudoAte || "",
                              db.diasRetomada || {}, agendaAutomatica(), db.posProva || "", tiposAutomaticos()]);
-        if (mudouDatas) replanejarTudo();
+        if (mudouDatas) (religou ? replanejarAoReligar : replanejarTudo)();   // religando, conta do último estudo
         persistir(); fecharModal(); render();
         toast(automaticoAntes && !automatico ? "Agendamento automático desligado — a agenda é a sua rotina."
              : !automaticoAntes && automatico ? "Agendamento automático ligado (" + fraseTiposAuto() + ") — cronograma refeito."

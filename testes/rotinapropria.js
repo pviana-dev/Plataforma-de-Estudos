@@ -177,11 +177,18 @@ async function abrirNovaRevisao(w, conteudo){
     ok("["+modo+"] a marcada à mão e a feita ficam", pend(w).some(r=>r.id==="mm") && db(w).revisoes.some(r=>r.id==="ff"));
   }
 
-  /* ---- 4g. religar, venha de qual opção vier, segue o cronograma normal: a agenda
-     fica igual à de quem nunca desligou (pedido de 07/10) ---- */
+  /* ---- 4g. religar, venha de qual opção vier, segue o cronograma (pedido de 07/10):
+     o que foi apagado renasce contando do último estudo (ver 4i) e o que foi mantido
+     volta ao automático no lugar — igual, nos dois casos, a apagar tudo e religar ---- */
   const foto=w=>JSON.stringify(pend(w).map(r=>(r.retomada?"C":"R")+":"+r.data+(r.manual?"M":"")).sort());
+  const parte=(f,t)=>JSON.stringify(JSON.parse(f).filter(x=>x[0]===t));
   w=abrir(base()); await espera(400);
   const normal=foto(w);
+  w=abrir(base()); await espera(400);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+    doc.querySelector('#formAjustes [name="jaNaAgenda"][value="apagar"]').checked=true; });
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+  const zero=foto(w);
   for (const modo of ["manter","apagar","revisoes","continuar","tudo"]){
     w=abrir(base()); await espera(400);
     await ajustes(w, doc=>{
@@ -189,7 +196,11 @@ async function abrirNovaRevisao(w, conteudo){
       doc.querySelector('#formAjustes [name="jaNaAgenda"][value="'+modo+'"]').checked=true;
     });
     await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
-    ok("["+modo+"] religando, a agenda volta ao cronograma normal", foto(w)===normal, [foto(w), normal]);
+    // revisões mantidas voltam como estavam; as apagadas renascem como no "zero"
+    const esperado=JSON.stringify(JSON.parse(["manter","continuar"].includes(modo) ? parte(normal,"R") : parte(zero,"R"))
+      .concat(JSON.parse(parte(zero,"C"))).sort());
+    ok("["+modo+"] religando, a agenda segue o cronograma, sem atrasado", foto(w)===esperado && pend(w).every(r=>r.data>=hoje),
+       [foto(w), esperado]);
   }
 
   /* ---- 4h. ligado, escolher o que o automático cria (pedido de 07/10) ---- */
@@ -229,7 +240,7 @@ async function abrirNovaRevisao(w, conteudo){
   w=abrir(db(w)); await espera(400);
   ok("e reabrir o app não cria a escada", autoDe(w,false).length===0);
   await ajustes(w, tipo("ambos"));
-  ok("voltando aos dois, segue o cronograma normal", foto(w)===normal, [foto(w), normal]);
+  ok("voltando aos dois, segue o cronograma", foto(w)===zero, [foto(w), zero]);
 
   w=abrir(base()); await espera(400);
   await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=false; });
@@ -246,6 +257,36 @@ async function abrirNovaRevisao(w, conteudo){
   ok("religando só os cards de continuar: eles voltam ao automático; as revisões continuam suas",
      autoDe(w,true).length===1 && pend(w).filter(r=>!r.retomada).every(r=>r.manual && r.doAutomatico),
      pend(w).map(r=>(r.retomada?"C":"R")+(r.manual?"M":"")));
+
+  /* ---- 4i. religar conta do último estudo (pedido de 07/10): o que já passou conta
+     como feito, sem marcar nada, e só nasce a próxima data por vir — nada de pilha ---- */
+  const velho=()=>base({diasRetomada:{1:4,2:4,3:4},
+    conteudos:[{id:"a1",disciplina:"Legislação",nome:"A",fase:"andamento"},
+               {id:"a2",disciplina:"Legislação",nome:"B",fase:"andamento"},
+               {id:"a3",disciplina:"Legislação",nome:"C",fase:"andamento"},
+               {id:"k1",disciplina:"Legislação",nome:"K",fase:"concluido",concluidoEm:dia(-20)},
+               {id:"k2",disciplina:"Legislação",nome:"Z",fase:"concluido",concluidoEm:dia(-900)}],
+    registros:[sess("s1","A",{data:dia(-11)}), sess("s2","B",{data:dia(-6)}), sess("s3","C",{data:dia(-1)}),
+               sess("s4","K",{data:dia(-20)}), sess("s5","Z",{data:dia(-900)})]});
+  w=abrir(velho()); await espera(400);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+    doc.querySelector('#formAjustes [name="jaNaAgenda"][value="apagar"]').checked=true; });
+  ok("desligado apagando, a agenda fica vazia", pend(w).length===0, pend(w).length);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+  ok("religando, nada nasce atrasado", pend(w).every(r=>r.data>=hoje), pend(w).map(r=>r.data));
+  const n=4, card=nome=>pend(w).find(r=>r.retomada && r.assuntos && r.assuntos[0]===nome);
+  ok("cada card de continuar segue o ritmo do último estudo dele (o que passou conta como feito)",
+     [["A",-11],["B",-6],["C",-1]].every(([c,u])=>{ const k=card(c); return k && (off(k.data)-u)%n===0 && off(k.data)-u>0 && off(k.data)-n<0; }),
+     [n].concat(["A","B","C"].map(c=>card(c)&&off(card(c).data))));
+  const revK=pend(w).filter(r=>!r.retomada && r.assuntos && r.assuntos[0]==="K").sort((a,b)=>a.data.localeCompare(b.data));
+  const fk=JSON.parse(JSON.stringify(db(w).conteudos.find(c=>c.nome==="K")));
+  ok("a escada do concluído segue do degrau que ainda está por vir, sem pilha hoje",
+     revK.length>0 && off(revK[0].data)>=0 && fk.ancoraEscada && off(fk.ancoraEscada.dia)<0,
+     [revK.map(r=>off(r.data)), fk.ancoraEscada]);
+  ok("escada que já passou inteira não renasce", !pend(w).some(r=>r.assuntos && r.assuntos[0]==="Z"));
+  const f1=foto(w);
+  w=abrir(db(w)); await espera(400);
+  ok("e reabrir o app não refaz nada do começo", foto(w)===f1, [foto(w), f1]);
 
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);
