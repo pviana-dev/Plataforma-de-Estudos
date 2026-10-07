@@ -288,6 +288,16 @@ async function abrirNovaRevisao(w, conteudo){
   w=abrir(db(w)); await espera(400);
   ok("e reabrir o app não refaz nada do começo", foto(w)===f1, [foto(w), f1]);
 
+  /* ---- 4j. religando, os cards de continuar respeitam o limite por dia (meta ÷ 30 min) ---- */
+  const nomes=["A","B","C","D","E","F"];
+  w=abrir(base({agendaAutomatica:false, metaDiariaMin:60, diasRetomada:{1:1,2:1,3:1},
+    conteudos:nomes.map(n=>({id:"x"+n,disciplina:"Legislação",nome:n,fase:"andamento"})),
+    registros:nomes.map((n,i)=>sess("q"+n,n,{data:dia(-5-i)}))})); await espera(400);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+  const porDia={}; pend(w).forEach(r=>{ porDia[off(r.data)]=(porDia[off(r.data)]||0)+1; });
+  ok("com meta de 60 min, no máximo 2 cards por dia, começando hoje", pend(w).length===6 &&
+     Object.values(porDia).every(n=>n<=2) && porDia[0]===2 && porDia[2]===2, porDia);
+
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);
   let f=await abrirNovaRevisao(w,"LGPD");

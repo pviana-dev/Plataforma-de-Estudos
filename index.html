@@ -1413,6 +1413,7 @@ const CONFIG = {
   VOLTA_MEDIO: 90,
   VOLTA_MAX_ESCOLHA: 30,                // nos ajustes: de 1 a 30 dias
   RETORNO_POR_DIA: 3,                   // depois da prova: primeiras revisões por dia, no máximo
+  MINUTOS_POR_ITEM: 30,                 // religando: a meta diária ÷ isto = itens por dia (espalharCardsAoReligar)
   AVISO_ABERTO_DIAS: 14,                // depois disso, o card sugere fechar o conteúdo
   ASSUNTOS_VISIVEIS: 4,                 // blocos abertos na visão por assunto antes do "+"
   AGENDA_VISIVEL: 12,                   // itens abertos na visão por dia antes do "+"
@@ -8774,6 +8775,34 @@ function replanejarTudo(){
 function replanejarAoReligar(){
   contarDoUltimoEstudo = true;
   try { replanejarTudo(); } finally { contarDoUltimoEstudo = false; }
+  espalharCardsAoReligar();
+}
+/* O LIMITE POR DIA AO RELIGAR (pedido do Pedro, 07/10). Mesmo contando do último
+   estudo, os cards de continuar caem perto (difícil volta a cada 1 dia, médio a
+   cada 2): religar com muitos conteúdos abertos enchia hoje e amanhã. Cabe por
+   dia a meta diária ÷ CONFIG.MINUTOS_POR_ITEM itens, contando tudo o que está no
+   dia; o que passa disso vai para o dia seguinte com vaga. Só os cards de
+   continuar automáticos andam — as revisões já se espalham pela escada e o que
+   você marcou fica onde está. Os mais difíceis ficam primeiro. */
+function espalharCardsAoReligar(){
+  const hoje = D.hoje(), fim = ultimoDiaRevisao();
+  const cabe = Math.max(1, Math.round((db.metaDiariaMin || CONFIG.META_DIARIA_MIN) / CONFIG.MINUTOS_POR_ITEM));
+  const anda = r => ehRetomada(r) && !r.manual;
+  const peso = r => Math.max(0, ...fichasDaRevisao(r).map(dificuldadeDaFicha));
+  const porDia = new Map();
+  const por = (d, r) => { if (!porDia.has(d)) porDia.set(d, []); porDia.get(d).push(r); };
+  db.revisoes.forEach(r => { if (!r.feita && r.data >= hoje) por(r.data, r); });
+  const ultimo = () => [...porDia.keys()].sort().pop() || hoje;
+  for (let dia = hoje; dia <= ultimo(); dia = D.soma(dia, 1)){
+    const lista = porDia.get(dia) || [];
+    if (lista.length <= cabe) continue;
+    const fixos = lista.filter(r => !anda(r)), moveis = lista.filter(anda).sort((a,b) => peso(b) - peso(a));
+    const sobra = moveis.slice(Math.max(0, cabe - fixos.length));
+    const prox = foraDaProva(D.soma(dia, 1));
+    if (!sobra.length || prox > fim) continue;
+    sobra.forEach(r => { r.data = prox; por(prox, r); });
+    porDia.set(dia, lista.filter(r => !sobra.includes(r)));
+  }
 }
 /** `dia` + `passo`; religando, o que cai antes de hoje conta como feito e anda mais um passo */
 function pularPassadas(dia, passo){
@@ -9621,7 +9650,8 @@ function modalAjuda(){
         'As já feitas ficam sempre no histórico.</p>' +
       '<p>Quer um meio-termo? Com a caixa marcada, escolha em <b>O que criar</b>: só as <b>revisões</b> (o sistema cuida da ' +
         'repetição espaçada e você marca quando continuar), só os <b>cards de continuar</b> (o contrário) ou os dois. ' +
-        'Voltando a criar um tipo, ele segue o cronograma normal.</p>' +
+        'Voltando a criar um tipo, cada conteúdo conta do <b>próprio último estudo</b>: o que já passou conta como feito ' +
+        '(sem marcar nada) e entra só a próxima data, com no máximo a sua meta diária ÷ 30 min de cards de continuar por dia.</p>' +
       '<p>Para marcar rápido, o <b>+ Adicionar revisão</b> (aba ' + aba("Agenda") + ') aceita <b>várias datas de uma vez</b>: ' +
         'uma data só? Basta a caixa. Várias? Abra <b>Mais de uma data</b> e adicione uma a uma, gere "a cada N dias, K vezes" ou ' +
         'use o <b>Espaçado</b> (1, 3, 7, 16 e 35 dias). Cada data vira um card, todos com o mesmo conteúdo.</p>'],
