@@ -177,6 +177,21 @@ async function abrirNovaRevisao(w, conteudo){
     ok("["+modo+"] a marcada à mão e a feita ficam", pend(w).some(r=>r.id==="mm") && db(w).revisoes.some(r=>r.id==="ff"));
   }
 
+  /* ---- 4g. religar, venha de qual opção vier, segue o cronograma normal: a agenda
+     fica igual à de quem nunca desligou (pedido de 07/10) ---- */
+  const foto=w=>JSON.stringify(pend(w).map(r=>(r.retomada?"C":"R")+":"+r.data+(r.manual?"M":"")).sort());
+  w=abrir(base()); await espera(400);
+  const normal=foto(w);
+  for (const modo of ["manter","apagar","revisoes","continuar","tudo"]){
+    w=abrir(base()); await espera(400);
+    await ajustes(w, doc=>{
+      doc.querySelector('#formAjustes [name="automatico"]').checked=false;
+      doc.querySelector('#formAjustes [name="jaNaAgenda"][value="'+modo+'"]').checked=true;
+    });
+    await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=true; });
+    ok("["+modo+"] religando, a agenda volta ao cronograma normal", foto(w)===normal, [foto(w), normal]);
+  }
+
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);
   let f=await abrirNovaRevisao(w,"LGPD");
