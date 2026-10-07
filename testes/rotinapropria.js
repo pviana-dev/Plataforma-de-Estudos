@@ -192,6 +192,61 @@ async function abrirNovaRevisao(w, conteudo){
     ok("["+modo+"] religando, a agenda volta ao cronograma normal", foto(w)===normal, [foto(w), normal]);
   }
 
+  /* ---- 4h. ligado, escolher o que o automático cria (pedido de 07/10) ---- */
+  const tipo=(v,sai)=>doc=>{
+    doc.querySelector('#formAjustes [name="automatico"]').checked=true;
+    doc.querySelector('#formAjustes [name="tiposAuto"][value="'+v+'"]').checked=true;
+    if(sai) doc.querySelector('#formAjustes [name="tipoSai"][value="'+sai+'"]').checked=true;
+  };
+  const autoDe=(w,ret)=>pend(w).filter(r=>!!r.retomada===ret && !r.manual);
+  w=abrir(base()); await espera(400);
+  click(w, w.document.getElementById("btnAjustes")); await espera(250);
+  ok("ligado, aparece 'O que criar' com os dois marcados",
+     w.document.querySelector("#painelTipos").classList.contains("aberto") &&
+     w.document.querySelector('#formAjustes [name="tiposAuto"][value="ambos"]').checked);
+  const rSo=w.document.querySelector('#formAjustes [name="tiposAuto"][value="revisoes"]');
+  rSo.checked=true; rSo.dispatchEvent(new w.Event("change",{bubbles:true}));
+  ok("tirando os cards de continuar, pergunta o que fazer com os que já estão na agenda",
+     w.document.querySelector("#painelTipoSai").classList.contains("aberto") &&
+     /cards de continuar/.test(w.document.querySelector("#rotuloTipoSai").textContent));
+  w.document.querySelector("#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
+  ok("só revisões (manter): fica gravado", db(w).automaticoTipos==="revisoes" && db(w).agendaAutomatica!==false);
+  ok("o card de continuar vira seu, guardando a origem; as revisões seguem automáticas",
+     pend(w).filter(r=>r.retomada).every(r=>r.manual && r.doAutomatico) && autoDe(w,false).length>1,
+     pend(w).map(r=>(r.retomada?"C":"R")+(r.manual?"M":"")));
+  ok("a Agenda avisa que só as revisões são automáticas", /cria\s*só as revisões/.test(w.document.querySelector("#view").textContent));
+
+  w=abrir(base()); await espera(400);
+  await ajustes(w, tipo("revisoes","apagar"));
+  ok("só revisões (apagar): o card de continuar automático sai", !pend(w).some(r=>r.retomada), pend(w).map(r=>r.retomada?"C":"R"));
+  w=abrir(db(w)); await espera(400);
+  ok("e reabrir o app não cria card de continuar", !pend(w).some(r=>r.retomada) && autoDe(w,false).length>1);
+
+  w=abrir(base()); await espera(400);
+  await ajustes(w, tipo("continuar","apagar"));
+  ok("só cards de continuar (apagar): as revisões automáticas saem, o card fica automático",
+     autoDe(w,false).length===0 && autoDe(w,true).length===1, pend(w).map(r=>(r.retomada?"C":"R")+(r.manual?"M":"")));
+  w=abrir(db(w)); await espera(400);
+  ok("e reabrir o app não cria a escada", autoDe(w,false).length===0);
+  await ajustes(w, tipo("ambos"));
+  ok("voltando aos dois, segue o cronograma normal", foto(w)===normal, [foto(w), normal]);
+
+  w=abrir(base()); await espera(400);
+  await ajustes(w, doc=>{ doc.querySelector('#formAjustes [name="automatico"]').checked=false; });
+  click(w, w.document.getElementById("btnAjustes")); await espera(250);
+  const cx=w.document.querySelector('#formAjustes [name="automatico"]');
+  ok("desligado, 'O que criar' fica escondido", !w.document.querySelector("#painelTipos").classList.contains("aberto"));
+  cx.checked=true; cx.dispatchEvent(new w.Event("change",{bubbles:true}));
+  const cSo=w.document.querySelector('#formAjustes [name="tiposAuto"][value="continuar"]');
+  cSo.checked=true; cSo.dispatchEvent(new w.Event("change",{bubbles:true}));
+  ok("religando, aparece, e não pergunta do que sai (nada estava valendo)",
+     w.document.querySelector("#painelTipos").classList.contains("aberto") &&
+     !w.document.querySelector("#painelTipoSai").classList.contains("aberto"));
+  w.document.querySelector("#formAjustes").dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true})); await espera(350);
+  ok("religando só os cards de continuar: eles voltam ao automático; as revisões continuam suas",
+     autoDe(w,true).length===1 && pend(w).filter(r=>!r.retomada).every(r=>r.manual && r.doAutomatico),
+     pend(w).map(r=>(r.retomada?"C":"R")+(r.manual?"M":"")));
+
   /* ---- 5. várias datas de uma vez ---- */
   w=abrir(base({agendaAutomatica:false})); await espera(400);
   let f=await abrirNovaRevisao(w,"LGPD");

@@ -2080,12 +2080,24 @@ const provaFutura = () => !!ultimaProva() && ultimaProva() > D.hoje();
     prova, a pergunta "e depois?" não segura nada (decisão do Pedro, 23/09). */
 const agendaAutomatica = () => db.agendaAutomatica !== false;
 const agendamentoAtivo = () => db.posProva !== "encerrei" && agendaAutomatica();
+/* O QUE O AUTOMÁTICO CRIA (pedido do Pedro, 07/10): as revisões (escada do
+   concluído), os cards de continuar (em andamento) ou os dois. `automaticoTipos`
+   ausente = os dois. O tipo que fica de fora se comporta como o automático
+   desligado: não nasce, não anda, não é refeito — só o que você marcar. */
+const TIPOS_AUTO = ["revisoes", "continuar"];
+const tiposDaEscolha = t => t === "revisoes" || t === "continuar" ? [t] : TIPOS_AUTO.slice();
+const tiposAutomaticos = () => tiposDaEscolha(db.automaticoTipos);
+const tipoDoItem = r => ehRetomada(r) ? "continuar" : "revisoes";
+const fraseTiposAuto = () => ({ revisoes: "só as revisões", continuar: "só os cards de continuar" })[db.automaticoTipos]
+                             || "as revisões e os cards de continuar";
+const autoRevisoes = () => agendamentoAtivo() && tiposAutomaticos().includes("revisoes");
+const autoContinuar = () => agendamentoAtivo() && tiposAutomaticos().includes("continuar");
 /* A MESMA CHAVE, NUM CONTEÚDO SÓ (pedido do Pedro, 03/10). Conteúdo concluído pode
    ter as revisões automáticas desligadas na janela "✎ editar": a escada dele não
    nasce, não é empurrada e não é refeita — fica só o que você marcar. É a exceção
    escolhida à garantia de revisão. Vale só para concluído (o em andamento sempre
    tem o card de continuar) e reabrir o conteúdo religa (marcarConteudos). */
-const escadaAtiva = f => agendamentoAtivo() && !(f && f.semAutomaticas);
+const escadaAtiva = f => autoRevisoes() && !(f && f.semAutomaticas);
 /* RELIGAR A PARTIR DE UM DIA (pedido do Pedro, 05/10). Ao religar as automáticas
    de um conteúdo, a pessoa diz a partir de quando a escada volta: nenhuma revisão
    automática dele nasce antes desse dia. A escada volta do degrau em que parou.
@@ -2457,7 +2469,7 @@ function remanejarItem(rev, nova){
                : fichasDaRevisao(rev).filter(f => f.fase === "concluido" && !f.semAutomaticas);
   fichas.forEach(f => fixarPassos(f));
   rev.data = nova;
-  if (!agendamentoAtivo() || nova <= antiga) return;
+  if (!autoRevisoes() || nova <= antiga) return;
   fichas.forEach(f => {
     let ant = nova;
     itensDaFicha(f).filter(r => !r.feita && r.id !== rev.id && !r.planoProva && r.data >= antiga).sort(porData).forEach(r => {
@@ -2593,7 +2605,7 @@ function gerarRevisoes(reg, opcoes){
      concluído não abre uma segunda fila: é contato, e contato empurra a escada
      que já existe (reancorarEscada). */
   conteudosDoAlvo(reg).filter(c => c.fase === "concluido").forEach(continuarEscada);
-  if (!conteudoAberto(reg)) return;
+  if (!conteudoAberto(reg) || !autoContinuar()) return;        // cards de continuar fora do automático
 
   const base = (opcoes && opcoes.base) || reg.data;
   // revisões feitas e as criadas/editadas à mão nunca são reescritas pelo replanejamento
@@ -2952,7 +2964,7 @@ function juntarIrmas(){
    nasce do último contato. É o par de garantirRetomadas, que cuida dos
    conteúdos abertos. */
 function garantirEscadas(){
-  if (!agendamentoAtivo()) return 0;
+  if (!autoRevisoes()) return 0;
   let n = 0;
   conteudosCad().forEach(c => {
     // passada a prova, o modo "eu escolho" acaba sozinho: volta o automático
@@ -5606,6 +5618,10 @@ function telaRevisoes(){
   if (!agendaAutomatica())
     h += '<p class="sub" style="margin:-6px 0 14px">Agendamento automático <b>desligado</b>: a agenda é a sua rotina. ' +
          'No <b>+ Adicionar revisão</b> dá para marcar várias datas de uma vez. Para religar, use a <b>engrenagem</b> no topo.</p>';
+  else if (tiposAutomaticos().length === 1)
+    h += '<p class="sub" style="margin:-6px 0 14px">O agendamento automático cria <b>' + fraseTiposAuto() + '</b>: ' +
+         (db.automaticoTipos === "revisoes" ? 'os cards de continuar' : 'as revisões') +
+         ' são os que você marca. Para mudar, use a <b>engrenagem</b> no topo.</p>';
 
   /* O que é para hoje vem logo depois, igual à aba Hoje: quem abre esta aba
      quer saber o que fazer agora. O card é FIXO — não obedece aos filtros de
@@ -8156,7 +8172,7 @@ function janelaConcluir(fichas, o){
   return new Promise(resolve => {
     const caixa = $("#dialogo"), corpo = $("#dialogoCorpo");
     const foco = document.activeElement;
-    const ativo = agendamentoAtivo(), varios = fichas.length > 1;
+    const ativo = autoRevisoes(), varios = fichas.length > 1;
     const inicial = c => escadaValida(c.escada) ? c.escada.slice() : passosSugeridos(c);
     // o conjunto começa pelo cronograma que todos já têm; diferentes, pela sugestão do mais difícil
     const maisDificil = fichas.slice().sort((a, b) => dificuldadeDaFicha(b) - dificuldadeDaFicha(a))[0];
@@ -8251,7 +8267,7 @@ function janelaConcluir(fichas, o){
 }
 /** a frase do toast depois de concluir: o que a agenda ganhou */
 function fraseDaConclusao(fichas){
-  if (!agendamentoAtivo()) return "";
+  if (!autoRevisoes()) return "";
   const sem = fichas.filter(c => c.semAutomaticas).length;
   if (sem === fichas.length) return " — sem revisões automáticas";
   const prox = fichas.filter(c => !c.semAutomaticas)
@@ -8273,8 +8289,10 @@ function htmlJanelaConteudo(ficha){
   if (!concluido)
     return h + '<p class="sub nota-conteudo">Revisões automáticas e revisões até a prova ficam disponíveis quando o ' +
       'conteúdo for <b>concluído</b>. Enquanto isso, a agenda chama para continuar.</p>';
-  if (!agendamentoAtivo())
-    return h + '<p class="sub nota-conteudo">O agendamento automático está desligado para todos os conteúdos (engrenagem no topo).</p>';
+  if (!autoRevisoes())
+    return h + '<p class="sub nota-conteudo">' + (agendamentoAtivo()
+      ? 'O agendamento automático está criando só os cards de continuar — as revisões são as que você marca (engrenagem no topo).'
+      : 'O agendamento automático está desligado para todos os conteúdos (engrenagem no topo).') + '</p>';
   const ligado = !ficha.semAutomaticas;
   h += '<div class="campos uma-coluna">' + campoOpcoes("Revisões", [{ nome: "autoConteudo", marcado: ligado,
          texto: "Criar revisões automáticas para este conteúdo" }]);
@@ -8526,7 +8544,7 @@ function marcarVolta(reg, conteudos, base){
 }
 
 function garantirRetomadas(){
-  if (!agendamentoAtivo()) return 0;
+  if (!autoContinuar()) return 0;
   let criadas = 0;
   /* Da mais RECENTE para a mais antiga: a sessão nova tem o contexto mais
      fresco, então é ela que fica com a volta dos conteúdos que ainda estão
@@ -8645,7 +8663,7 @@ function juntarConteudos(fichas, nome){
     const base = { id: uid(), assuntos: [nome], data: proxima, feita: false, feitaEm: null, minutos: null,
                    questoes: null, acertos: null, dificuldade: null, atividade: "", nota: "", manual: false };
     if (aberto){
-      const dono = sessoesDaFicha(nova).find(agendaVolta);
+      const dono = autoContinuar() && sessoesDaFicha(nova).find(agendaVolta);
       if (dono) db.revisoes.push(Object.assign(base, { registroId: dono.id, ordem: 1, retomada: true }));
     } else if (escadaAtiva(nova)){
       const dono = donoDaEscada(nova);
@@ -8855,9 +8873,9 @@ function linhaConteudo(d, c){
           (c.juntadoEm ? ' em ' + D.br(D.iso(new Date(c.juntadoEm))) : '') + '</div>' : '') +
       (ligacoesAtivas() ? '<div class="meta dia-cont">Dia de prova: ' + seletorDiaConteudo(c) + '</div>' : '') +
       metaAteProva(c) +
-      (fechado && c.semAutomaticas && agendamentoAtivo()
+      (fechado && c.semAutomaticas && autoRevisoes()
         ? '<div class="meta sem-auto">revisões automáticas desligadas — só as que você marcar</div>' : '') +
-      (fechado && !c.semAutomaticas && inicioDasAutomaticas(c) && agendamentoAtivo()
+      (fechado && !c.semAutomaticas && inicioDasAutomaticas(c) && autoRevisoes()
         ? '<div class="meta sem-auto">revisões automáticas voltam em ' + D.br(c.automaticasDesde) + '</div>' : '') +
     '</div>' +
     '<div class="cont-acoes">' +
@@ -9285,20 +9303,25 @@ function modalObjetivo(){
    `modo`: "manter", "apagar" (só as automáticas pendentes) ou "tudo" (pedido do
    Pedro, 06/10: toda revisão pendente sai, automática ou sua — começar do zero).
    "revisoes" e "continuar" (pedido do Pedro, 07/10) apagam só um dos dois tipos
-   de automática; o outro fica, como no "Manter". */
-function desligarAgendaAutomatica(modo){
-  const automatica = r => !r.feita && (!r.manual || r.doAutomatico);
+   de automática; o outro fica, como no "Manter".
+   `tipo` (opcional): só mexe nos itens daquele tipo — é o que acontece quando
+   um dos dois sai do automático e o outro continua (ver tiposAutomaticos). */
+function desligarAgendaAutomatica(modo, tipo){
+  const doTipo = r => !tipo || tipoDoItem(r) === tipo;
+  const automatica = r => !r.feita && doTipo(r) && (!r.manual || r.doAutomatico);
   const sai = modo === "tudo" ? r => !r.feita
             : modo === "apagar" ? automatica
             : modo === "revisoes" ? r => automatica(r) && !ehRetomada(r)
             : modo === "continuar" ? r => automatica(r) && ehRetomada(r)
             : () => false;
   db.revisoes = db.revisoes.filter(r => !sai(r));
-  db.revisoes.forEach(r => { if (!r.feita && !r.manual){ r.manual = true; r.doAutomatico = true; } });
+  db.revisoes.forEach(r => { if (!r.feita && !r.manual && doTipo(r)){ r.manual = true; r.doAutomatico = true; } });
 }
-function religarAgendaAutomatica(){
+/* `tipos`: os que voltam ao automático (padrão: os dois) */
+function religarAgendaAutomatica(tipos){
+  const voltam = tipos || TIPOS_AUTO;
   db.revisoes.forEach(r => {
-    if (!r.doAutomatico) return;
+    if (!r.doAutomatico || !voltam.includes(tipoDoItem(r))) return;
     if (!r.feita) r.manual = false;
     delete r.doAutomatico;
   });
@@ -9350,9 +9373,24 @@ function modalAjustes(){
       /* Agendamento logo abaixo da data da prova (pedido do Pedro, 02/10): é
          importante demais para ficar no fim da tela */
       campoOpcoes("Agendamento", [{ nome:"automatico", marcado: agendaAutomatica(),
-        texto:"Criar os agendamentos automaticamente (revisões e cards de continuar)" }]
+        texto:"Criar os agendamentos automaticamente" }]
         .concat(db.posProva === "encerrei" ? [{ nome:"religar", marcado:false,
         texto:"Voltar a agendar revisões (está desligado desde a prova)" }] : [])) +
+      /* Ligado: o que ele cria (pedido do Pedro, 07/10). Tirando um tipo que
+         estava valendo, a mesma pergunta do desligar, só sobre ele. */
+      '<div class="campo largo painel-questao' + (agendaAutomatica() ? ' aberto' : '') + '" id="painelTipos"><div class="interno">' +
+        '<span>O que criar</span><div class="opcoes">' +
+        [["ambos", "Revisões e cards de continuar"], ["revisoes", "Só as revisões (conteúdo concluído)"],
+         ["continuar", "Só os cards de continuar (conteúdo em andamento)"]].map(([v, t]) =>
+          '<label class="opcao"><input type="radio" name="tiposAuto" value="' + v + '"' +
+          ((db.automaticoTipos || "ambos") === v ? ' checked' : '') + '><span>' + t + '</span></label>').join("") +
+        '</div>' +
+        '<div class="campo largo painel-questao" id="painelTipoSai"><div class="interno">' +
+          '<span id="rotuloTipoSai">O que já está na agenda</span><div class="opcoes">' +
+          '<label class="opcao"><input type="radio" name="tipoSai" value="manter" checked><span id="tipoSaiManter"></span></label>' +
+          '<label class="opcao"><input type="radio" name="tipoSai" value="apagar"><span id="tipoSaiApagar"></span></label>' +
+        '</div></div></div>' +
+      '</div></div>' +
       /* Desligando: o que já está na agenda. Manter é o padrão — nada some sem
          você pedir; o que era automático passa a ser seu e não é mais mexido. */
       (agendaAutomatica()
@@ -9547,6 +9585,9 @@ function modalAjuda(){
         'a agenda passa a ser só o que você marca, e o sistema não cria nem move nada. Dá para manter o que ele já tinha ' +
         'marcado, apagar só isso (tudo, só as revisões ou só os cards de continuar) ou apagar todas as revisões agendadas (as suas também) e começar do zero. ' +
         'As já feitas ficam sempre no histórico.</p>' +
+      '<p>Quer um meio-termo? Com a caixa marcada, escolha em <b>O que criar</b>: só as <b>revisões</b> (o sistema cuida da ' +
+        'repetição espaçada e você marca quando continuar), só os <b>cards de continuar</b> (o contrário) ou os dois. ' +
+        'Voltando a criar um tipo, ele segue o cronograma normal.</p>' +
       '<p>Para marcar rápido, o <b>+ Adicionar revisão</b> (aba ' + aba("Agenda") + ') aceita <b>várias datas de uma vez</b>: ' +
         'uma data só? Basta a caixa. Várias? Abra <b>Mais de uma data</b> e adicione uma a uma, gere "a cada N dias, K vezes" ou ' +
         'use o <b>Espaçado</b> (1, 3, 7, 16 e 35 dias). Cada data vira um card, todos com o mesmo conteúdo.</p>'],
@@ -9555,7 +9596,8 @@ function modalAjuda(){
         '<div class="aj-item"><dt>Objetivo</dt><dd>Estudo contínuo, concurso (uma prova) ou vestibular (vários dias de prova, quantos ' +
           'forem). Sem data, a prova fica “data a definir” e a agenda segue sem prazo até ela entrar. Com dois dias de prova ou ' +
           'mais, dá para ligar disciplinas e conteúdos a um dia, na aba Disciplinas — é opcional.</dd></div>' +
-        '<div class="aj-item"><dt>Agendamento</dt><dd>Ligar ou desligar a criação automática de revisões e cards de continuar.</dd></div>' +
+        '<div class="aj-item"><dt>Agendamento</dt><dd>Ligar ou desligar a criação automática e escolher o que ela cria: ' +
+          'revisões, cards de continuar ou os dois. O que fica de fora é só o que você marcar.</dd></div>' +
         '<div class="aj-item"><dt>Meta diária</dt><dd>Os minutos por dia que contam para a meta e para a sequência de dias.</dd></div>' +
         '<div class="aj-item"><dt>Revisar até</dt><dd>O teto do cronograma: o sistema agenda até esse dia e não passa dele. ' +
           'Em branco, ele anda ' + CONFIG.HORIZONTE_LIVRE + ' dias à frente de hoje.</dd></div>' +
@@ -9632,6 +9674,26 @@ function ligarAjustes(){
       });
       const auto = document.querySelector('#formAjustes [name="automatico"]'), painel = $("#painelAutomatico");
       if (auto && painel) auto.addEventListener("change", () => painel.classList.toggle("aberto", !auto.checked));
+      /* O que criar: aparece com a chave ligada. Tirar um tipo que estava valendo
+         abre a pergunta sobre o que dele já está na agenda. */
+      const atualizarTipos = () => {
+        const tipos = $("#painelTipos"), sai = $("#painelTipoSai");
+        if (!auto || !tipos) return;
+        tipos.classList.toggle("aberto", auto.checked);
+        const marcado = document.querySelector('#formAjustes [name="tiposAuto"]:checked');
+        const novos = tiposDaEscolha(marcado && marcado.value);
+        const tirado = agendaAutomatica() && auto.checked ? tiposAutomaticos().find(t => !novos.includes(t)) : null;
+        sai.classList.toggle("aberto", !!tirado);
+        if (!tirado) return;
+        const rev = tirado === "revisoes";
+        $("#rotuloTipoSai").textContent = rev ? "As revisões automáticas que já estão na agenda"
+                                              : "Os cards de continuar automáticos que já estão na agenda";
+        $("#tipoSaiManter").textContent = rev ? "Manter — passam a ser suas" : "Manter — passam a ser seus";
+        $("#tipoSaiApagar").textContent = rev ? "Apagar as pendentes" : "Apagar os pendentes";
+      };
+      if (auto) auto.addEventListener("change", atualizarTipos);
+      document.querySelectorAll('#formAjustes [name="tiposAuto"]').forEach(el => el.addEventListener("change", atualizarTipos));
+      atualizarTipos();
       $("#formAjustes").addEventListener("submit", async ev => {   // async: a confirmação do "apagar todas"
         ev.preventDefault();
         const d = Object.fromEntries(new FormData(ev.target).entries());
@@ -9650,7 +9712,7 @@ function ligarAjustes(){
            inteira contando de hoje — mudar a meta diária remarcava os cards de
            continuar e sumia com os atrasados. */
         const datasAntes = JSON.stringify([db.revisarAte || "", db.estudoAte || "", db.diasRetomada || {},
-                                           agendaAutomatica(), db.posProva || ""]);
+                                           agendaAutomatica(), db.posProva || "", tiposAutomaticos()]);
         const mudouObjetivo = aplicarObjetivo(novo);
         db.revisarAte = d.revisarAte || "";                   // sem teto de um ano (saiu em 23/09)
         if (db.revisarAte && db.revisarAte <= D.hoje()) db.revisarAte = "";
@@ -9665,15 +9727,23 @@ function ligarAjustes(){
           if (v >= 1) db.diasRetomada[n] = Math.min(CONFIG.VOLTA_MAX_ESCOLHA, v);
         });
         const automaticoAntes = agendaAutomatica(), automatico = !!d.automatico;
+        const tiposAntes = automaticoAntes ? tiposAutomaticos() : [];
         if (automaticoAntes && !automatico) desligarAgendaAutomatica(d.jaNaAgenda || "manter");
-        if (!automaticoAntes && automatico) religarAgendaAutomatica();
+        if (automatico){
+          // o tipo que sai fica (vira seu) ou é apagado; o que entra volta ao automático
+          const novos = tiposDaEscolha(d.tiposAuto);
+          tiposAntes.filter(t => !novos.includes(t)).forEach(t => desligarAgendaAutomatica(d.tipoSai === "apagar" ? t : "manter", t));
+          religarAgendaAutomatica(novos.filter(t => !tiposAntes.includes(t)));
+          if (novos.length === 1) db.automaticoTipos = novos[0]; else delete db.automaticoTipos;
+        }
         db.agendaAutomatica = automatico;
         const mudouDatas = mudouObjetivo || datasAntes !== JSON.stringify([db.revisarAte || "", db.estudoAte || "",
-                             db.diasRetomada || {}, agendaAutomatica(), db.posProva || ""]);
+                             db.diasRetomada || {}, agendaAutomatica(), db.posProva || "", tiposAutomaticos()]);
         if (mudouDatas) replanejarTudo();
         persistir(); fecharModal(); render();
         toast(automaticoAntes && !automatico ? "Agendamento automático desligado — a agenda é a sua rotina."
-             : !automaticoAntes && automatico ? "Agendamento automático ligado — cronograma refeito."
+             : !automaticoAntes && automatico ? "Agendamento automático ligado (" + fraseTiposAuto() + ") — cronograma refeito."
+             : automatico && tiposAntes.join() !== tiposAutomaticos().join() ? "O agendamento automático agora cria " + fraseTiposAuto() + "."
              : d.religar ? "Agendamento religado — cronograma refeito."
              : db.revisarAte && db.revisarAte !== tetoAntes ? "Revisões agendadas até " + D.brFull(db.revisarAte) + "."
              : mudouObjetivo ? fraseObjetivo()
@@ -11013,7 +11083,7 @@ document.addEventListener("click", async ev => {   // async: as confirmações d
          na hora evita a impressão de que o botão não funcionou. */
       if (await confirmar({ titulo: "Excluir", botao: "Excluir", perigo: true,
                   texto: "Excluir " + tx.esta + "? A sessão de estudo " + tx.ligada + ", se houver, continua como está." +
-                  (ehRetomada(rv) ? "\n\nO conteúdo continua em andamento, então um novo card de continuar é marcado no lugar." : "") })){
+                  (ehRetomada(rv) && autoContinuar() ? "\n\nO conteúdo continua em andamento, então um novo card de continuar é marcado no lugar." : "") })){
         if (rv) esquecerRevisaoNaSessao(sessaoDaRevisao(rv), rv.id);   // a sessão sobrevive, só perde o vínculo
         db.revisoes = db.revisoes.filter(r => r.id !== id);
         garantirAgenda();                        // conteúdo aberto não fica sem próxima volta
