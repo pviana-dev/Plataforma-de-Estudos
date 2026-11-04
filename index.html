@@ -701,28 +701,36 @@ html[data-tema="escuro"] .aviso{background:#3a2e26;border-color:#5a4632;color:#e
 /* A TELA DE ACESSO (login). Cobre o app inteiro — o app nem é desenhado por
    baixo (render sai cedo; ver portaoFechado). Um cartão só, no alto, com a marca. */
 .acesso{position:fixed;inset:0;z-index:70;background:var(--bg);overflow-y:auto;display:flex;
-  justify-content:center;align-items:flex-start;padding:9vh 16px 40px}
+  justify-content:center;align-items:flex-start;padding:6vh 16px 32px}
 .acesso[hidden]{display:none}
 body.sem-acesso .wrap{display:none}
 .acesso-caixa{width:100%;max-width:400px}
-.acesso-marca{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:20px}
+.acesso-marca{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:16px}
 .acesso-marca h1{font-size:23px;font-weight:650;letter-spacing:-.5px}
 .acesso-marca h1 span{font-weight:400;color:var(--muted)}
-.acesso .card{padding:22px 20px 18px}
+.acesso .card{padding:20px 20px 16px}
 .acesso .card > h2{font-size:17px;margin-bottom:6px}
-.acesso .campos{grid-template-columns:1fr;margin-top:12px}
+.acesso .campos{grid-template-columns:1fr;gap:10px;margin-top:10px}
 .acesso .campo input{font-size:15px;padding:10px 12px}
-.acesso .btn-largo{width:100%;justify-content:center;margin-top:14px;padding:11px}
-.acesso .mostrar{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);margin-top:9px;cursor:pointer}
+.acesso .btn-largo{width:100%;justify-content:center;margin-top:4px;padding:11px}
+.acesso .mostrar{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);margin-top:-2px;cursor:pointer}
 .acesso .mostrar input{accent-color:var(--accent)}
-.acesso .erro-form{display:block;margin-top:10px;min-height:1em}
-.acesso .aviso-ok{display:block;margin-top:10px;font-size:12.5px;color:var(--bom-ink)}
-.acesso-links{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:18px}
+.acesso .erro-form{display:block;margin-top:-2px}
+.acesso .erro-form:empty{display:none}   /* sem erro, não reserva espaço */
+.acesso .aviso-ok{display:block;margin-top:-2px;font-size:12.5px;color:var(--bom-ink)}
+.acesso-links{display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:14px}
+.acesso-links:empty{display:none}
 .acesso-links button{color:var(--accent-ink);font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
 .acesso-links button:hover{color:var(--text)}
 .acesso .regra{font-size:12px;color:var(--muted);margin-top:4px}
 /* o convite para quem ainda não tem conta, no cartão de Entrar */
-.acesso-novo{margin-top:18px;padding-top:16px;border-top:1px solid var(--grade);text-align:center}
+.acesso-novo{margin-top:16px;padding-top:14px;border-top:1px solid var(--grade);text-align:center}
+/* no Entrar: "mostrar a senha" e "Esqueci minha senha" na mesma linha, logo abaixo da senha */
+.acesso-linha{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:-2px}
+.acesso-linha .mostrar{margin-top:0}
+.acesso-linha button,.acesso-novo .link-apr{color:var(--accent-ink);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.acesso-linha button:hover,.acesso-novo .link-apr:hover{color:var(--text)}
+.acesso-novo .link-apr{display:inline-block;margin-top:10px}
 .acesso-novo p{margin:0 0 9px;font-size:12.5px;color:var(--muted)}
 .acesso .acesso-novo .btn-largo{margin-top:0}
 /* A APRESENTAÇÃO (pedido do Pedro, 04/11): o primeiro contato de quem nunca usou
@@ -10411,12 +10419,14 @@ function htmlAcesso(){
   if (a.etapa === "entrar"){
     titulo = "Entrar";
     corpo = campoEmail +
-      campo("Senha", '<input type="password" name="senha" autocomplete="current-password" required>', true) + mostrar;
+      campo("Senha", '<input type="password" name="senha" autocomplete="current-password" required>', true) +
+      '<div class="acesso-linha">' + mostrar + link("esqueci", "Esqueci minha senha") + '</div>';
     corpo += rodape("Entrar");
-    links = link("esqueci", "Esqueci minha senha") + link("apresentacao", "Conhecer a plataforma");
-    /* o cadastro: o "primeiro acesso" é o mesmo caminho (código no e-mail + criar a senha) */
-    links += '</div><div class="acesso-novo"><p>Primeiro acesso? Ainda não tem conta?</p>' +
-      '<button type="button" class="btn ghost btn-largo" data-acesso="primeiro">Criar minha conta</button>';
+    /* o cadastro: o "primeiro acesso" é o mesmo caminho (código no e-mail + criar a senha).
+       Logo abaixo, o caminho de volta para a apresentação (a prévia do sistema). */
+    links = '</div><div class="acesso-novo"><p>Primeiro acesso? Ainda não tem conta?</p>' +
+      '<button type="button" class="btn ghost btn-largo" data-acesso="primeiro">Criar minha conta</button>' +
+      '<button type="button" class="link-apr" data-acesso="apresentacao">Ver como a plataforma funciona →</button>';
   } else if (a.etapa === "primeiro" || a.etapa === "esqueci"){
     const primeiro = a.etapa === "primeiro";
     titulo = primeiro ? "Criar a sua conta" : "Redefinir a senha";
