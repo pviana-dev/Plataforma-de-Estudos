@@ -20,7 +20,7 @@ function abrir(srv, sessao, fetchQuebrado){
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"https://t.local/",pretendToBeVisual:true,
     beforeParse(w){ w.localStorage.setItem("plataforma-estudos:v1",JSON.stringify(dados));
       if (sessao) w.localStorage.setItem("plataforma-estudos:sessao",JSON.stringify(sessao));
-      w.fetch=fetchQuebrado ? (async()=>{ throw new TypeError("Load failed"); }) : srv.fetch; w.__confirmarNativo=true; w.confirm=()=>true; }});
+      w.__semApresentacao=true; w.fetch=fetchQuebrado ? (async()=>{ throw new TypeError("Load failed"); }) : srv.fetch; w.__confirmarNativo=true; w.confirm=()=>true; }});
   const w=dom.window, doc=w.document;
   const $=s=>doc.querySelector(s);
   return { w, doc, $,

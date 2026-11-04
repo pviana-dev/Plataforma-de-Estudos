@@ -1,6 +1,6 @@
-/* A APRESENTAÇÃO (pedido do Pedro, 04/11): o primeiro contato num aparelho novo
-   mostra uma visão geral do sistema com os botões de cadastrar e de entrar.
-   Escolhido um deles, da próxima vez a tela abre direto no Entrar. */
+/* A APRESENTAÇÃO (pedido do Pedro, 04/11): toda vez que o app abre sem ninguém
+   na conta, aparece antes uma visão geral do sistema com os botões de cadastrar
+   e de entrar. */
 const fs=require("fs"),{JSDOM}=require("jsdom");
 const servidorFalso=require("./_nuvemfalsa.cjs");
 const html=fs.readFileSync(__dirname + "/../index.html","utf8")
@@ -17,7 +17,7 @@ function abrir(srv, guardado){
 (async()=>{try{
   const srv=servidorFalso();
   let t=abrir(srv); await espera(400);
-  ok("aparelho novo: abre na apresentação, sem formulário", !t.tela().hidden && t.tela().classList.contains("apresentando") &&
+  ok("sem conta: abre na apresentação, sem formulário", !t.tela().hidden && t.tela().classList.contains("apresentando") &&
      !t.doc.getElementById("formAcesso") && !!t.tela().querySelector(".vis-previa"), t.texto().slice(0,100));
   ok("com o botão de cadastrar e o de entrar", !!t.tela().querySelector('[data-acesso="primeiro"]') &&
      !!t.tela().querySelector('[data-acesso="entrar"]') && /Criar minha conta/.test(t.texto()));
@@ -26,8 +26,6 @@ function abrir(srv, guardado){
   await t.clicar("primeiro");
   ok("Criar minha conta leva ao cadastro (e-mail → código)", !!t.doc.querySelector('#formAcesso[data-etapa="primeiro"] [name="email"]') &&
      /Criar a sua conta/.test(t.texto()) && !t.tela().classList.contains("apresentando"));
-  const vista=t.w.localStorage.getItem("plataforma-estudos:apresentacao-vista");
-  ok("fica marcado que a apresentação já foi vista", vista==="1", vista);
   await t.clicar("entrar");
   ok("no Entrar: o botão Criar minha conta e o link para rever a apresentação",
      !!t.doc.querySelector('#formAcesso[data-etapa="entrar"]') && !!t.tela().querySelector('.acesso-novo [data-acesso="primeiro"]') &&
@@ -35,11 +33,12 @@ function abrir(srv, guardado){
   await t.clicar("apresentacao");
   ok("Conhecer a plataforma traz a apresentação de volta", !!t.tela().querySelector(".vis-previa"));
 
-  t=abrir(srv,{"plataforma-estudos:apresentacao-vista":"1"}); await espera(400);
-  ok("já vista: abre direto no Entrar", !!t.doc.querySelector('#formAcesso[data-etapa="entrar"]'));
   t=abrir(srv,{"plataforma-estudos:v1":JSON.stringify({versao:1,registros:[],revisoes:[]})}); await espera(400);
-  ok("aparelho que já usou o app (saiu da conta): abre direto no Entrar", !!t.doc.querySelector('#formAcesso[data-etapa="entrar"]'));
+  ok("abrindo de novo (e num aparelho que já usou o app), a apresentação aparece outra vez",
+     !!t.tela().querySelector(".vis-previa") && !t.doc.getElementById("formAcesso"));
+  await t.clicar("entrar");
+  ok("e o Entrar está a um clique", !!t.doc.querySelector('#formAcesso[data-etapa="entrar"]'));
 }catch(e){ console.log("ERRO", e); falhas++; }
-console.log(falhas ? falhas+" FALHA(S)" : "apresentação: primeiro contato, cadastro e volta ao Entrar funcionando");
+console.log(falhas ? falhas+" FALHA(S)" : "apresentação: sempre na abertura, cadastro e Entrar funcionando");
 process.exit(falhas?1:0);
 })();

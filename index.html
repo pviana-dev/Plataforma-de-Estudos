@@ -733,8 +733,8 @@ body.sem-acesso .wrap{display:none}
 .acesso-novo .link-apr{display:inline-block;margin-top:10px}
 .acesso-novo p{margin:0 0 9px;font-size:12.5px;color:var(--muted)}
 .acesso .acesso-novo .btn-largo{margin-top:0}
-/* A APRESENTAÇÃO (pedido do Pedro, 04/11): o primeiro contato de quem nunca usou
-   o app neste aparelho. Uma prévia PARCIAL do sistema (a tela Hoje desenhada com
+/* A APRESENTAÇÃO (pedido do Pedro, 04/11): o que aparece toda vez que se abre
+   o app sem estar na conta. Uma prévia PARCIAL do sistema (a tela Hoje desenhada com
    dados de exemplo, que se apaga embaixo) e os botões de cadastrar e de entrar. */
 .acesso.apresentando{padding-top:5vh}
 .vis{width:100%;max-width:980px}
@@ -1974,13 +1974,6 @@ function carregar(){
   return { db: base, migrados, desintegrados: [] };
 }
 
-/* APARELHO NOVO: nada do app guardado aqui (sem dados, sem a apresentação já
-   vista). É lido ANTES de carregar/persistir — a própria abertura grava o db.
-   Decide se a tela de acesso começa pela apresentação (ver htmlApresentacao). */
-const CHAVE_APRESENTACAO = "plataforma-estudos:apresentacao-vista";
-const aparelhoNovo = (() => {
-  try { return !localStorage.getItem(CHAVE) && !localStorage.getItem(CHAVE_APRESENTACAO); } catch(e){ return false; }
-})();
 const inicio = carregar();
 let db = inicio.db;
 
@@ -10376,7 +10369,9 @@ function portaoFechado(){
   const s = lerSessao();
   return !s || s.senha === false;
 }
-const acesso = { etapa: aparelhoNovo ? "apresentacao" : "entrar", email: "", tipo: "", motivo: "", erro: "", aviso: "", ocupado: false };
+/* a tela de acesso SEMPRE abre pela apresentação (pedido do Pedro, 04/11);
+   window.__semApresentacao: só as suítes de teste antigas, para ir direto ao Entrar */
+const acesso = { etapa: window.__semApresentacao ? "entrar" : "apresentacao", email: "", tipo: "", motivo: "", erro: "", aviso: "", ocupado: false };
 let objetivoPendente = false;           // a pergunta do objetivo espera a pessoa entrar
 /** os erros do Supabase, em português de gente */
 function traduzirErroAcesso(e){
@@ -10465,9 +10460,9 @@ function htmlAcesso(){
 /* A APRESENTAÇÃO (pedido do Pedro, 04/11). Quem abre o app pela primeira vez
    neste aparelho vê antes uma visão geral: a tela Hoje desenhada com dados de
    EXEMPLO (não é a conta de ninguém; só desenho, sem clique), o que dá para
-   fazer e os botões de cadastrar e de entrar. Escolhido um dos dois, fica
-   marcado (CHAVE_APRESENTACAO) e da próxima vez abre direto no Entrar — onde o
-   link "Conhecer a plataforma" a traz de volta. */
+   fazer e os botões de cadastrar e de entrar. Aparece TODA VEZ que o app abre
+   sem ninguém na conta (pedido do Pedro, 04/11); no Entrar, o link "Ver como a
+   plataforma funciona" a traz de volta. */
 function htmlApresentacao(){
   const botoes = '<div class="vis-acoes">' +
     '<button type="button" class="btn" data-acesso="primeiro">Criar minha conta grátis</button>' +
@@ -10548,8 +10543,6 @@ function navegarAcesso(para){
   acesso.erro = ""; acesso.aviso = "";
   if (para === "sair"){ sairAgora(); return; }
   if (para === "reenviar"){ reenviarCodigo(); return; }
-  if (acesso.etapa === "apresentacao")                    // já viu: da próxima vez, direto no Entrar
-    try { localStorage.setItem(CHAVE_APRESENTACAO, "1"); } catch(e){}
   acesso.etapa = para;
   pintarAcesso();
 }
