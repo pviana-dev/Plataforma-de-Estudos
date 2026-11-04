@@ -723,7 +723,7 @@ body.sem-acesso .wrap{display:none}
 .acesso .regra{font-size:12px;color:var(--muted);margin-top:4px}
 /* o convite para quem ainda não tem conta, no cartão de Entrar */
 .acesso-novo{margin-top:18px;padding-top:16px;border-top:1px solid var(--grade);text-align:center}
-.acesso-novo p{margin:0 0 9px;font-size:13px;color:var(--muted)}
+.acesso-novo p{margin:0 0 9px;font-size:12.5px;color:var(--muted)}
 .acesso .acesso-novo .btn-largo{margin-top:0}
 /* A APRESENTAÇÃO (pedido do Pedro, 04/11): o primeiro contato de quem nunca usou
    o app neste aparelho. Uma prévia PARCIAL do sistema (a tela Hoje desenhada com
@@ -733,9 +733,9 @@ body.sem-acesso .wrap{display:none}
 .vis-topo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:34px;align-items:center}
 .vis-texto h2{font-size:31px;line-height:1.2;font-weight:680;letter-spacing:-.7px;margin:4px 0 12px}
 .vis-texto h2 em{font-style:normal;color:var(--accent-ink)}
-.vis-texto > p{font-size:15.5px;color:var(--text-2);margin:0 0 20px;max-width:440px}
+.vis-texto > p{font-size:15px;color:var(--text-2);margin:0 0 20px;max-width:440px}
 .vis-acoes{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.vis-acoes .btn{padding:11px 20px;font-size:14.5px}
+.vis-acoes .btn{padding:11px 20px}
 .vis-nota{font-size:12.5px;color:var(--muted);margin-top:12px}
 /* a janela de mentira com a tela Hoje */
 .vis-previa{position:relative;border:1px solid var(--border);border-radius:14px;background:var(--bg);
@@ -745,41 +745,41 @@ body.sem-acesso .wrap{display:none}
 .vis-barra{display:flex;align-items:center;gap:6px;padding:9px 12px;background:var(--surface-2);border-bottom:1px solid var(--border)}
 .vis-barra i{width:9px;height:9px;border-radius:50%;background:var(--surface-3)}
 .vis-barra span{margin-left:10px;font-size:11px;color:var(--muted);background:var(--surface);border-radius:6px;padding:1px 10px}
-.vis-tela{padding:12px 13px;font-size:12px;line-height:1.45}
+.vis-tela{padding:12px 13px;font-size:11.5px;line-height:1.45}
 .vis-abas{display:flex;gap:4px;margin-bottom:11px;overflow:hidden}
-.vis-abas b{flex:none;font-weight:500;font-size:11px;padding:3px 9px;border-radius:7px;color:var(--text-2);background:var(--surface)}
+.vis-abas b{flex:none;font-weight:400;font-size:12px;padding:3px 9px;border-radius:7px;color:var(--text-2);background:var(--surface)}
 .vis-abas b.on{background:var(--accent-forte);color:#fff}
 html[data-tema="escuro"] .vis-abas b.on{color:#1b2224}
 .vis-grade{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:9px}
 .vis-c{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 10px}
-.vis-c h4{margin:0 0 6px;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.vis-c h4{margin:0 0 6px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
 .vis-c h4::before{content:"";width:3px;height:11px;border-radius:2px;background:var(--accent)}
 .vis-crono{border-color:var(--accent);background:var(--accent-soft);display:flex;align-items:center;gap:10px;grid-column:1/-1}
-.vis-crono strong{font-size:22px;font-weight:600;color:var(--accent-ink);font-variant-numeric:tabular-nums}
-.vis-crono small{display:block;color:var(--muted);font-size:10.5px}
+.vis-crono strong{font-size:24px;font-weight:600;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.vis-crono small{display:block;color:var(--muted);font-size:10px}
 .vis-crono .pulso{width:7px;height:7px}
 .vis-item{display:flex;align-items:center;gap:7px;padding:5px 0;border-top:1px solid var(--grade)}
 .vis-item:first-of-type{border-top:0}
 .vis-item .ck{flex:none;width:12px;height:12px;border-radius:4px;border:1.5px solid var(--campo-borda)}
 .vis-item .ck.ok{background:var(--accent-forte);border-color:var(--accent-forte)}
-.vis-item span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vis-item em{flex:none;font-style:normal;font-size:10px;padding:0 6px;border-radius:5px;background:var(--surface-2);color:var(--text-2)}
+.vis-item span{font-weight:550;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vis-item em{flex:none;font-style:normal;font-size:9px;font-weight:550;padding:0 6px;border-radius:999px;background:var(--surface-2);color:var(--text-2)}
 .vis-item em.rev{background:var(--star-soft);color:var(--star-ink)}
 .vis-item em.atr{background:var(--critico-soft);color:var(--critico-ink)}
 .vis-meta{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin:4px 0 3px}
 .vis-meta i{display:block;height:100%;width:64%;background:var(--accent-forte);border-radius:4px}
-.vis-num{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px}
+.vis-num{display:flex;justify-content:space-between;color:var(--muted);font-size:10px}
 .vis-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px}
 .vis-cal i{aspect-ratio:1;border-radius:3px;background:var(--seq1)}
 .vis-cal i.n2{background:var(--seq2)} .vis-cal i.n3{background:var(--seq3)} .vis-cal i.n4{background:var(--seq4)}
 .vis-cal i.n0{background:var(--surface-2)}
-.vis-barras div{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:10.5px;color:var(--text-2)}
+.vis-barras div{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:10px;color:var(--text-2)}
 .vis-barras span{width:72px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vis-barras i{height:7px;border-radius:3px}
 /* o que dá para fazer, em seis quadros */
 .vis-recursos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:40px}
 .vis-recursos .card{margin:0;padding:15px 16px}
-.vis-recursos h3{font-size:14.5px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+.vis-recursos h3{font-size:15px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:9px}
 .vis-recursos h3 i{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
   font-style:normal;font-size:14px;background:var(--accent-soft);color:var(--accent-ink)}
 .vis-recursos p{margin:0;font-size:13px;color:var(--text-2);line-height:1.5}
@@ -788,7 +788,7 @@ html[data-tema="escuro"] .vis-abas b.on{color:#1b2224}
 .vis-passos ol{list-style:none;padding:0;margin:0 auto 20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;max-width:760px}
 .vis-passos li{flex:1 1 160px;font-size:13px;color:var(--text-2);background:var(--surface);border:1px solid var(--border);
   border-radius:10px;padding:10px 12px;text-align:left}
-.vis-passos li b{display:block;color:var(--accent-ink);font-size:12px}
+.vis-passos li b{display:block;color:var(--accent-ink);font-weight:600}
 .vis-passos .vis-acoes{justify-content:center}
 @media (max-width:820px){
   .vis-topo{grid-template-columns:minmax(0,1fr);gap:24px}
